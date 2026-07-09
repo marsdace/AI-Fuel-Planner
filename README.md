@@ -68,7 +68,30 @@ python fuel_planner.py 23231556007_ACTIVITY.fit --weight 68 --target full_marath
 ```bash
 python fuel_planner.py 23231556007_ACTIVITY.fit --weight 68 --target trail_run --distance 30 --ascent 1200 --provider openai --model gpt-4o-mini --api-key YOUR_KEY --language en
 ```
+## Streamlit 应用
 
+项目已提供 `app.py`，可直接运行 Streamlit Web 应用：
+
+```bash
+streamlit run app.py
+```
+
+在 Streamlit 应用中：
+
+- 上传 FIT 文件
+- 选择 AI provider、模型、语言、目标类型
+- 展示活动摘要和性能指标
+- 点击“Generate Fueling Strategy”生成补给策略
+
+### DeepSeek API Key
+
+如果使用 `deepseek` provider，请将密钥填入 `.streamlit/secrets.toml`：
+
+```toml
+DEEPSEEK_API_KEY = "your_deepseek_api_key_here"
+```
+
+Streamlit 会通过 `st.secrets` 读取该值。
 ### 环境变量
 
 如果不想在命令行中输入 API Key，可通过环境变量传入：
