@@ -1,5 +1,7 @@
 # AI Fuel Planner
 
+> English version available in `README_EN.md`
+
 AI Fuel Planner 是一个基于 FIT 文件的运动补给策略生成器。它从 Garmin 运动历史文件提取训练数据，评估运动员能力，并生成半程马拉松、全程马拉松或越野跑（含距离与累计爬升）目标的补给方案。
 
 ## 核心功能
