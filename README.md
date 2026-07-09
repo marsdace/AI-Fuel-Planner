@@ -1,0 +1,129 @@
+# AI Fuel Planner
+
+AI Fuel Planner 是一个基于 FIT 文件的运动补给策略生成器。它从 Garmin 运动历史文件提取训练数据，评估运动员能力，并生成半程马拉松、全程马拉松或越野跑（含距离与累计爬升）目标的补给方案。
+
+## 核心功能
+
+- 解析 FIT 文件，提取基础运动数据、心率、功率、海拔和其他关键指标
+- 基于历史运动能力，构建补给策略提示词
+- 支持 `openai`、`deepseek` 与 `mock` 三种 AI 提供商
+- 支持中文/英文界面与输出语言
+- 支持三种目标：`half_marathon`、`full_marathon`、`trail_run`
+- 越野跑目标可输入 `--distance` 和 `--ascent`
+
+## 目录结构
+
+- `fuel_planner.py`：主程序，负责 FIT 解析、AI Prompt 构建和策略生成
+- `test_fuel_planner.py`：基础单元测试
+- `23231556007_ACTIVITY.fit`：示例 FIT 活动文件
+- `PROJECT_CONTEXT.md` / `PROJECT_CONTEXT_CN.md`：项目背景与定位说明
+
+## 依赖
+
+只需安装 FIT 解析依赖：
+
+```bash
+pip install -r requirements.txt
+```
+
+`requirements.txt` 包含：
+
+- `fitparse`
+
+如果你使用 `openai` 提供商，也可以选择安装官方 SDK，但不是必须。
+
+## 使用说明
+
+在项目目录下运行：
+
+```bash
+python fuel_planner.py <FIT_FILE> --weight 68 --target full_marathon --provider deepseek --model deepseek-v4-pro --api-key YOUR_KEY --language zh
+```
+
+### 主要参数
+
+- `fit_file`：FIT 活动文件路径
+- `--weight`：运动员体重（kg）
+- `--target`：目标类型 (`half_marathon`, `full_marathon`, `trail_run`)
+- `--ascent`：越野跑目标累计爬升（米）
+- `--distance`：越野跑目标距离（公里）
+- `--provider`：AI 提供商 (`openai`, `deepseek`, `mock`)
+- `--model`：模型名称，例如 `gpt-4o-mini` 或 `deepseek-v4-pro`
+- `--api-key`：AI API Key
+- `--temperature`：生成温度
+- `--language`：界面与输出语言，`zh` 或 `en`
+- `--insecure`：如果遇到 SSL 证书问题，可禁用证书验证
+
+### 例子
+
+中文输出：
+
+```bash
+python fuel_planner.py 23231556007_ACTIVITY.fit --weight 68 --target full_marathon --provider deepseek --model deepseek-v4-pro --api-key YOUR_KEY --language zh
+```
+
+英文输出：
+
+```bash
+python fuel_planner.py 23231556007_ACTIVITY.fit --weight 68 --target trail_run --distance 30 --ascent 1200 --provider openai --model gpt-4o-mini --api-key YOUR_KEY --language en
+```
+
+### 环境变量
+
+如果不想在命令行中输入 API Key，可通过环境变量传入：
+
+```bash
+export OPENAI_API_KEY=your_openai_key
+python fuel_planner.py 23231556007_ACTIVITY.fit --weight 68 --target half_marathon --provider openai --model gpt-4o-mini --language zh
+```
+
+> `--api-key` 优先于环境变量。
+
+## 测试
+
+运行测试：
+
+```bash
+pytest
+```
+
+如果未安装 `pytest`，请先安装：
+
+```bash
+pip install pytest
+```
+
+## GitHub 上传建议
+
+1. 初始化仓库：
+
+```bash
+git init
+```
+
+2. 添加文件：
+
+```bash
+git add .
+```
+
+3. 提交：
+
+```bash
+git commit -m "Add AI Fuel Planner project"
+```
+
+4. 添加远程仓库并推送：
+
+```bash
+git remote add origin https://github.com/<your-username>/<repo-name>.git
+ git push -u origin main
+```
+
+## 备注
+
+这个项目设计原则是：
+
+- 业务逻辑独立于 UI、LLM 和第三方接口
+- AI 仅用于生成自然语言解释，不参与核心计算
+- 保持简单、可替换、可维护
