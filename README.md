@@ -14,9 +14,8 @@ AI Fuel Planner 是一个基于 FIT 文件的运动补给策略生成器。它�
 ## 目录结构
 
 - `fuel_planner.py`：主程序，负责 FIT 解析、AI Prompt 构建和策略生成
-- `test_fuel_planner.py`：基础单元测试
 - `23231556007_ACTIVITY.fit`：示例 FIT 活动文件
-- `PROJECT_CONTEXT.md` / `PROJECT_CONTEXT_CN.md`：项目背景与定位说明
+
 
 ## 依赖
 
@@ -93,37 +92,5 @@ pytest
 pip install pytest
 ```
 
-## GitHub 上传建议
 
-1. 初始化仓库：
 
-```bash
-git init
-```
-
-2. 添加文件：
-
-```bash
-git add .
-```
-
-3. 提交：
-
-```bash
-git commit -m "Add AI Fuel Planner project"
-```
-
-4. 添加远程仓库并推送：
-
-```bash
-git remote add origin https://github.com/<your-username>/<repo-name>.git
- git push -u origin main
-```
-
-## 备注
-
-这个项目设计原则是：
-
-- 业务逻辑独立于 UI、LLM 和第三方接口
-- AI 仅用于生成自然语言解释，不参与核心计算
-- 保持简单、可替换、可维护
