@@ -7,8 +7,8 @@ import streamlit as st
 from fuel_planner import (
     call_ai_strategy,
     extract_fit_metrics,
+    get_supported_targets,
     parse_fit_activity,
-    recommend_fuel,
     render_activity_summary,
 )
 
@@ -25,7 +25,7 @@ def main() -> None:
     st.set_page_config(page_title="AI Fuel Planner", layout="wide")
     st.title("AI Fuel Planner")
     st.markdown(
-        "Use your Garmin FIT file to evaluate training ability and generate fueling strategy for a chosen target event."
+        "Use your Garmin FIT file to evaluate training ability and generate fueling guidance for trail, mountain, and hiking events."
     )
 
     with st.sidebar:
@@ -34,18 +34,13 @@ def main() -> None:
         model = st.text_input("Model", value="deepseek-v4-pro" if provider == "deepseek" else "gpt-4o-mini")
         language = st.selectbox("Language", ["zh", "en"], index=0)
         weight = st.number_input("Athlete Weight (kg)", min_value=30.0, max_value=200.0, value=70.0)
-        target = st.selectbox(
-            "Target",
-            ["half_marathon", "full_marathon", "trail_run"],
-            format_func=lambda x: {
-                "half_marathon": "Half Marathon",
-                "full_marathon": "Full Marathon",
-                "trail_run": "Trail Run",
-            }[x],
-        )
+        target_options = get_supported_targets(language)
+        target_choices = [code for code, _ in target_options]
+        target_labels = {code: label for code, label in target_options}
+        target = st.selectbox("Target", target_choices, format_func=lambda x: target_labels[x])
         ascent = None
         distance = None
-        if target == "trail_run":
+        if target in {"trail_run", "mountain_run", "mountain_hike"}:
             distance = st.number_input("Target Distance (km)", min_value=1.0, max_value=200.0, value=30.0)
             ascent = st.number_input("Target Elevation Gain (m)", min_value=0.0, max_value=10000.0, value=1200.0)
 
@@ -121,14 +116,18 @@ def main() -> None:
 
 
 def _render_target_description(target: str, ascent: Optional[float], distance: Optional[float], language: str) -> str:
-    if target == "half_marathon":
-        return "Target: Half Marathon" if language == "en" else "目标：半程马拉松"
-    if target == "full_marathon":
-        return "Target: Full Marathon" if language == "en" else "目标：全程马拉松"
     if target == "trail_run":
         if language == "en":
             return f"Target: Trail Run, Distance {distance} km, Elevation Gain {ascent} m"
-        return f"目标：累计爬升跑，距离 {distance} 公里，累计爬升 {ascent} 米"
+        return f"目标：越野跑，距离 {distance} 公里，累计爬升 {ascent} 米"
+    if target == "mountain_run":
+        if language == "en":
+            return f"Target: Mountain Run, Distance {distance} km, Elevation Gain {ascent} m"
+        return f"目标：山地跑，距离 {distance} 公里，累计爬升 {ascent} 米"
+    if target == "mountain_hike":
+        if language == "en":
+            return f"Target: Mountain Hiking, Distance {distance} km, Elevation Gain {ascent} m"
+        return f"目标：山地徒步，距离 {distance} 公里，累计爬升 {ascent} 米"
     return ""
 
 

@@ -767,41 +767,72 @@ def generate_recommendation_text(summary: ActivitySummary, plan: FuelPlan) -> st
     return "\n".join([carb_sentence, timing_sentence, pre_sentence, decision_sentence, plan.notes])
 
 
+def get_supported_targets(language: str = "zh") -> List[Tuple[str, str]]:
+    if language == "en":
+        return [
+            ("trail_run", "Trail Run"),
+            ("mountain_run", "Mountain Run"),
+            ("mountain_hike", "Mountain Hiking"),
+        ]
+    return [
+        ("trail_run", "越野跑"),
+        ("mountain_run", "山地跑"),
+        ("mountain_hike", "山地徒步"),
+    ]
+
+
+def _format_target_description(target: str, ascent: Optional[float], distance: Optional[float], language: str) -> str:
+    if language == "en":
+        if target == "trail_run":
+            return f"Target: Trail Run, Distance {distance} km, Elevation Gain {ascent} m"
+        if target == "mountain_run":
+            return f"Target: Mountain Run, Distance {distance} km, Elevation Gain {ascent} m"
+        if target == "mountain_hike":
+            return f"Target: Mountain Hiking, Distance {distance} km, Elevation Gain {ascent} m"
+        return "Target: Outdoor Adventure"
+
+    if target == "trail_run":
+        return f"目标：越野跑，距离 {distance} 公里，累计爬升 {ascent} 米"
+    if target == "mountain_run":
+        return f"目标：山地跑，距离 {distance} 公里，累计爬升 {ascent} 米"
+    if target == "mountain_hike":
+        return f"目标：山地徒步，距离 {distance} 公里，累计爬升 {ascent} 米"
+    return "目标：户外运动"
+
+
 def _resolve_target(args, language: str) -> str:
     if language == "en":
         mapping = {
-            "half_marathon": "Target: Half Marathon",
-            "full_marathon": "Target: Full Marathon",
-            "trail_run": "Target: Trail Run with Elevation Gain",
+            "trail_run": "Target: Trail Run",
+            "mountain_run": "Target: Mountain Run",
+            "mountain_hike": "Target: Mountain Hiking",
         }
         prompt_ascent = "Enter target elevation gain (meters): "
         prompt_distance = "Enter target distance (kilometers): "
         choose_text = "Select fueling target:"
-        options = ["1. Half Marathon", "2. Full Marathon", "3. Trail Run with Elevation Gain"]
+        options = ["1. Trail Run", "2. Mountain Run", "3. Mountain Hiking"]
         input_prompt = "Enter 1/2/3: "
     else:
         mapping = {
-            "half_marathon": "目标：半程马拉松",
-            "full_marathon": "目标：全程马拉松",
-            "trail_run": "目标：累计爬升跑",
+            "trail_run": "目标：越野跑",
+            "mountain_run": "目标：山地跑",
+            "mountain_hike": "目标：山地徒步",
         }
         prompt_ascent = "请输入目标累计爬升（米）: "
         prompt_distance = "请输入目标距离（公里）: "
         choose_text = "请选择补给目标："
-        options = ["1. 半程马拉松", "2. 全程马拉松", "3. 累计爬升跑"]
+        options = ["1. 越野跑", "2. 山地跑", "3. 山地徒步"]
         input_prompt = "输入 1/2/3: "
 
     if args.target:
-        if args.target == "trail_run":
+        if args.target in {"trail_run", "mountain_run", "mountain_hike"}:
             ascent = args.ascent
             distance = args.distance
             if ascent is None:
                 ascent = float(input(prompt_ascent).strip())
             if distance is None:
                 distance = float(input(prompt_distance).strip())
-            if language == "en":
-                return "Target: Trail Run with Elevation Gain, Distance %s km, Elevation Gain %s m" % (distance, ascent)
-            return "目标：累计爬升跑，距离 %s 公里，累计爬升 %s 米" % (distance, ascent)
+            return _format_target_description(args.target, ascent, distance, language)
         return mapping.get(args.target, args.target)
 
     print(choose_text)
@@ -809,9 +840,9 @@ def _resolve_target(args, language: str) -> str:
         print(opt)
     choice = input(input_prompt).strip()
     if choice == "1":
-        return mapping["half_marathon"]
+        return mapping["trail_run"]
     if choice == "2":
-        return mapping["full_marathon"]
+        return mapping["mountain_run"]
     if choice == "3":
         ascent = args.ascent
         distance = args.distance
@@ -819,17 +850,15 @@ def _resolve_target(args, language: str) -> str:
             ascent = float(input(prompt_ascent).strip())
         if distance is None:
             distance = float(input(prompt_distance).strip())
-        if language == "en":
-            return "Target: Trail Run with Elevation Gain, Distance %s km, Elevation Gain %s m" % (distance, ascent)
-        return "目标：累计爬升跑，距离 %s 公里，累计爬升 %s 米" % (distance, ascent)
-    return mapping["full_marathon"]
+        return _format_target_description("mountain_hike", ascent, distance, language)
+    return mapping["trail_run"]
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="AI Fuel Planner: extract FIT data and generate a fueling strategy via AI.")
     parser.add_argument("fit_file", type=Path, help="Path to the FIT activity file.")
     parser.add_argument("--weight", type=float, default=70.0, help="Athlete body weight in kilograms.")
-    parser.add_argument("--target", type=str, choices=["half_marathon", "full_marathon", "trail_run"], default=None, help="补给目标类型: half_marathon, full_marathon, trail_run")
+    parser.add_argument("--target", type=str, choices=["trail_run", "mountain_run", "mountain_hike"], default=None, help="补给目标类型: trail_run, mountain_run, mountain_hike")
     parser.add_argument("--ascent", type=float, default=None, help="如果目标是累计爬升跑，请输入目标累计爬升米数")
     parser.add_argument("--distance", type=float, default=None, help="如果目标是累计爬升跑，请输入目标距离，单位为公里")
     parser.add_argument("--provider", type=str, default="openai", choices=["openai", "deepseek", "mock"], help="AI provider name, e.g. openai, deepseek or mock.")
