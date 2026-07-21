@@ -1,6 +1,7 @@
+import os
 from pathlib import Path
 
-from fuel_planner import get_supported_targets, parse_fit_activity, recommend_fuel
+from fuel_planner import get_supported_targets, parse_fit_activity, recommend_fuel, resolve_api_key
 
 
 def test_parse_fit_activity():
@@ -47,3 +48,12 @@ def test_supported_targets_focus_on_outdoor_categories():
         ("mountain_run", "Mountain Run"),
         ("mountain_hike", "Mountain Hiking"),
     ]
+
+
+def test_resolve_api_key_prefers_provider_specific_env(monkeypatch):
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+    monkeypatch.setenv("OPENAI_API_KEY", "openai-key")
+    assert resolve_api_key("deepseek") == "openai-key"
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "deepseek-key")
+    assert resolve_api_key("deepseek") == "deepseek-key"
+    assert resolve_api_key("openai") == "openai-key"

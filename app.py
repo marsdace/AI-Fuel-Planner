@@ -1,3 +1,4 @@
+import os
 import tempfile
 from pathlib import Path
 from typing import Optional
@@ -13,11 +14,21 @@ from fuel_planner import (
 )
 
 
-def get_api_key(provider: str) -> Optional[str]:
+def get_api_key(provider: str, manual_key: Optional[str]) -> Optional[str]:
     if provider == "deepseek":
-        return st.secrets.get("DEEPSEEK_API_KEY")
+        secret_value = None
+        try:
+            secret_value = st.secrets.get("DEEPSEEK_API_KEY")
+        except Exception:
+            secret_value = None
+        return manual_key or secret_value or os.environ.get("DEEPSEEK_API_KEY") or os.environ.get("OPENAI_API_KEY")
     if provider == "openai":
-        return st.text_input("OpenAI API Key", type="password")
+        secret_value = None
+        try:
+            secret_value = st.secrets.get("OPENAI_API_KEY")
+        except Exception:
+            secret_value = None
+        return manual_key or secret_value or os.environ.get("OPENAI_API_KEY")
     return None
 
 
@@ -46,18 +57,23 @@ def main() -> None:
 
         temperature = st.slider("Temperature", min_value=0.0, max_value=1.0, value=0.7, step=0.05)
         insecure = st.checkbox("Disable SSL verification (for local testing)")
-        api_key = get_api_key(provider)
+        manual_api_key = st.text_input(
+            "API Key",
+            type="password",
+            help="Paste your API key here for the selected provider. This also works when secrets are not configured.",
+        )
+        api_key = get_api_key(provider, manual_api_key)
 
         if provider == "deepseek":
             if api_key:
-                st.success("DeepSeek API key loaded from st.secrets.")
+                st.success("DeepSeek API key is ready.")
             else:
                 st.warning(
-                    "DeepSeek API key not found in st.secrets. Please add DEEPSEEK_API_KEY to your Streamlit secrets."
+                    "DeepSeek API key not found. Please enter it above or add DEEPSEEK_API_KEY to your Streamlit secrets."
                 )
         elif provider == "openai":
             if not api_key:
-                st.warning("Please enter an OpenAI API key in the sidebar.")
+                st.warning("Please enter an OpenAI API key above or add OPENAI_API_KEY to your Streamlit secrets.")
 
     file_upload = st.file_uploader("Upload FIT file", type=["fit"])
 
@@ -102,7 +118,13 @@ def main() -> None:
                             st.success("Fueling strategy generated successfully.")
                             st.code(strategy, language="text")
                         except Exception as exc:
-                            st.error(f"Failed to generate strategy: {exc}")
+                            message = str(exc)
+                            if "401" in message or "Unauthorized" in message.lower():
+                                st.error(
+                                    "Authentication failed. The API key may be invalid, expired, or missing for the selected provider."
+                                )
+                            else:
+                                st.error(f"Failed to generate strategy: {exc}")
         finally:
             try:
                 temp_path.unlink()

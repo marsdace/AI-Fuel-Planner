@@ -294,6 +294,17 @@ def call_ai_strategy(metrics: Dict[str, Dict[str, Optional[float]]], unavailable
     return adapter.generate(prompt, temperature=temperature)
 
 
+def resolve_api_key(provider: str, explicit_key: Optional[str] = None) -> Optional[str]:
+    provider = provider.lower()
+    if explicit_key:
+        return explicit_key
+    if provider == "deepseek":
+        return os.environ.get("DEEPSEEK_API_KEY") or os.environ.get("OPENAI_API_KEY")
+    if provider == "openai":
+        return os.environ.get("OPENAI_API_KEY")
+    return None
+
+
 def extract_fit_metrics(fit_path: Path) -> Tuple[Dict[str, Dict[str, Optional[float]]], List[str]]:
     """Extract a broad set of metrics from a FIT file and list any missing fields."""
     with fit_path.open("rb") as fit_file:
@@ -869,7 +880,7 @@ def main() -> int:
     parser.add_argument("--insecure", action="store_true", help="Disable SSL certificate verification for AI API calls.")
     args = parser.parse_args()
 
-    api_key = args.api_key or os.environ.get("OPENAI_API_KEY")
+    api_key = resolve_api_key(args.provider, args.api_key)
     target_desc = _resolve_target(args, args.language)
     metrics, unavailable = extract_fit_metrics(args.fit_file)
 
