@@ -29,6 +29,13 @@ def get_api_key(provider: str, manual_key: Optional[str]) -> Optional[str]:
         except Exception:
             secret_value = None
         return manual_key or secret_value or os.environ.get("OPENAI_API_KEY")
+    if provider == "gemini":
+        secret_value = None
+        try:
+            secret_value = st.secrets.get("GEMINI_API_KEY")
+        except Exception:
+            secret_value = None
+        return manual_key or secret_value or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     return None
 
 
@@ -41,8 +48,11 @@ def main() -> None:
 
     with st.sidebar:
         st.header("Configuration")
-        provider = st.selectbox("AI Provider", ["openai", "deepseek", "mock"], index=1)
-        model = st.text_input("Model", value="deepseek-v4-pro" if provider == "deepseek" else "gpt-4o-mini")
+        provider = st.selectbox("AI Provider", ["openai", "deepseek", "gemini", "mock"], index=1)
+        model = st.text_input(
+            "Model",
+            value=("gemini-flash-latest" if provider == "gemini" else "deepseek-v4-pro" if provider == "deepseek" else "gpt-4o-mini"),
+        )
         language = st.selectbox("Language", ["zh", "en"], index=0)
         weight = st.number_input("Athlete Weight (kg)", min_value=30.0, max_value=200.0, value=70.0)
         target_options = get_supported_targets(language)
@@ -56,6 +66,8 @@ def main() -> None:
             ascent = st.number_input("Target Elevation Gain (m)", min_value=0.0, max_value=10000.0, value=1200.0)
 
         temperature = st.slider("Temperature", min_value=0.0, max_value=1.0, value=0.7, step=0.05)
+        weather_temp = st.number_input("Expected temperature (°C)", min_value=-30.0, max_value=60.0, value=20.0, step=1.0)
+        humidity = st.number_input("Expected humidity (%)", min_value=0.0, max_value=100.0, value=50.0, step=1.0)
         insecure = st.checkbox("Disable SSL verification (for local testing)")
         manual_api_key = st.text_input(
             "API Key",
@@ -74,6 +86,9 @@ def main() -> None:
         elif provider == "openai":
             if not api_key:
                 st.warning("Please enter an OpenAI API key above or add OPENAI_API_KEY to your Streamlit secrets.")
+        elif provider == "gemini":
+            if not api_key:
+                st.warning("Please enter a Gemini API key above or add GEMINI_API_KEY to your Streamlit secrets.")
 
     file_upload = st.file_uploader("Upload FIT file", type=["fit"])
 
@@ -114,6 +129,8 @@ def main() -> None:
                                 temperature=temperature,
                                 verify_ssl=not insecure,
                                 language=language,
+                                weather_temp_c=weather_temp,
+                                humidity_pct=humidity,
                             )
                             st.success("Fueling strategy generated successfully.")
                             st.code(strategy, language="text")
@@ -133,7 +150,7 @@ def main() -> None:
 
     st.markdown("---")
     st.markdown(
-        "**Note:** DeepSeek API key should be stored in `st.secrets` as `DEEPSEEK_API_KEY`."
+        "**Note:** For DeepSeek, store the key in `st.secrets` as `DEEPSEEK_API_KEY`. For Gemini, use `GEMINI_API_KEY`."
     )
 
 

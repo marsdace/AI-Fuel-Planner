@@ -203,42 +203,129 @@ class DeepSeekAdapter(AIModelAdapter):
         return str(data["choices"][0].get("message", {}).get("content", "")).strip()
 
 
+class GeminiAdapter(AIModelAdapter):
+    def __init__(self, api_key: Optional[str], model: str, provider: str = "gemini", base_url: str = "https://generativelanguage.googleapis.com", verify_ssl: bool = True, language: str = "zh"):
+        super(GeminiAdapter, self).__init__(api_key, model, provider, verify_ssl=verify_ssl, language=language)
+        self.base_url = base_url.rstrip("/")
+        if not self.api_key:
+            raise ValueError("Gemini API key is required for gemini provider")
+
+    def _request(self, prompt: str, temperature: float, model_name: str) -> str:
+        body = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "temperature": temperature,
+                "maxOutputTokens": 4000,
+            },
+        }
+        request_data = json.dumps(body).encode("utf-8")
+        request = urllib.request.Request(
+            f"{self.base_url}/v1beta/models/{model_name}:generateContent?key={self.api_key}",
+            data=request_data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        ctx = ssl.create_default_context()
+        if not self.verify_ssl:
+            ctx = ssl._create_unverified_context()
+        try:
+            with urllib.request.urlopen(request, timeout=60, context=ctx) as response:
+                response_body = response.read().decode("utf-8")
+        except urllib.error.HTTPError as exc:
+            raise RuntimeError("AI API request failed: {} {}".format(exc.code, exc.reason))
+        except urllib.error.URLError as exc:
+            raise RuntimeError("AI API connection failed: {}".format(exc.reason))
+        data = json.loads(response_body)
+        if "candidates" not in data or not data["candidates"]:
+            raise RuntimeError("AI API returned no candidates")
+        parts = data["candidates"][0].get("content", {}).get("parts", [])
+        if not parts:
+            raise RuntimeError("AI API returned no text content")
+        return str(parts[0].get("text", "")).strip()
+
+    def generate(self, prompt: str, temperature: float = 0.7) -> str:
+        attempted_models = []
+        model_names = []
+        requested = self.model.strip()
+        if requested:
+            model_names.append(requested)
+        if requested and not requested.startswith("models/"):
+            model_names.append(f"models/{requested}")
+        model_names.extend(["gemini-flash-latest", "models/gemini-flash-latest"])
+
+        seen = set()
+        ordered_models = []
+        for model_name in model_names:
+            normalized = model_name.replace("models/", "", 1)
+            if normalized not in seen:
+                seen.add(normalized)
+                ordered_models.append(normalized)
+
+        for model_name in ordered_models:
+            attempted_models.append(model_name)
+            try:
+                return self._request(prompt, temperature, model_name)
+            except RuntimeError as exc:
+                message = str(exc)
+                if "404" not in message and "Not Found" not in message:
+                    raise
+        if len(attempted_models) > 1:
+            raise RuntimeError(
+                "AI API request failed for all Gemini models (tried: {}). Please verify the API key and use a newer model name.".format(
+                    ", ".join(attempted_models)
+                )
+            )
+        raise RuntimeError("AI API request failed: Gemini model unavailable")
+
+
 def create_model_adapter(provider: str, model: str, api_key: Optional[str] = None, verify_ssl: bool = True, language: str = "zh") -> AIModelAdapter:
     provider = provider.lower()
     if provider == "openai":
         return OpenAIAdapter(api_key=api_key, model=model, provider=provider, verify_ssl=verify_ssl, language=language)
     if provider == "deepseek":
         return DeepSeekAdapter(api_key=api_key, model=model, provider=provider, verify_ssl=verify_ssl, language=language)
+    if provider == "gemini":
+        return GeminiAdapter(api_key=api_key, model=model, provider=provider, verify_ssl=verify_ssl, language=language)
     if provider == "mock":
         return MockAIAdapter(api_key=api_key, model=model, provider=provider, verify_ssl=verify_ssl, language=language)
     raise ValueError("Unsupported AI provider: {}".format(provider))
 
 
-def build_prompt(metrics: Dict[str, Dict[str, Optional[float]]], unavailable: List[str], target_desc: str, weight: float, language: str) -> str:
+def build_prompt(metrics: Dict[str, Dict[str, Optional[float]]], unavailable: List[str], target_desc: str, weight: float, language: str, weather_temp_c: Optional[float] = None, humidity_pct: Optional[float] = None) -> str:
     if language == "en":
         lines = [
             "You are a fueling strategy generator. Please use the FIT activity data below to assess the athlete's fitness and then create a fueling plan for the selected event target.",
             "Note: The FIT file data is only used to evaluate the athlete's ability and fitness level, not to represent the actual route or environment of the target event.",
-            "Please output only the fueling strategy in English and do not include unrelated information.",
+            "Please output a complete, structured, and directly usable fueling strategy in English and do not include unrelated information.",
             "If any data is unavailable, note it or provide a reasonable estimate.",
+            "Make sure the response includes complete pre-event, during-event, and post-event recommendations with explicit carbohydrate, calorie, fluid, and pacing guidance.",
             "\nEvent target:",
             f"  - {target_desc}",
             f"  - Athlete body weight: {weight} kg",
             "  - Note: FIT data is used as a capability baseline, and the fueling strategy should be based on the selected event type.",
-            "\nFitness assessment data (only include available fields):",
         ]
+        if weather_temp_c is not None:
+            lines.append(f"  - Expected weather temperature: {weather_temp_c:.1f}°C")
+        if humidity_pct is not None:
+            lines.append(f"  - Expected humidity: {humidity_pct:.1f}%")
+        lines.append("\nFitness assessment data (only include available fields):")
     else:
         lines = [
             "你是一个运动补给策略生成器。请根据下面的 FIT 运动数据评估运动员的运动能力，然后为所选目标制定补给策略。",
             "注意：FIT 文件数据仅用于评估运动员的能力和体能水平，而不是代表目标赛事的实际路线或环境。",
-            "请仅输出补给策略，不要输出其他无关信息。",
+            "请输出一份完整、结构化且可直接执行的补给策略，不要输出任何无关说明。",
             "如果某项数据不可用，请说明该项缺失或给出合理估计。",
+            "请确保输出内容包含完整的赛前、赛中、赛后建议，以及具体的碳水、热量、液体与节奏安排。",
             "\n运动目标：",
             f"  - {target_desc}",
             f"  - 运动员体重: {weight} kg",
             "  - 说明：FIT 数据用作能力评估基准，目标赛事补给策略应基于所选目标类型。",
-            "\n运动能力评估数据（仅列出可用数据）：",
         ]
+        if weather_temp_c is not None:
+            lines.append(f"  - 预计天气温度: {weather_temp_c:.1f}°C")
+        if humidity_pct is not None:
+            lines.append(f"  - 预计湿度: {humidity_pct:.1f}%")
+        lines.append("\n运动能力评估数据（仅列出可用数据）：")
     for category, values in metrics.items():
         lines.append(f"{category}:")
         for name, value in values.items():
@@ -255,8 +342,9 @@ def build_prompt(metrics: Dict[str, Dict[str, Optional[float]]], unavailable: Li
             "\nPlease provide:",
             "1. Overall fueling strategy (carbohydrates, calories, fluids, pacing).",
             "2. Pre-event, during-event, and post-event fueling recommendations.",
-            "3. Athlete guidance for the target event type, weight, intensity, duration, and elevation.",
+            "3. Athlete guidance for the target event type, weight, intensity, duration, elevation, and expected weather conditions.",
             "4. If data is missing, explain and propose reasonable estimates.",
+            "5. Organize the response with clear headings or bullet points so the strategy is complete and easy to follow.",
             "\nAnswer only with the fueling strategy text in English.",
         ])
     else:
@@ -264,8 +352,9 @@ def build_prompt(metrics: Dict[str, Dict[str, Optional[float]]], unavailable: Li
             "\n请基于以上信息给出：",
             "1. 补给总体策略（碳水、热量、液体、补给节奏）。",
             "2. 赛前、赛中、赛后补给建议。",
-            "3. 目标赛事说明（例如目标类型、体重、强度、时长、爬升等）。",
+            "3. 目标赛事说明（例如目标类型、体重、强度、时长、爬升和预计天气等）。",
             "4. 如数据缺失，请说明并提出合理估计。",
+            "5. 以分段小标题或清晰列表形式输出，确保内容完整且便于执行。",
             "\n请仅输出补给策略文本，不要输出其他无关内容。",
         ])
     return "\n".join(lines)
@@ -288,8 +377,8 @@ def build_prompt(metrics: Dict[str, Dict[str, Optional[float]]], unavailable: Li
     return "\n".join(lines)
 
 
-def call_ai_strategy(metrics: Dict[str, Dict[str, Optional[float]]], unavailable: List[str], target_desc: str, provider: str, model: str, api_key: Optional[str], weight: float, temperature: float = 0.7, verify_ssl: bool = True, language: str = "zh") -> str:
-    prompt = build_prompt(metrics, unavailable, target_desc, weight, language)
+def call_ai_strategy(metrics: Dict[str, Dict[str, Optional[float]]], unavailable: List[str], target_desc: str, provider: str, model: str, api_key: Optional[str], weight: float, temperature: float = 0.7, verify_ssl: bool = True, language: str = "zh", weather_temp_c: Optional[float] = None, humidity_pct: Optional[float] = None) -> str:
+    prompt = build_prompt(metrics, unavailable, target_desc, weight, language, weather_temp_c=weather_temp_c, humidity_pct=humidity_pct)
     adapter = create_model_adapter(provider, model, api_key=api_key, verify_ssl=verify_ssl, language=language)
     return adapter.generate(prompt, temperature=temperature)
 
@@ -302,6 +391,8 @@ def resolve_api_key(provider: str, explicit_key: Optional[str] = None) -> Option
         return os.environ.get("DEEPSEEK_API_KEY") or os.environ.get("OPENAI_API_KEY")
     if provider == "openai":
         return os.environ.get("OPENAI_API_KEY")
+    if provider == "gemini":
+        return os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     return None
 
 
@@ -872,19 +963,34 @@ def main() -> int:
     parser.add_argument("--target", type=str, choices=["trail_run", "mountain_run", "mountain_hike"], default=None, help="补给目标类型: trail_run, mountain_run, mountain_hike")
     parser.add_argument("--ascent", type=float, default=None, help="如果目标是累计爬升跑，请输入目标累计爬升米数")
     parser.add_argument("--distance", type=float, default=None, help="如果目标是累计爬升跑，请输入目标距离，单位为公里")
-    parser.add_argument("--provider", type=str, default="openai", choices=["openai", "deepseek", "mock"], help="AI provider name, e.g. openai, deepseek or mock.")
+    parser.add_argument("--provider", type=str, default="openai", choices=["openai", "deepseek", "gemini", "mock"], help="AI provider name, e.g. openai, deepseek, gemini or mock.")
     parser.add_argument("--model", type=str, default="gpt-4o-mini", help="AI model name to use.")
     parser.add_argument("--api-key", type=str, default=None, help="AI API key, if required by provider.")
     parser.add_argument("--temperature", type=float, default=0.7, help="AI generation temperature.")
     parser.add_argument("--language", type=str, default="zh", choices=["zh", "en"], help="Interface and output language: zh or en.")
     parser.add_argument("--insecure", action="store_true", help="Disable SSL certificate verification for AI API calls.")
+    parser.add_argument("--weather-temp", type=float, default=None, help="Expected event-day temperature in Celsius.")
+    parser.add_argument("--humidity", type=float, default=None, help="Expected event-day humidity percentage.")
     args = parser.parse_args()
 
     api_key = resolve_api_key(args.provider, args.api_key)
     target_desc = _resolve_target(args, args.language)
     metrics, unavailable = extract_fit_metrics(args.fit_file)
 
-    strategy = call_ai_strategy(metrics=metrics, unavailable=unavailable, target_desc=target_desc, provider=args.provider, model=args.model, api_key=api_key, weight=args.weight, temperature=args.temperature, verify_ssl=not args.insecure, language=args.language)
+    strategy = call_ai_strategy(
+        metrics=metrics,
+        unavailable=unavailable,
+        target_desc=target_desc,
+        provider=args.provider,
+        model=args.model,
+        api_key=api_key,
+        weight=args.weight,
+        temperature=args.temperature,
+        verify_ssl=not args.insecure,
+        language=args.language,
+        weather_temp_c=args.weather_temp,
+        humidity_pct=args.humidity,
+    )
     print(strategy)
 
     return 0
