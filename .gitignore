@@ -17,3 +17,7 @@ __pycache__/
 
 # Ignore local sample data if needed
 23231556007_ACTIVITY.fit
+
+# Ignore local project context notes
+PROJECT_CONTEXT.md
+PROJECT_CONTEXT_CN.md
