@@ -72,11 +72,11 @@ python fuel_planner.py 23231556007_ACTIVITY.fit --weight 68 --target mountain_hi
 
 ## Streamlit 应用
 
-项目提供了已经搭建完成的Streamlit，并提供了免费的DEEPSEEK_API_KEY（额度有限，请勿浪费），其网址为：https://ai-fuel-planner-3ojkuqgmh5o93otmjmpc64.streamlit.app/
+项目提供了已经搭建完成的 Streamlit 示例页面，其网址为：https://ai-fuel-planner-3ojkuqgmh5o93otmjmpc64.streamlit.app/
 项目也提供了 app.py，可自行搭建 Streamlit Web 应用：
 
 ```bash
-cd 03_Code
+cd code
 streamlit run app.py
 ```
 

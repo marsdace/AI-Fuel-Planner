@@ -72,12 +72,12 @@ python fuel_planner.py 23231556007_ACTIVITY.fit --weight 68 --target mountain_hi
 
 ## Streamlit App
 
-The project provides a pre-configured Streamlit setup and a free DEEPSEEK_API_KEY (please do not waste it, as the quota is limited), available at: https://ai-fuel-planner-3ojkuqgmh5o93otmjmpc64.streamlit.app/
+The project provides a pre-configured Streamlit demo page at: https://ai-fuel-planner-3ojkuqgmh5o93otmjmpc64.streamlit.app/
 
 It also provides app.py so you can build your own Streamlit web app locally:
 
 ```bash
-cd 03_Code
+cd code
 streamlit run app.py
 ```
 

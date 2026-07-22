@@ -15,6 +15,19 @@ __pycache__/
 *.swp
 *~
 
+# Local secrets and generated outputs
+.streamlit/
+**/.streamlit/
+**/secrets.toml
+**/last_strategy.txt
+
+# Local personal activity data (do not commit)
+*.fit
+*.fit.zip
+
+# Local office docs
+*.docx
+
 # Ignore local sample data if needed
 23231556007_ACTIVITY.fit
 
