@@ -11,11 +11,12 @@ from fuel_planner import (
     parse_fit_activity,
     recommend_fuel,
     resolve_api_key,
+    resolve_fit_path,
 )
 
 
 def test_parse_fit_activity():
-    fit_path = Path("23231556007_ACTIVITY.fit")
+    fit_path = resolve_fit_path("23231556007_ACTIVITY.fit")
     summary = parse_fit_activity(fit_path)
     assert summary.total_timer_time > 0
     assert summary.total_distance >= 0
@@ -141,6 +142,7 @@ def test_gemini_adapter_falls_back_to_latest_model(monkeypatch):
     monkeypatch.setattr("fuel_planner.urllib.request.urlopen", fake_urlopen)
     adapter = create_model_adapter("gemini", "gemini-2.0-flash", api_key="test-key")
 
-    assert adapter.generate("hi") == "ok"
+    result = adapter.generate("hi")
+    assert result == "ok"
     assert len(calls) == 2
     assert calls[1].endswith("/v1beta/models/gemini-flash-latest:generateContent?key=test-key")

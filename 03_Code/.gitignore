@@ -1,0 +1,23 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite
+.env
+.env.*
+.DS_Store
+.idea/
+.vscode/
+*.log
+*.tmp
+*.temp
+*.swp
+*~
+
+# Ignore local sample data if needed
+23231556007_ACTIVITY.fit
+
+# Ignore local project context notes
+PROJECT_CONTEXT.md
+PROJECT_CONTEXT_CN.md

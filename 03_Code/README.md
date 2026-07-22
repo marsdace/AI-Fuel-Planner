@@ -76,6 +76,7 @@ python fuel_planner.py 23231556007_ACTIVITY.fit --weight 68 --target mountain_hi
 项目也提供了 app.py，可自行搭建 Streamlit Web 应用：
 
 ```bash
+cd 03_Code
 streamlit run app.py
 ```
 

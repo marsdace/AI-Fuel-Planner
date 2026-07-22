@@ -77,6 +77,7 @@ The project provides a pre-configured Streamlit setup and a free DEEPSEEK_API_KE
 It also provides app.py so you can build your own Streamlit web app locally:
 
 ```bash
+cd 03_Code
 streamlit run app.py
 ```
 

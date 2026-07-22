@@ -5,8 +5,8 @@
   "customizations": {
     "codespaces": {
       "openFiles": [
-        "README.md",
-        "app.py"
+        "03_Code/README.md",
+        "03_Code/app.py"
       ]
     },
     "vscode": {
@@ -17,9 +17,9 @@
       ]
     }
   },
-  "updateContentCommand": "[ -f packages.txt ] && sudo apt update && sudo apt upgrade -y && sudo xargs apt install -y <packages.txt; [ -f requirements.txt ] && pip3 install --user -r requirements.txt; pip3 install --user streamlit; echo '✅ Packages installed and Requirements met'",
+  "updateContentCommand": "[ -f 03_Code/packages.txt ] && sudo apt update && sudo apt upgrade -y && sudo xargs apt install -y <03_Code/packages.txt; [ -f 03_Code/requirements.txt ] && pip3 install --user -r 03_Code/requirements.txt; pip3 install --user streamlit; echo '✅ Packages installed and Requirements met'",
   "postAttachCommand": {
-    "server": "streamlit run app.py --server.enableCORS false --server.enableXsrfProtection false"
+    "server": "cd 03_Code && streamlit run app.py --server.enableCORS false --server.enableXsrfProtection false"
   },
   "portsAttributes": {
     "8501": {

@@ -11,7 +11,7 @@ import urllib.error
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from fitparse import FitFile
 
@@ -74,6 +74,23 @@ def _get_record_field(record: dict, *names: str) -> Optional[float]:
 
 def _sorted_records(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return sorted(records, key=lambda record: record["timestamp"])
+
+
+def resolve_fit_path(fit_path: Union[str, Path]) -> Path:
+    """Resolve a FIT path from the current working directory or the code folder."""
+    path = Path(fit_path)
+    if path.is_absolute():
+        return path
+
+    candidates = [
+        Path.cwd() / path,
+        Path(__file__).resolve().parent / path,
+        Path(__file__).resolve().parent.parent / path,
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate.resolve()
+    return path.resolve()
 
 
 class AIModelAdapter(ABC):
@@ -215,7 +232,7 @@ class GeminiAdapter(AIModelAdapter):
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {
                 "temperature": temperature,
-                "maxOutputTokens": 4000,
+                "maxOutputTokens": 8192,
             },
         }
         request_data = json.dumps(body).encode("utf-8")
@@ -241,7 +258,11 @@ class GeminiAdapter(AIModelAdapter):
         parts = data["candidates"][0].get("content", {}).get("parts", [])
         if not parts:
             raise RuntimeError("AI API returned no text content")
-        return str(parts[0].get("text", "")).strip()
+        text_chunks = [str(part.get("text", "")) for part in parts if part.get("text")]
+        full_text = "\n".join(chunk.strip() for chunk in text_chunks if chunk.strip()).strip()
+        if not full_text:
+            raise RuntimeError("AI API returned empty text content")
+        return full_text
 
     def generate(self, prompt: str, temperature: float = 0.7) -> str:
         attempted_models = []
@@ -396,9 +417,10 @@ def resolve_api_key(provider: str, explicit_key: Optional[str] = None) -> Option
     return None
 
 
-def extract_fit_metrics(fit_path: Path) -> Tuple[Dict[str, Dict[str, Optional[float]]], List[str]]:
+def extract_fit_metrics(fit_path: Union[str, Path]) -> Tuple[Dict[str, Dict[str, Optional[float]]], List[str]]:
     """Extract a broad set of metrics from a FIT file and list any missing fields."""
-    with fit_path.open("rb") as fit_file:
+    resolved_path = resolve_fit_path(fit_path)
+    with resolved_path.open("rb") as fit_file:
         fit = FitFile(fit_file)
         session = next(fit.get_messages("session"), None)
         lap = next(fit.get_messages("lap"), None)
@@ -695,9 +717,10 @@ def extract_fit_metrics(fit_path: Path) -> Tuple[Dict[str, Dict[str, Optional[fl
     return metrics, unavailable
 
 
-def parse_fit_activity(fit_path: Path) -> ActivitySummary:
+def parse_fit_activity(fit_path: Union[str, Path]) -> ActivitySummary:
     """Parse a FIT file and return a summary of the recorded session."""
-    with fit_path.open("rb") as fit_file:
+    resolved_path = resolve_fit_path(fit_path)
+    with resolved_path.open("rb") as fit_file:
         fit = FitFile(fit_file)
         session = next(fit.get_messages("session"), None)
         if session is None:
@@ -971,6 +994,7 @@ def main() -> int:
     parser.add_argument("--insecure", action="store_true", help="Disable SSL certificate verification for AI API calls.")
     parser.add_argument("--weather-temp", type=float, default=None, help="Expected event-day temperature in Celsius.")
     parser.add_argument("--humidity", type=float, default=None, help="Expected event-day humidity percentage.")
+    parser.add_argument("--output-file", type=Path, default=None, help="Optional path to save the full strategy text.")
     args = parser.parse_args()
 
     api_key = resolve_api_key(args.provider, args.api_key)
@@ -991,6 +1015,13 @@ def main() -> int:
         weather_temp_c=args.weather_temp,
         humidity_pct=args.humidity,
     )
+
+    if args.output_file is not None:
+        output_path = args.output_file.expanduser().resolve()
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(strategy, encoding="utf-8")
+        print(f"Full strategy saved to: {output_path}")
+
     print(strategy)
 
     return 0
