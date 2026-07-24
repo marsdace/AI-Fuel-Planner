@@ -105,6 +105,11 @@ class AIModelAdapter(ABC):
     def generate(self, prompt: str, temperature: float = 0.7) -> str:
         pass
 
+    def _continuation_prompt(self) -> str:
+        if self.language == "en":
+            return "Continue exactly from where you stopped. Do not repeat any previous content."
+        return "请从刚才中断处继续输出，不要重复之前已经输出的内容。"
+
 
 class OpenAIAdapter(AIModelAdapter):
     def __init__(self, api_key: Optional[str], model: str, provider: str = "openai", base_url: str = "https://api.openai.com/v1", verify_ssl: bool = True, language: str = "zh"):
@@ -113,12 +118,12 @@ class OpenAIAdapter(AIModelAdapter):
         if not self.api_key:
             raise ValueError("OpenAI API key is required for openai provider")
 
-    def generate(self, prompt: str, temperature: float = 0.7) -> str:
+    def _request(self, messages: List[Dict[str, str]], temperature: float, max_tokens: int) -> Tuple[str, Optional[str]]:
         body = {
             "model": self.model,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": messages,
             "temperature": temperature,
-            "max_tokens": 3000,
+            "max_tokens": max_tokens,
             "top_p": 1.0,
         }
         request_data = json.dumps(body).encode("utf-8")
@@ -144,7 +149,28 @@ class OpenAIAdapter(AIModelAdapter):
         data = json.loads(response_body)
         if "choices" not in data or not data["choices"]:
             raise RuntimeError("AI API returned no choices")
-        return str(data["choices"][0]["message"]["content"]).strip()
+        text = str(data["choices"][0].get("message", {}).get("content", "")).strip()
+        finish_reason = data["choices"][0].get("finish_reason")
+        return text, str(finish_reason) if finish_reason is not None else None
+
+    def generate(self, prompt: str, temperature: float = 0.7) -> str:
+        messages: List[Dict[str, str]] = [{"role": "user", "content": prompt}]
+        segments: List[str] = []
+        max_rounds = 4
+
+        for _ in range(max_rounds):
+            chunk, finish_reason = self._request(messages, temperature=temperature, max_tokens=8192)
+            if chunk:
+                segments.append(chunk)
+            if finish_reason != "length":
+                break
+            messages.append({"role": "assistant", "content": chunk})
+            messages.append({"role": "user", "content": self._continuation_prompt()})
+
+        full_text = "\n".join(part for part in segments if part).strip()
+        if not full_text:
+            raise RuntimeError("AI API returned empty text content")
+        return full_text
 
 
 class MockAIAdapter(AIModelAdapter):
@@ -168,15 +194,12 @@ class DeepSeekAdapter(AIModelAdapter):
         if not self.api_key:
             raise ValueError("DeepSeek API key is required for deepseek provider")
 
-    def generate(self, prompt: str, temperature: float = 0.7) -> str:
+    def _request(self, messages: List[Dict[str, str]], temperature: float, max_tokens: int) -> Tuple[str, Optional[str]]:
         body = {
             "model": self.model,
-            "messages": [
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt},
-            ],
+            "messages": messages,
             "temperature": temperature,
-            "max_tokens": 2500,
+            "max_tokens": max_tokens,
             "top_p": 1.0,
             "stream": False,
             "reasoning_effort": "high",
@@ -217,7 +240,31 @@ class DeepSeekAdapter(AIModelAdapter):
         data = json.loads(response_body)
         if "choices" not in data or not data["choices"]:
             raise RuntimeError("AI API returned no choices")
-        return str(data["choices"][0].get("message", {}).get("content", "")).strip()
+        text = str(data["choices"][0].get("message", {}).get("content", "")).strip()
+        finish_reason = data["choices"][0].get("finish_reason")
+        return text, str(finish_reason) if finish_reason is not None else None
+
+    def generate(self, prompt: str, temperature: float = 0.7) -> str:
+        messages: List[Dict[str, str]] = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": prompt},
+        ]
+        segments: List[str] = []
+        max_rounds = 4
+
+        for _ in range(max_rounds):
+            chunk, finish_reason = self._request(messages, temperature=temperature, max_tokens=8192)
+            if chunk:
+                segments.append(chunk)
+            if finish_reason != "length":
+                break
+            messages.append({"role": "assistant", "content": chunk})
+            messages.append({"role": "user", "content": self._continuation_prompt()})
+
+        full_text = "\n".join(part for part in segments if part).strip()
+        if not full_text:
+            raise RuntimeError("AI API returned empty text content")
+        return full_text
 
 
 class GeminiAdapter(AIModelAdapter):
@@ -227,12 +274,12 @@ class GeminiAdapter(AIModelAdapter):
         if not self.api_key:
             raise ValueError("Gemini API key is required for gemini provider")
 
-    def _request(self, prompt: str, temperature: float, model_name: str) -> str:
+    def _request(self, contents: List[Dict[str, Any]], temperature: float, model_name: str, max_output_tokens: int = 8192) -> Tuple[str, Optional[str]]:
         body = {
-            "contents": [{"parts": [{"text": prompt}]}],
+            "contents": contents,
             "generationConfig": {
                 "temperature": temperature,
-                "maxOutputTokens": 8192,
+                "maxOutputTokens": max_output_tokens,
             },
         }
         request_data = json.dumps(body).encode("utf-8")
@@ -262,7 +309,8 @@ class GeminiAdapter(AIModelAdapter):
         full_text = "\n".join(chunk.strip() for chunk in text_chunks if chunk.strip()).strip()
         if not full_text:
             raise RuntimeError("AI API returned empty text content")
-        return full_text
+        finish_reason = data["candidates"][0].get("finishReason")
+        return full_text, str(finish_reason) if finish_reason is not None else None
 
     def generate(self, prompt: str, temperature: float = 0.7) -> str:
         attempted_models = []
@@ -285,7 +333,24 @@ class GeminiAdapter(AIModelAdapter):
         for model_name in ordered_models:
             attempted_models.append(model_name)
             try:
-                return self._request(prompt, temperature, model_name)
+                contents: List[Dict[str, Any]] = [{"role": "user", "parts": [{"text": prompt}]}]
+                segments: List[str] = []
+                max_rounds = 4
+
+                for _ in range(max_rounds):
+                    chunk, finish_reason = self._request(contents, temperature, model_name)
+                    if chunk:
+                        segments.append(chunk)
+                    finish_reason_text = (finish_reason or "").upper()
+                    if finish_reason_text not in {"MAX_TOKENS", "LENGTH"}:
+                        break
+                    contents.append({"role": "model", "parts": [{"text": chunk}]})
+                    contents.append({"role": "user", "parts": [{"text": self._continuation_prompt()}]})
+
+                full_text = "\n".join(part for part in segments if part).strip()
+                if not full_text:
+                    raise RuntimeError("AI API returned empty text content")
+                return full_text
             except RuntimeError as exc:
                 message = str(exc)
                 if "404" not in message and "Not Found" not in message:
