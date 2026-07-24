@@ -65,7 +65,14 @@ def main() -> None:
             distance = st.number_input("Target Distance (km)", min_value=1.0, max_value=200.0, value=30.0)
             ascent = st.number_input("Target Elevation Gain (m)", min_value=0.0, max_value=10000.0, value=1200.0)
 
-        temperature = st.slider("Temperature", min_value=0.0, max_value=1.0, value=0.7, step=0.05)
+        temperature = st.slider(
+            "AI Response Variability",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.7,
+            step=0.05,
+            help="Controls how deterministic or creative the AI output is. Lower = more stable, higher = more diverse.",
+        )
         weather_temp = st.number_input("Expected temperature (°C)", min_value=-30.0, max_value=60.0, value=20.0, step=1.0)
         humidity = st.number_input("Expected humidity (%)", min_value=0.0, max_value=100.0, value=50.0, step=1.0)
         insecure = st.checkbox("Disable SSL verification (for local testing)")
