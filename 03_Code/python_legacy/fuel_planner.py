@@ -13,7 +13,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from fitparse import FitFile
+try:
+    from garmin_fit_sdk import Decoder, Stream  # type: ignore[reportMissingImports]
+except ModuleNotFoundError:
+    _vendor_dir = Path(__file__).resolve().parent / "_vendor"
+    if _vendor_dir.exists():
+        sys.path.insert(0, str(_vendor_dir))
+    from garmin_fit_sdk import Decoder, Stream  # type: ignore[reportMissingImports]
 
 
 @dataclass
@@ -46,6 +52,69 @@ class FuelPlan:
     during_per_15_min_g: float
     fluid_ml: float
     notes: str
+
+
+@dataclass
+class UserInputProfile:
+    weight_kg: float
+    irta_points: Optional[float]
+    recent_env_adaptation: Optional[float]
+    hrv_score: Optional[float]
+    training_status: Optional[str]
+    physiological_max_hr: Optional[float]
+
+
+@dataclass
+class UserProfile:
+    ability_score: float
+    fatigue_risk: str
+    hr_zone_reference: Optional[float]
+    hr_zone_warning: Optional[str]
+    metrics: Dict[str, Dict[str, Optional[float]]]
+    unavailable: List[str]
+
+
+@dataclass
+class RaceInputProfile:
+    distance_km: float
+    ascent_m: float
+    weather_temp_c: Optional[float]
+    humidity_pct: Optional[float]
+    location_history_notes: Optional[str]
+    cp_points_km: List[float]
+    manual_climb_segments: List[Tuple[float, float]]
+    climb_trigger_m: float = 250.0
+    max_interval_min: float = 45.0
+
+
+@dataclass
+class RaceProfile:
+    distance_km: float
+    ascent_m: float
+    aid_stations_km: List[float]
+    climb_segments: List[Tuple[float, float]]
+    steep_segments: List[Tuple[float, float, float]]
+    supplemental_points_km: List[float]
+    climb_trigger_m: float
+    max_interval_min: float
+    weather_temp_c: Optional[float]
+    humidity_pct: Optional[float]
+    location_history_notes: Optional[str]
+
+
+@dataclass
+class RuleEngineOutput:
+    contract_version: str
+    estimated_finish_time_h: float
+    carbs_per_hour_g: float
+    fluid_per_hour_ml: float
+    sodium_per_hour_mg: float
+    total_carbs_g: float
+    total_fluid_ml: float
+    total_sodium_mg: float
+    fueling_points: List[Dict[str, Any]]
+    trigger_config: Dict[str, float]
+    warnings: List[str]
 
 
 def _safe_float(value: Optional[object]) -> Optional[float]:
@@ -93,6 +162,33 @@ def resolve_fit_path(fit_path: Union[str, Path]) -> Path:
     return path.resolve()
 
 
+def _decode_fit_messages(fit_path: Union[str, Path]) -> Dict[str, List[Dict[str, Any]]]:
+    """Decode FIT binary data with Garmin official SDK and return grouped messages."""
+    resolved_path = resolve_fit_path(fit_path)
+    stream = Stream.from_file(str(resolved_path))
+    decoder = Decoder(stream)
+    messages, errors = decoder.read(
+        apply_scale_and_offset=True,
+        convert_datetimes_to_dates=True,
+        convert_types_to_strings=True,
+        enable_crc_check=True,
+        expand_sub_fields=True,
+        expand_components=True,
+        merge_heart_rates=True,
+    )
+
+    if not isinstance(messages, dict):
+        raise ValueError("Failed to decode FIT file: unexpected Garmin SDK output")
+    if not messages:
+        raise ValueError("Failed to decode FIT file: no messages were decoded")
+
+    # Garmin SDK returns errors list for non-fatal decode issues; we continue to keep robustness.
+    if errors:
+        pass
+
+    return messages
+
+
 class AIModelAdapter(ABC):
     def __init__(self, api_key: Optional[str], model: str, provider: str, verify_ssl: bool = True, language: str = "zh"):
         self.api_key = api_key
@@ -105,6 +201,11 @@ class AIModelAdapter(ABC):
     def generate(self, prompt: str, temperature: float = 0.7) -> str:
         pass
 
+    def _continuation_prompt(self) -> str:
+        if self.language == "en":
+            return "Continue exactly from where you stopped. Do not repeat any previous content."
+        return "请从刚才中断处继续输出，不要重复之前已经输出的内容。"
+
 
 class OpenAIAdapter(AIModelAdapter):
     def __init__(self, api_key: Optional[str], model: str, provider: str = "openai", base_url: str = "https://api.openai.com/v1", verify_ssl: bool = True, language: str = "zh"):
@@ -113,12 +214,12 @@ class OpenAIAdapter(AIModelAdapter):
         if not self.api_key:
             raise ValueError("OpenAI API key is required for openai provider")
 
-    def generate(self, prompt: str, temperature: float = 0.7) -> str:
+    def _request(self, messages: List[Dict[str, str]], temperature: float, max_tokens: int) -> Tuple[str, Optional[str]]:
         body = {
             "model": self.model,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": messages,
             "temperature": temperature,
-            "max_tokens": 3000,
+            "max_tokens": max_tokens,
             "top_p": 1.0,
         }
         request_data = json.dumps(body).encode("utf-8")
@@ -144,7 +245,28 @@ class OpenAIAdapter(AIModelAdapter):
         data = json.loads(response_body)
         if "choices" not in data or not data["choices"]:
             raise RuntimeError("AI API returned no choices")
-        return str(data["choices"][0]["message"]["content"]).strip()
+        text = str(data["choices"][0].get("message", {}).get("content", "")).strip()
+        finish_reason = data["choices"][0].get("finish_reason")
+        return text, str(finish_reason) if finish_reason is not None else None
+
+    def generate(self, prompt: str, temperature: float = 0.7) -> str:
+        messages: List[Dict[str, str]] = [{"role": "user", "content": prompt}]
+        segments: List[str] = []
+        max_rounds = 4
+
+        for _ in range(max_rounds):
+            chunk, finish_reason = self._request(messages, temperature=temperature, max_tokens=8192)
+            if chunk:
+                segments.append(chunk)
+            if finish_reason != "length":
+                break
+            messages.append({"role": "assistant", "content": chunk})
+            messages.append({"role": "user", "content": self._continuation_prompt()})
+
+        full_text = "\n".join(part for part in segments if part).strip()
+        if not full_text:
+            raise RuntimeError("AI API returned empty text content")
+        return full_text
 
 
 class MockAIAdapter(AIModelAdapter):
@@ -168,15 +290,12 @@ class DeepSeekAdapter(AIModelAdapter):
         if not self.api_key:
             raise ValueError("DeepSeek API key is required for deepseek provider")
 
-    def generate(self, prompt: str, temperature: float = 0.7) -> str:
+    def _request(self, messages: List[Dict[str, str]], temperature: float, max_tokens: int) -> Tuple[str, Optional[str]]:
         body = {
             "model": self.model,
-            "messages": [
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt},
-            ],
+            "messages": messages,
             "temperature": temperature,
-            "max_tokens": 2500,
+            "max_tokens": max_tokens,
             "top_p": 1.0,
             "stream": False,
             "reasoning_effort": "high",
@@ -217,7 +336,31 @@ class DeepSeekAdapter(AIModelAdapter):
         data = json.loads(response_body)
         if "choices" not in data or not data["choices"]:
             raise RuntimeError("AI API returned no choices")
-        return str(data["choices"][0].get("message", {}).get("content", "")).strip()
+        text = str(data["choices"][0].get("message", {}).get("content", "")).strip()
+        finish_reason = data["choices"][0].get("finish_reason")
+        return text, str(finish_reason) if finish_reason is not None else None
+
+    def generate(self, prompt: str, temperature: float = 0.7) -> str:
+        messages: List[Dict[str, str]] = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": prompt},
+        ]
+        segments: List[str] = []
+        max_rounds = 4
+
+        for _ in range(max_rounds):
+            chunk, finish_reason = self._request(messages, temperature=temperature, max_tokens=8192)
+            if chunk:
+                segments.append(chunk)
+            if finish_reason != "length":
+                break
+            messages.append({"role": "assistant", "content": chunk})
+            messages.append({"role": "user", "content": self._continuation_prompt()})
+
+        full_text = "\n".join(part for part in segments if part).strip()
+        if not full_text:
+            raise RuntimeError("AI API returned empty text content")
+        return full_text
 
 
 class GeminiAdapter(AIModelAdapter):
@@ -227,12 +370,12 @@ class GeminiAdapter(AIModelAdapter):
         if not self.api_key:
             raise ValueError("Gemini API key is required for gemini provider")
 
-    def _request(self, prompt: str, temperature: float, model_name: str) -> str:
+    def _request(self, contents: List[Dict[str, Any]], temperature: float, model_name: str, max_output_tokens: int = 8192) -> Tuple[str, Optional[str]]:
         body = {
-            "contents": [{"parts": [{"text": prompt}]}],
+            "contents": contents,
             "generationConfig": {
                 "temperature": temperature,
-                "maxOutputTokens": 8192,
+                "maxOutputTokens": max_output_tokens,
             },
         }
         request_data = json.dumps(body).encode("utf-8")
@@ -262,7 +405,8 @@ class GeminiAdapter(AIModelAdapter):
         full_text = "\n".join(chunk.strip() for chunk in text_chunks if chunk.strip()).strip()
         if not full_text:
             raise RuntimeError("AI API returned empty text content")
-        return full_text
+        finish_reason = data["candidates"][0].get("finishReason")
+        return full_text, str(finish_reason) if finish_reason is not None else None
 
     def generate(self, prompt: str, temperature: float = 0.7) -> str:
         attempted_models = []
@@ -285,7 +429,24 @@ class GeminiAdapter(AIModelAdapter):
         for model_name in ordered_models:
             attempted_models.append(model_name)
             try:
-                return self._request(prompt, temperature, model_name)
+                contents: List[Dict[str, Any]] = [{"role": "user", "parts": [{"text": prompt}]}]
+                segments: List[str] = []
+                max_rounds = 4
+
+                for _ in range(max_rounds):
+                    chunk, finish_reason = self._request(contents, temperature, model_name)
+                    if chunk:
+                        segments.append(chunk)
+                    finish_reason_text = (finish_reason or "").upper()
+                    if finish_reason_text not in {"MAX_TOKENS", "LENGTH"}:
+                        break
+                    contents.append({"role": "model", "parts": [{"text": chunk}]})
+                    contents.append({"role": "user", "parts": [{"text": self._continuation_prompt()}]})
+
+                full_text = "\n".join(part for part in segments if part).strip()
+                if not full_text:
+                    raise RuntimeError("AI API returned empty text content")
+                return full_text
             except RuntimeError as exc:
                 message = str(exc)
                 if "404" not in message and "Not Found" not in message:
@@ -417,19 +578,19 @@ def resolve_api_key(provider: str, explicit_key: Optional[str] = None) -> Option
     return None
 
 
-def extract_fit_metrics(fit_path: Union[str, Path]) -> Tuple[Dict[str, Dict[str, Optional[float]]], List[str]]:
+def extract_fit_metrics(fit_path: Union[str, Path], physiological_max_hr: Optional[float] = None) -> Tuple[Dict[str, Dict[str, Optional[float]]], List[str]]:
     """Extract a broad set of metrics from a FIT file and list any missing fields."""
-    resolved_path = resolve_fit_path(fit_path)
-    with resolved_path.open("rb") as fit_file:
-        fit = FitFile(fit_file)
-        session = next(fit.get_messages("session"), None)
-        lap = next(fit.get_messages("lap"), None)
-        zones_target = next(fit.get_messages("zones_target"), None)
-        records = [
-            {field.name: field.value for field in record.fields}
-            for record in fit.get_messages("record")
-            if any(field.name == "timestamp" for field in record.fields)
-        ]
+    decoded = _decode_fit_messages(fit_path)
+
+    session_messages = decoded.get("session_mesgs", [])
+    lap_messages = decoded.get("lap_mesgs", [])
+    zone_target_messages = decoded.get("zones_target_mesgs", [])
+    record_messages = decoded.get("record_mesgs", [])
+
+    session_fields = session_messages[0] if session_messages else {}
+    lap_fields = lap_messages[0] if lap_messages else {}
+    zones_fields = zone_target_messages[0] if zone_target_messages else {}
+    records = [record for record in record_messages if isinstance(record, dict) and record.get("timestamp") is not None]
 
     unavailable = []
     metrics = {
@@ -441,8 +602,6 @@ def extract_fit_metrics(fit_path: Union[str, Path]) -> Tuple[Dict[str, Dict[str,
         "环境数据": {},
     }
 
-    session_fields = {field.name: field.value for field in session.fields} if session else {}
-    lap_fields = {field.name: field.value for field in lap.fields} if lap else {}
     record_samples = _sorted_records(records)
 
     # 基础数据
@@ -556,7 +715,12 @@ def extract_fit_metrics(fit_path: Union[str, Path]) -> Tuple[Dict[str, Dict[str,
         for record in record_samples
         if _get_record_field(record, "heart_rate") is not None
     ]
-    hr_reference = max_heart_rate or (max(heart_rate_values) if heart_rate_values else None)
+    hr_reference = physiological_max_hr
+    if hr_reference is None:
+        fit_hr_max = max_heart_rate or (max(heart_rate_values) if heart_rate_values else None)
+        hr_reference = fit_hr_max
+        if fit_hr_max is not None:
+            unavailable.append("心肺数据: 未输入生理最大心率，区间可能偏低")
     if heart_rate_values and hr_reference is not None:
         zones = {
             "心率区间1": 0.0,
@@ -582,6 +746,7 @@ def extract_fit_metrics(fit_path: Union[str, Path]) -> Tuple[Dict[str, Dict[str,
             else:
                 zones["心率区间5"] += delta_time
         metrics["心肺数据"]["心率区间时间"] = zones
+        metrics["心肺数据"]["心率区间参考值"] = hr_reference
     else:
         unavailable.append("心肺数据: 心率区间时间")
 
@@ -635,10 +800,7 @@ def extract_fit_metrics(fit_path: Union[str, Path]) -> Tuple[Dict[str, Dict[str,
     else:
         unavailable.append("功率数据: 最大功率")
 
-    ftp = None
-    if zones_target:
-        zones_fields = {field.name: field.value for field in zones_target.fields}
-        ftp = _first_field(zones_fields, "functional_threshold_power")
+    ftp = _first_field(zones_fields, "functional_threshold_power")
     power_samples = [
         _get_record_field(record, "power")
         for record in record_samples
@@ -719,37 +881,34 @@ def extract_fit_metrics(fit_path: Union[str, Path]) -> Tuple[Dict[str, Dict[str,
 
 def parse_fit_activity(fit_path: Union[str, Path]) -> ActivitySummary:
     """Parse a FIT file and return a summary of the recorded session."""
-    resolved_path = resolve_fit_path(fit_path)
-    with resolved_path.open("rb") as fit_file:
-        fit = FitFile(fit_file)
-        session = next(fit.get_messages("session"), None)
-        if session is None:
-            raise ValueError("No session message found in FIT file")
+    decoded = _decode_fit_messages(fit_path)
+    session_messages = decoded.get("session_mesgs", [])
+    if not session_messages:
+        raise ValueError("No session message found in FIT file")
 
-        fields = {field.name: field.value for field in session.fields}
+    fields = session_messages[0]
+    total_timer_time = _first_field(fields, "total_timer_time", "total_elapsed_time") or 0.0
+    total_distance = _first_field(fields, "total_distance") or 0.0
+    total_calories = _first_field(fields, "total_calories") or 0.0
 
-        total_timer_time = _first_field(fields, "total_timer_time", "total_elapsed_time") or 0.0
-        total_distance = _first_field(fields, "total_distance") or 0.0
-        total_calories = _first_field(fields, "total_calories") or 0.0
-
-        return ActivitySummary(
-            start_time=str(fields.get("start_time") or fields.get("timestamp") or ""),
-            total_timer_time=total_timer_time,
-            total_distance=total_distance,
-            total_calories=total_calories,
-            avg_heart_rate=_first_field(fields, "avg_heart_rate"),
-            max_heart_rate=_first_field(fields, "max_heart_rate"),
-            avg_power=_first_field(fields, "avg_power"),
-            max_power=_first_field(fields, "max_power"),
-            normalized_power=_first_field(fields, "normalized_power"),
-            avg_speed=_first_field(fields, "enhanced_avg_speed", "avg_speed"),
-            max_speed=_first_field(fields, "enhanced_max_speed", "max_speed"),
-            avg_cadence=_first_field(fields, "avg_running_cadence", "avg_cadence", "avg_fractional_cadence"),
-            max_cadence=_first_field(fields, "max_running_cadence", "max_cadence", "max_fractional_cadence"),
-            sport=str(fields.get("sport") or fields.get("sub_sport") or "unknown"),
-            total_ascent=_first_field(fields, "total_ascent"),
-            total_descent=_first_field(fields, "total_descent"),
-        )
+    return ActivitySummary(
+        start_time=str(fields.get("start_time") or fields.get("timestamp") or ""),
+        total_timer_time=total_timer_time,
+        total_distance=total_distance,
+        total_calories=total_calories,
+        avg_heart_rate=_first_field(fields, "avg_heart_rate"),
+        max_heart_rate=_first_field(fields, "max_heart_rate"),
+        avg_power=_first_field(fields, "avg_power"),
+        max_power=_first_field(fields, "max_power"),
+        normalized_power=_first_field(fields, "normalized_power"),
+        avg_speed=_first_field(fields, "enhanced_avg_speed", "avg_speed"),
+        max_speed=_first_field(fields, "enhanced_max_speed", "max_speed"),
+        avg_cadence=_first_field(fields, "avg_running_cadence", "avg_cadence", "avg_fractional_cadence"),
+        max_cadence=_first_field(fields, "max_running_cadence", "max_cadence", "max_fractional_cadence"),
+        sport=str(fields.get("sport") or fields.get("sub_sport") or "unknown"),
+        total_ascent=_first_field(fields, "total_ascent"),
+        total_descent=_first_field(fields, "total_descent"),
+    )
 
 
 def recommend_fuel(summary: ActivitySummary, body_weight_kg: float = 70.0) -> FuelPlan:
@@ -892,100 +1051,472 @@ def generate_recommendation_text(summary: ActivitySummary, plan: FuelPlan) -> st
     return "\n".join([carb_sentence, timing_sentence, pre_sentence, decision_sentence, plan.notes])
 
 
-def get_supported_targets(language: str = "zh") -> List[Tuple[str, str]]:
-    if language == "en":
+def _clamp(value: float, low: float, high: float) -> float:
+    return max(low, min(high, value))
+
+
+def parse_km_points(raw_points: Optional[str], max_distance_km: Optional[float] = None) -> List[float]:
+    if not raw_points:
+        return []
+    points: List[float] = []
+    for token in raw_points.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        try:
+            km = float(token)
+        except ValueError:
+            continue
+        if km <= 0:
+            continue
+        if max_distance_km is not None and km >= max_distance_km:
+            continue
+        points.append(round(km, 2))
+    return sorted(set(points))
+
+
+def parse_climb_segments(raw_segments: Optional[str]) -> List[Tuple[float, float]]:
+    """Parse manual segments from format 'distance:ascent,distance:ascent' in km/m."""
+    if not raw_segments:
+        return []
+    segments: List[Tuple[float, float]] = []
+    for token in raw_segments.split(","):
+        token = token.strip()
+        if not token or ":" not in token:
+            continue
+        dist_text, ascent_text = token.split(":", 1)
+        try:
+            distance_km = float(dist_text.strip())
+            ascent_m = float(ascent_text.strip())
+        except ValueError:
+            continue
+        if distance_km <= 0:
+            continue
+        segments.append((distance_km, max(ascent_m, 0.0)))
+    return segments
+
+
+class UserProfileBuilder:
+    def build(self, fit_path: Union[str, Path], user_input: UserInputProfile) -> UserProfile:
+        metrics, unavailable = extract_fit_metrics(fit_path, physiological_max_hr=user_input.physiological_max_hr)
+        base_metrics = metrics.get("基础数据", {})
+
+        pace_min_per_km: Optional[float] = None
+        pace = base_metrics.get("配速")
+        if isinstance(pace, float):
+            pace_min_per_km = pace
+
+        irta_component = 0.5
+        if user_input.irta_points is not None:
+            irta_component = _clamp(user_input.irta_points / 1000.0, 0.2, 1.0)
+
+        pace_component = 0.5
+        if pace_min_per_km is not None and pace_min_per_km > 0:
+            pace_component = _clamp(8.5 / pace_min_per_km, 0.2, 1.0)
+
+        env_component = 0.5
+        if user_input.recent_env_adaptation is not None:
+            env_component = _clamp(user_input.recent_env_adaptation, 0.0, 1.0)
+
+        ability_score = round((irta_component * 0.35 + pace_component * 0.45 + env_component * 0.20) * 100.0, 1)
+
+        fatigue_risk = "medium"
+        hrv = user_input.hrv_score
+        if hrv is not None:
+            if hrv < 35:
+                fatigue_risk = "high"
+            elif hrv >= 60:
+                fatigue_risk = "low"
+
+        status = (user_input.training_status or "").lower()
+        if any(keyword in status for keyword in ["over", "过度", "fatigue", "疲劳"]):
+            fatigue_risk = "high"
+        elif any(keyword in status for keyword in ["ready", "充分", "恢复良好", "fresh"]):
+            fatigue_risk = "low"
+
+        hr_warning = None
+        if user_input.physiological_max_hr is None:
+            hr_warning = "未输入 physiological_max_hr，心率区间可能偏低"
+
+        return UserProfile(
+            ability_score=ability_score,
+            fatigue_risk=fatigue_risk,
+            hr_zone_reference=user_input.physiological_max_hr,
+            hr_zone_warning=hr_warning,
+            metrics=metrics,
+            unavailable=unavailable,
+        )
+
+
+class RaceProfileBuilder:
+    def _normalize_segments(self, distance_km: float, ascent_m: float, raw_segments: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
+        if raw_segments:
+            total_dist = sum(seg[0] for seg in raw_segments)
+            total_ascent = sum(seg[1] for seg in raw_segments)
+            if total_dist > 0:
+                dist_scale = distance_km / total_dist
+            else:
+                dist_scale = 1.0
+            if total_ascent > 0:
+                ascent_scale = ascent_m / total_ascent
+            else:
+                ascent_scale = 0.0
+            return [(round(d * dist_scale, 2), round(a * ascent_scale, 1)) for d, a in raw_segments]
+
         return [
-            ("trail_run", "Trail Run"),
-            ("mountain_run", "Mountain Run"),
-            ("mountain_hike", "Mountain Hiking"),
+            (round(distance_km * 0.35, 2), round(ascent_m * 0.25, 1)),
+            (round(distance_km * 0.35, 2), round(ascent_m * 0.50, 1)),
+            (round(distance_km * 0.30, 2), round(ascent_m * 0.25, 1)),
         ]
-    return [
-        ("trail_run", "越野跑"),
-        ("mountain_run", "山地跑"),
-        ("mountain_hike", "山地徒步"),
-    ]
+
+    def build(self, race_input: RaceInputProfile) -> RaceProfile:
+        distance_km = max(race_input.distance_km, 1.0)
+        ascent_m = max(race_input.ascent_m, 0.0)
+
+        segments = self._normalize_segments(distance_km, ascent_m, race_input.manual_climb_segments)
+
+        cumulative = 0.0
+        steep_segments: List[Tuple[float, float, float]] = []
+        supplemental_points: List[float] = []
+        for segment_distance, segment_ascent in segments:
+            start_km = cumulative
+            end_km = cumulative + segment_distance
+            gradient = segment_ascent / max(segment_distance, 0.1)
+            if gradient >= 80.0:
+                steep_segments.append((round(start_km, 2), round(end_km, 2), round(gradient, 1)))
+                pre_climb_point = max(start_km - 0.6, 0.8)
+                if pre_climb_point < distance_km:
+                    supplemental_points.append(round(pre_climb_point, 2))
+            cumulative = end_km
+
+        cp_points = parse_km_points(",".join(str(p) for p in race_input.cp_points_km), max_distance_km=distance_km)
+        if not cp_points:
+            cp_points = [round(km, 1) for km in [distance_km * 0.25, distance_km * 0.5, distance_km * 0.75] if 0 < km < distance_km]
+
+        aid_stations = sorted(set(cp_points))
+        supplemental_points = sorted(set(p for p in supplemental_points if p not in aid_stations and p < distance_km))
+
+        return RaceProfile(
+            distance_km=distance_km,
+            ascent_m=ascent_m,
+            aid_stations_km=aid_stations,
+            climb_segments=segments,
+            steep_segments=steep_segments,
+            supplemental_points_km=supplemental_points,
+            climb_trigger_m=max(race_input.climb_trigger_m, 100.0),
+            max_interval_min=max(race_input.max_interval_min, 20.0),
+            weather_temp_c=race_input.weather_temp_c,
+            humidity_pct=race_input.humidity_pct,
+            location_history_notes=race_input.location_history_notes,
+        )
 
 
-def _format_target_description(target: str, ascent: Optional[float], distance: Optional[float], language: str) -> str:
+class TrailLabRuleEngine:
+    def _build_climb_trigger_points(self, race_profile: RaceProfile, climb_trigger_m: float) -> List[float]:
+        if climb_trigger_m <= 0:
+            return []
+
+        points: List[float] = []
+        next_trigger_m = climb_trigger_m
+        accumulated_ascent = 0.0
+        cumulative_km = 0.0
+
+        for segment_distance, segment_ascent in race_profile.climb_segments:
+            if segment_distance <= 0:
+                continue
+
+            seg_start_ascent = accumulated_ascent
+            seg_end_ascent = accumulated_ascent + max(segment_ascent, 0.0)
+            seg_start_km = cumulative_km
+            seg_end_km = cumulative_km + segment_distance
+
+            while next_trigger_m <= seg_end_ascent and seg_end_ascent > seg_start_ascent:
+                ratio = (next_trigger_m - seg_start_ascent) / (seg_end_ascent - seg_start_ascent)
+                trigger_km = seg_start_km + ratio * (seg_end_km - seg_start_km)
+                if 0.5 <= trigger_km < race_profile.distance_km:
+                    points.append(round(trigger_km, 2))
+                next_trigger_m += climb_trigger_m
+
+            accumulated_ascent = seg_end_ascent
+            cumulative_km = seg_end_km
+
+        return sorted(set(points))
+
+    def _build_time_fallback_points(self, race_profile: RaceProfile, finish_time_h: float, max_interval_min: float) -> List[float]:
+        if max_interval_min <= 0:
+            return []
+
+        finish_time_min = max(finish_time_h * 60.0, 1.0)
+        distance_per_min = race_profile.distance_km / finish_time_min
+        interval_km = max(distance_per_min * max_interval_min, 0.8)
+
+        points: List[float] = []
+        km = interval_km
+        while km < race_profile.distance_km:
+            if km >= 0.5:
+                points.append(round(km, 2))
+            km += interval_km
+        return sorted(set(points))
+
+    def compute(self, user_profile: UserProfile, race_profile: RaceProfile, weight_kg: float) -> RuleEngineOutput:
+        ability_scale = _clamp(user_profile.ability_score / 100.0, 0.35, 1.0)
+        base_pace_min_per_km = 8.8 - ability_scale * 2.2
+
+        climb_factor = race_profile.ascent_m / max(race_profile.distance_km, 1.0)
+        climb_penalty = 1.0 + _clamp((climb_factor - 30.0) / 120.0, 0.0, 0.6)
+
+        fatigue_penalty = 1.0
+        if user_profile.fatigue_risk == "high":
+            fatigue_penalty = 1.12
+        elif user_profile.fatigue_risk == "low":
+            fatigue_penalty = 0.96
+
+        finish_time_h = (race_profile.distance_km * base_pace_min_per_km / 60.0) * climb_penalty * fatigue_penalty
+        finish_time_h = round(max(finish_time_h, 1.0), 2)
+
+        carbs_per_hour = 55.0 + (1.0 - ability_scale) * 8.0 + _clamp((climb_factor - 35.0) / 12.0, 0.0, 10.0)
+        if user_profile.fatigue_risk == "high":
+            carbs_per_hour += 4.0
+
+        fluid_per_hour = 550.0
+        if race_profile.weather_temp_c is not None:
+            fluid_per_hour += max(0.0, race_profile.weather_temp_c - 15.0) * 18.0
+        if race_profile.humidity_pct is not None:
+            fluid_per_hour += max(0.0, race_profile.humidity_pct - 55.0) * 3.0
+        fluid_per_hour = _clamp(fluid_per_hour, 450.0, 1100.0)
+
+        sodium_per_hour = 450.0
+        if race_profile.weather_temp_c is not None and race_profile.weather_temp_c >= 24.0:
+            sodium_per_hour += 120.0
+        if race_profile.humidity_pct is not None and race_profile.humidity_pct >= 70.0:
+            sodium_per_hour += 80.0
+
+        total_carbs = round(carbs_per_hour * finish_time_h, 1)
+        total_fluid = round(fluid_per_hour * finish_time_h, 1)
+        total_sodium = round(sodium_per_hour * finish_time_h, 1)
+
+        climb_trigger_m = race_profile.climb_trigger_m
+        max_interval_min = race_profile.max_interval_min
+        climb_trigger_points = self._build_climb_trigger_points(race_profile, climb_trigger_m)
+        time_fallback_points = self._build_time_fallback_points(race_profile, finish_time_h, max_interval_min)
+
+        fueling_km = set(race_profile.aid_stations_km)
+        fueling_km.update(race_profile.supplemental_points_km)
+        fueling_km.update(climb_trigger_points)
+        fueling_km.update(time_fallback_points)
+
+        sorted_km = sorted(point for point in fueling_km if 0.5 <= point < race_profile.distance_km)
+        if not sorted_km:
+            sorted_km = [round(race_profile.distance_km / 2.0, 1)]
+
+        carb_per_event = round(total_carbs / len(sorted_km), 1)
+        fluid_per_event = round(total_fluid / len(sorted_km), 1)
+        sodium_per_event = round(total_sodium / len(sorted_km), 1)
+
+        fueling_points: List[Dict[str, Any]] = []
+        for point_km in sorted_km:
+            time_h = finish_time_h * (point_km / race_profile.distance_km)
+            sources: List[str] = []
+            if any(abs(point_km - cp) <= 0.05 for cp in race_profile.aid_stations_km):
+                sources.append("cp")
+            if any(abs(point_km - sp) <= 0.05 for sp in race_profile.supplemental_points_km):
+                sources.append("supplemental")
+            if any(abs(point_km - cp) <= 0.05 for cp in climb_trigger_points):
+                sources.append("climb_trigger")
+            if any(abs(point_km - tf) <= 0.05 for tf in time_fallback_points):
+                sources.append("time_fallback")
+
+            fueling_points.append(
+                {
+                    "km": round(point_km, 2),
+                    "time_h": round(time_h, 2),
+                    "carbs_g": carb_per_event,
+                    "fluid_ml": fluid_per_event,
+                    "sodium_mg": sodium_per_event,
+                    "source": "+".join(sorted(set(sources))) if sources else "auto",
+                }
+            )
+
+        warnings: List[str] = []
+        if user_profile.hr_zone_warning:
+            warnings.append(user_profile.hr_zone_warning)
+
+        return RuleEngineOutput(
+            contract_version="trail_lab_rule_contract_v1",
+            estimated_finish_time_h=finish_time_h,
+            carbs_per_hour_g=round(carbs_per_hour, 1),
+            fluid_per_hour_ml=round(fluid_per_hour, 1),
+            sodium_per_hour_mg=round(sodium_per_hour, 1),
+            total_carbs_g=total_carbs,
+            total_fluid_ml=total_fluid,
+            total_sodium_mg=total_sodium,
+            fueling_points=fueling_points,
+            trigger_config={
+                "climb_trigger_m": climb_trigger_m,
+                "max_interval_min": max_interval_min,
+            },
+            warnings=warnings,
+        )
+
+
+class AIPlanner:
+    def __init__(self, provider: str, model: str, api_key: Optional[str], temperature: float = 0.6, verify_ssl: bool = True, language: str = "zh"):
+        self.provider = provider
+        self.model = model
+        self.api_key = api_key
+        self.temperature = temperature
+        self.verify_ssl = verify_ssl
+        self.language = language
+
+    def _build_prompt(self, user_profile: UserProfile, race_profile: RaceProfile, rule_output: RuleEngineOutput) -> str:
+        contract_json = json.dumps(rule_engine_output_to_contract(user_profile, race_profile, rule_output), ensure_ascii=False, indent=2)
+        if self.language == "en":
+            return (
+                "You are AI Planner and explainer only. Do not recompute core numbers.\n"
+                "Use the fixed Rule Engine outputs to explain and sequence fueling actions.\n"
+                "Sport mode is trail running only.\n"
+                f"User ability score: {user_profile.ability_score}\n"
+                f"User fatigue risk: {user_profile.fatigue_risk}\n"
+                f"Route distance: {race_profile.distance_km} km, ascent: {race_profile.ascent_m} m\n"
+                f"Aid stations (km): {race_profile.aid_stations_km}\n"
+                f"Supplemental points (km): {race_profile.supplemental_points_km}\n"
+                f"Rule estimated finish time (h): {rule_output.estimated_finish_time_h}\n"
+                f"Rule carbs/hour: {rule_output.carbs_per_hour_g}\n"
+                f"Rule fluid/hour (ml): {rule_output.fluid_per_hour_ml}\n"
+                f"Rule sodium/hour (mg): {rule_output.sodium_per_hour_mg}\n"
+                f"Fueling points: {rule_output.fueling_points}\n"
+                f"Warnings: {rule_output.warnings}\n"
+                f"Rule contract JSON:\n{contract_json}\n"
+                "You must not output any number outside the contract JSON unless explicitly marked as assumption."
+                " Output a practical timeline checklist with concise explanations."
+            )
+
+        return (
+            "你是 AI Planner，只负责规划与解释，不重新计算规则引擎数值。\n"
+            "请严格基于 Rule Engine 的固定结果安排补给时间点并解释原因。\n"
+            "运动模式仅为越野跑。\n"
+            f"用户能力分: {user_profile.ability_score}\n"
+            f"用户疲劳风险: {user_profile.fatigue_risk}\n"
+            f"线路距离: {race_profile.distance_km} km，爬升: {race_profile.ascent_m} m\n"
+            f"CP/补给站 (km): {race_profile.aid_stations_km}\n"
+            f"补充补给点 (km): {race_profile.supplemental_points_km}\n"
+            f"规则引擎完赛时间(h): {rule_output.estimated_finish_time_h}\n"
+            f"规则引擎碳水(g/h): {rule_output.carbs_per_hour_g}\n"
+            f"规则引擎液体(ml/h): {rule_output.fluid_per_hour_ml}\n"
+            f"规则引擎钠(mg/h): {rule_output.sodium_per_hour_mg}\n"
+            f"补给点清单: {rule_output.fueling_points}\n"
+            f"警告: {rule_output.warnings}\n"
+            f"规则契约 JSON:\n{contract_json}\n"
+            "除非明确标注为假设，否则不得输出契约 JSON 之外的新数值。"
+            " 请输出可执行的时间轴清单（赛前/赛中/赛后），并给出每个阶段的简要解释。"
+        )
+
+    def plan_and_explain(self, user_profile: UserProfile, race_profile: RaceProfile, rule_output: RuleEngineOutput) -> str:
+        prompt = self._build_prompt(user_profile, race_profile, rule_output)
+        adapter = create_model_adapter(
+            provider=self.provider,
+            model=self.model,
+            api_key=self.api_key,
+            verify_ssl=self.verify_ssl,
+            language=self.language,
+        )
+        return adapter.generate(prompt, temperature=self.temperature)
+
+
+def rule_engine_output_to_contract(user_profile: UserProfile, race_profile: RaceProfile, rule_output: RuleEngineOutput) -> Dict[str, Any]:
+    return {
+        "contract_version": rule_output.contract_version,
+        "sport_mode": "trail_run",
+        "user_profile": {
+            "ability_score": user_profile.ability_score,
+            "fatigue_risk": user_profile.fatigue_risk,
+            "hr_zone_reference": user_profile.hr_zone_reference,
+            "hr_zone_warning": user_profile.hr_zone_warning,
+        },
+        "race_profile": {
+            "distance_km": race_profile.distance_km,
+            "ascent_m": race_profile.ascent_m,
+            "aid_stations_km": race_profile.aid_stations_km,
+            "supplemental_points_km": race_profile.supplemental_points_km,
+            "steep_segments": race_profile.steep_segments,
+            "weather_temp_c": race_profile.weather_temp_c,
+            "humidity_pct": race_profile.humidity_pct,
+        },
+        "trigger_config": rule_output.trigger_config,
+        "engine_outputs": {
+            "estimated_finish_time_h": rule_output.estimated_finish_time_h,
+            "carbs_per_hour_g": rule_output.carbs_per_hour_g,
+            "fluid_per_hour_ml": rule_output.fluid_per_hour_ml,
+            "sodium_per_hour_mg": rule_output.sodium_per_hour_mg,
+            "total_carbs_g": rule_output.total_carbs_g,
+            "total_fluid_ml": rule_output.total_fluid_ml,
+            "total_sodium_mg": rule_output.total_sodium_mg,
+            "fueling_points": rule_output.fueling_points,
+            "warnings": rule_output.warnings,
+        },
+    }
+
+
+def render_rule_engine_contract_json(user_profile: UserProfile, race_profile: RaceProfile, rule_output: RuleEngineOutput) -> str:
+    return json.dumps(
+        rule_engine_output_to_contract(user_profile, race_profile, rule_output),
+        ensure_ascii=False,
+        indent=2,
+        sort_keys=True,
+    )
+
+
+def render_rule_engine_output(rule_output: RuleEngineOutput, language: str = "zh") -> str:
     if language == "en":
-        if target == "trail_run":
-            return f"Target: Trail Run, Distance {distance} km, Elevation Gain {ascent} m"
-        if target == "mountain_run":
-            return f"Target: Mountain Run, Distance {distance} km, Elevation Gain {ascent} m"
-        if target == "mountain_hike":
-            return f"Target: Mountain Hiking, Distance {distance} km, Elevation Gain {ascent} m"
-        return "Target: Outdoor Adventure"
-
-    if target == "trail_run":
-        return f"目标：越野跑，距离 {distance} 公里，累计爬升 {ascent} 米"
-    if target == "mountain_run":
-        return f"目标：山地跑，距离 {distance} 公里，累计爬升 {ascent} 米"
-    if target == "mountain_hike":
-        return f"目标：山地徒步，距离 {distance} 公里，累计爬升 {ascent} 米"
-    return "目标：户外运动"
-
-
-def _resolve_target(args, language: str) -> str:
-    if language == "en":
-        mapping = {
-            "trail_run": "Target: Trail Run",
-            "mountain_run": "Target: Mountain Run",
-            "mountain_hike": "Target: Mountain Hiking",
-        }
-        prompt_ascent = "Enter target elevation gain (meters): "
-        prompt_distance = "Enter target distance (kilometers): "
-        choose_text = "Select fueling target:"
-        options = ["1. Trail Run", "2. Mountain Run", "3. Mountain Hiking"]
-        input_prompt = "Enter 1/2/3: "
+        lines = [
+            "Trail Lab Rule Engine Output",
+            f"- Estimated finish time: {rule_output.estimated_finish_time_h:.2f} h",
+            f"- Carbohydrate: {rule_output.carbs_per_hour_g:.1f} g/h (total {rule_output.total_carbs_g:.1f} g)",
+            f"- Fluid: {rule_output.fluid_per_hour_ml:.0f} ml/h (total {rule_output.total_fluid_ml:.0f} ml)",
+            f"- Sodium: {rule_output.sodium_per_hour_mg:.0f} mg/h (total {rule_output.total_sodium_mg:.0f} mg)",
+            "- Fueling points:",
+        ]
+        for fp in rule_output.fueling_points:
+            lines.append(
+                f"  km {fp['km']:.1f} (~{fp['time_h']:.2f} h): {fp['carbs_g']:.1f} g carbs, {fp['fluid_ml']:.0f} ml fluid, {fp['sodium_mg']:.0f} mg sodium"
+            )
     else:
-        mapping = {
-            "trail_run": "目标：越野跑",
-            "mountain_run": "目标：山地跑",
-            "mountain_hike": "目标：山地徒步",
-        }
-        prompt_ascent = "请输入目标累计爬升（米）: "
-        prompt_distance = "请输入目标距离（公里）: "
-        choose_text = "请选择补给目标："
-        options = ["1. 越野跑", "2. 山地跑", "3. 山地徒步"]
-        input_prompt = "输入 1/2/3: "
+        lines = [
+            "Trail Lab Rule Engine 输出",
+            f"- 预计完赛时间: {rule_output.estimated_finish_time_h:.2f} h",
+            f"- 碳水: {rule_output.carbs_per_hour_g:.1f} g/h（总量 {rule_output.total_carbs_g:.1f} g）",
+            f"- 液体: {rule_output.fluid_per_hour_ml:.0f} ml/h（总量 {rule_output.total_fluid_ml:.0f} ml）",
+            f"- 钠: {rule_output.sodium_per_hour_mg:.0f} mg/h（总量 {rule_output.total_sodium_mg:.0f} mg）",
+            "- 补给点:",
+        ]
+        for fp in rule_output.fueling_points:
+            lines.append(
+                f"  km {fp['km']:.1f}（约 {fp['time_h']:.2f} h）: 碳水 {fp['carbs_g']:.1f} g, 液体 {fp['fluid_ml']:.0f} ml, 钠 {fp['sodium_mg']:.0f} mg"
+            )
 
-    if args.target:
-        if args.target in {"trail_run", "mountain_run", "mountain_hike"}:
-            ascent = args.ascent
-            distance = args.distance
-            if ascent is None:
-                ascent = float(input(prompt_ascent).strip())
-            if distance is None:
-                distance = float(input(prompt_distance).strip())
-            return _format_target_description(args.target, ascent, distance, language)
-        return mapping.get(args.target, args.target)
-
-    print(choose_text)
-    for opt in options:
-        print(opt)
-    choice = input(input_prompt).strip()
-    if choice == "1":
-        return mapping["trail_run"]
-    if choice == "2":
-        return mapping["mountain_run"]
-    if choice == "3":
-        ascent = args.ascent
-        distance = args.distance
-        if ascent is None:
-            ascent = float(input(prompt_ascent).strip())
-        if distance is None:
-            distance = float(input(prompt_distance).strip())
-        return _format_target_description("mountain_hike", ascent, distance, language)
-    return mapping["trail_run"]
+    if rule_output.warnings:
+        lines.append("- Warnings:" if language == "en" else "- 警告:")
+        for warning in rule_output.warnings:
+            lines.append(f"  - {warning}")
+    return "\n".join(lines)
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="AI Fuel Planner: extract FIT data and generate a fueling strategy via AI.")
+    parser = argparse.ArgumentParser(description="AI Fuel Planner: User Profile -> Race Profile -> Trail Lab Rule Engine -> AI Planner")
     parser.add_argument("fit_file", type=Path, help="Path to the FIT activity file.")
     parser.add_argument("--weight", type=float, default=70.0, help="Athlete body weight in kilograms.")
-    parser.add_argument("--target", type=str, choices=["trail_run", "mountain_run", "mountain_hike"], default=None, help="补给目标类型: trail_run, mountain_run, mountain_hike")
-    parser.add_argument("--ascent", type=float, default=None, help="如果目标是累计爬升跑，请输入目标累计爬升米数")
-    parser.add_argument("--distance", type=float, default=None, help="如果目标是累计爬升跑，请输入目标距离，单位为公里")
+    parser.add_argument("--distance-km", type=float, default=30.0, help="Target trail distance in km.")
+    parser.add_argument("--ascent-m", type=float, default=1200.0, help="Target trail total ascent in meters.")
+    parser.add_argument("--cp-km", type=str, default="", help="Manual CP points in km, comma-separated. Example: 8,16,24")
+    parser.add_argument("--segment-gain", type=str, default="", help="Manual climb segments in 'distance:ascent' pairs, comma-separated. Example: 6:200,8:800,10:300")
+    parser.add_argument("--climb-trigger-m", type=float, default=250.0, help="Trigger fueling every N meters of cumulative ascent.")
+    parser.add_argument("--max-interval-min", type=float, default=45.0, help="Fallback trigger: maximum minutes allowed between fueling events.")
+    parser.add_argument("--physiological-max-hr", type=float, default=None, help="Physiological maximum HR from lab/interval testing.")
+    parser.add_argument("--irta-points", type=float, default=None, help="IRTA score/points to calibrate capability.")
+    parser.add_argument("--env-adaptation", type=float, default=None, help="Recent environment adaptation score, range 0~1.")
+    parser.add_argument("--hrv", type=float, default=None, help="Recent HRV score.")
+    parser.add_argument("--training-status", type=str, default=None, help="Current training status, e.g. overreaching/ready.")
+    parser.add_argument("--location-notes", type=str, default=None, help="Historical notes for this course location.")
     parser.add_argument("--provider", type=str, default="openai", choices=["openai", "deepseek", "gemini", "mock"], help="AI provider name, e.g. openai, deepseek, gemini or mock.")
     parser.add_argument("--model", type=str, default="gpt-4o-mini", help="AI model name to use.")
     parser.add_argument("--api-key", type=str, default=None, help="AI API key, if required by provider.")
@@ -998,31 +1529,52 @@ def main() -> int:
     args = parser.parse_args()
 
     api_key = resolve_api_key(args.provider, args.api_key)
-    target_desc = _resolve_target(args, args.language)
-    metrics, unavailable = extract_fit_metrics(args.fit_file)
+    user_input = UserInputProfile(
+        weight_kg=args.weight,
+        irta_points=args.irta_points,
+        recent_env_adaptation=args.env_adaptation,
+        hrv_score=args.hrv,
+        training_status=args.training_status,
+        physiological_max_hr=args.physiological_max_hr,
+    )
+    race_input = RaceInputProfile(
+        distance_km=args.distance_km,
+        ascent_m=args.ascent_m,
+        weather_temp_c=args.weather_temp,
+        humidity_pct=args.humidity,
+        location_history_notes=args.location_notes,
+        cp_points_km=parse_km_points(args.cp_km, max_distance_km=args.distance_km),
+        manual_climb_segments=parse_climb_segments(args.segment_gain),
+        climb_trigger_m=args.climb_trigger_m,
+        max_interval_min=args.max_interval_min,
+    )
 
-    strategy = call_ai_strategy(
-        metrics=metrics,
-        unavailable=unavailable,
-        target_desc=target_desc,
+    user_profile = UserProfileBuilder().build(args.fit_file, user_input)
+    race_profile = RaceProfileBuilder().build(race_input)
+    rule_output = TrailLabRuleEngine().compute(user_profile, race_profile, weight_kg=args.weight)
+
+    planner = AIPlanner(
         provider=args.provider,
         model=args.model,
         api_key=api_key,
-        weight=args.weight,
         temperature=args.temperature,
         verify_ssl=not args.insecure,
         language=args.language,
-        weather_temp_c=args.weather_temp,
-        humidity_pct=args.humidity,
     )
+    strategy = planner.plan_and_explain(user_profile, race_profile, rule_output)
+
+    print("Rule Contract JSON")
+    print(render_rule_engine_contract_json(user_profile, race_profile, rule_output))
+    print()
+    print(render_rule_engine_output(rule_output, language=args.language))
+    print("\n" + ("AI Planner Output" if args.language == "en" else "AI Planner 输出"))
+    print(strategy)
 
     if args.output_file is not None:
         output_path = args.output_file.expanduser().resolve()
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(strategy, encoding="utf-8")
         print(f"Full strategy saved to: {output_path}")
-
-    print(strategy)
 
     return 0
 

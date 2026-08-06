@@ -25,11 +25,9 @@ __pycache__/
 *.fit
 *.fit.zip
 
-# Local office docs
+# Local office / data files
 *.docx
-
-# Ignore local sample data if needed
-23231556007_ACTIVITY.fit
+*.xlsx
 
 # Ignore local project context notes
 PROJECT_CONTEXT.md

@@ -1,0 +1,3 @@
+dist
+garmin_fit_sdk
+tests
