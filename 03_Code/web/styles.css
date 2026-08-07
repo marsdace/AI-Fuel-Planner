@@ -1568,13 +1568,7 @@ button:disabled {
   align-self: start;
 }
 
-#raceProfileEditor .field-row[data-row-key="climbSegments"] {
-  grid-column: 2;
-  grid-row: 6;
-  align-self: start;
-}
-
-#raceProfileEditor .field-row[data-row-key="descentSegments"] {
+#raceProfileEditor .field-row[data-row-key="routeSegments"] {
   grid-column: 2;
   grid-row: 7;
   align-self: start;
@@ -1759,8 +1753,7 @@ svg text {
 
   #raceProfileEditor .field-row,
   #raceProfileEditor .field-row[data-row-key="officialCp"],
-  #raceProfileEditor .field-row[data-row-key="climbSegments"],
-  #raceProfileEditor .field-row[data-row-key="descentSegments"] {
+  #raceProfileEditor .field-row[data-row-key="routeSegments"] {
     grid-column: auto;
     grid-row: auto;
   }
