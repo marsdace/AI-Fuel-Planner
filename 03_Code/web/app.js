@@ -1149,7 +1149,7 @@ const raceProfileFields = [
   { key: "locationNotes", label: { zh: "线路备注", en: "Route notes" }, type: "textarea", placeholder: "raceNotesPlaceholder" },
   // 右列：官方补给点 + 爬坡路段（位置均为距起点相对距离，提示统一在“!”悬浮中）
   { key: "officialCp", label: { zh: "官方补给点", en: "Official aid stations" }, type: "cplist", columns: CP_OFFICIAL_COLUMNS, addLabel: { zh: "新增补给点", en: "Add aid station" }, help: { zh: "FIT 有 CP 点会自动导入；也可手动新增。位置为距起点相对距离 (km)，每站可填名称、所在距离、关门时间、区间爬升与下降。列表从上到下需按距离递增排列。", en: "CP points are auto-imported from FIT; add more manually. Position = relative distance (km) from the start. Each station: name, distance, cutoff, segment climb and descent. Rows must be ordered by increasing distance from top to bottom." } },
-  { key: "climbSegments", label: { zh: "爬坡路段", en: "Climb segments" }, type: "cplist", columns: CP_CLIMB_COLUMNS, addLabel: { zh: "新增爬坡路段", en: "Add climb segment" }, help: { zh: "记录每个爬坡路段的爬升起点、爬升终点（距起点相对距离，km）与爬升高度 (m)。列表从上到下需依次排列且不重叠。", en: "Record each climb segment's start, end (relative distance in km from the start) and climb height (m). Rows must be ordered top-to-bottom and must not overlap." } },
+  { key: "climbSegments", label: { zh: "爬坡路段", en: "Climb segments" }, type: "cplist", columns: CP_CLIMB_COLUMNS, addLabel: { zh: "新增爬坡路段", en: "Add climb segment" }, help: { zh: "读取目标赛事 FIT 后会自动生成爬坡路段，可手动修改。记录每个爬坡路段的爬升起点、爬升终点（距起点相对距离，km）与爬升高度 (m)。列表从上到下需依次排列且不重叠。", en: "Climb segments are auto-generated after reading a target race FIT; you can edit them manually. Record each climb segment's start, end (relative distance in km from the start) and climb height (m). Rows must be ordered top-to-bottom and must not overlap." } },
 ];
 
 function renderEditor(container, fields, values) {
@@ -1494,6 +1494,75 @@ function buildSimulatedElevation(raceProfile) {
     points.push({ km: raceProfile.distance_km, altitude: currentAltitude });
   }
   return points;
+}
+
+// 从目标赛事 FIT 的海拔记录自动提取爬坡路段（起点/终点/爬升高度），可再手动修改
+function extractClimbSegmentsFromFit(decoded) {
+  const records = decoded?.record_mesgs || [];
+  const raw = [];
+  for (const record of records) {
+    const km = safeFloat(record.distance);
+    const alt = firstField(record, "enhanced_altitude", "altitude");
+    if (km === null || alt === null || km < 0) continue;
+    raw.push({ km: km / 1000, alt });
+  }
+  if (raw.length < 4) return [];
+  raw.sort((a, b) => a.km - b.km);
+
+  // 平滑采样：每 ~50m 取平均海拔，降低噪声
+  const step = 0.05;
+  const sampled = [];
+  let bucket = null;
+  let sumAlt = 0;
+  let count = 0;
+  const flush = () => {
+    if (bucket !== null && count) sampled.push({ km: bucket, alt: sumAlt / count });
+    bucket = null;
+    sumAlt = 0;
+    count = 0;
+  };
+  for (const point of raw) {
+    const b = Math.floor(point.km / step) * step;
+    if (bucket === null) bucket = b;
+    if (b > bucket) flush();
+    if (bucket === null) bucket = b;
+    sumAlt += point.alt;
+    count += 1;
+  }
+  flush();
+  if (sampled.length < 3) return [];
+
+  // 谷→峰检测：上升 ≥ minClimb，且峰后回落 ≥ hysteresis 记为一段爬升
+  const minClimb = 30;
+  const minLen = 0.2;
+  const hysteresis = 15;
+  const climbs = [];
+  let valley = 0;
+  let peak = 0;
+  for (let i = 0; i < sampled.length; i += 1) {
+    if (sampled[i].alt < sampled[valley].alt) valley = i;
+    if (sampled[i].alt > sampled[peak].alt) peak = i;
+    const isLast = i === sampled.length - 1;
+    if (sampled[peak].alt - sampled[i].alt >= hysteresis || isLast) {
+      const rise = sampled[peak].alt - sampled[valley].alt;
+      const length = sampled[peak].km - sampled[valley].km;
+      if (rise >= minClimb && length >= minLen) {
+        climbs.push({
+          start: Number(sampled[valley].km.toFixed(2)),
+          end: Number(sampled[peak].km.toFixed(2)),
+          height: Math.round(rise),
+        });
+      }
+      valley = i;
+      peak = i;
+    }
+  }
+
+  // 最多保留 8 段（按高度取最大的），再按起点排序
+  return climbs
+    .sort((a, b) => b.height - a.height)
+    .slice(0, 8)
+    .sort((a, b) => a.start - b.start);
 }
 
 function buildRoutePointsFromDecoded(decoded, fallbackDistanceKm) {
@@ -1861,6 +1930,7 @@ ui.parseRaceFitBtn.addEventListener("click", async () => {
         seenCp.add(key);
         return true;
       });
+    const autoClimbs = extractClimbSegmentsFromFit(state.decodedRace);
     const values = {
       distanceKm: firstField(session, "total_distance") !== null ? (firstField(session, "total_distance") / 1000).toFixed(2) : "",
       ascentM: firstField(session, "total_ascent") !== null ? firstField(session, "total_ascent").toFixed(0) : "",
@@ -1869,7 +1939,7 @@ ui.parseRaceFitBtn.addEventListener("click", async () => {
       humidity: "",
       locationNotes: "",
       officialCp: officialCp.length ? JSON.stringify(officialCp) : "",
-      climbSegments: "",
+      climbSegments: autoClimbs.length ? JSON.stringify(autoClimbs) : "",
     };
     renderKvPreview(ui.raceFitPreview, [
       [t("kvTotalDistance"), values.distanceKm ? `${values.distanceKm} km` : ""],
