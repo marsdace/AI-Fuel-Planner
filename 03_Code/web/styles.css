@@ -1426,6 +1426,11 @@ button:disabled {
   color: var(--climb);
 }
 
+.dot.descent {
+  background: var(--cp);
+  color: var(--cp);
+}
+
 /* ---------------- 输出终端 ---------------- */
 
 .outputs {
@@ -1566,6 +1571,12 @@ button:disabled {
 #raceProfileEditor .field-row[data-row-key="climbSegments"] {
   grid-column: 2;
   grid-row: 6;
+  align-self: start;
+}
+
+#raceProfileEditor .field-row[data-row-key="descentSegments"] {
+  grid-column: 2;
+  grid-row: 7;
   align-self: start;
 }
 
@@ -1748,7 +1759,8 @@ svg text {
 
   #raceProfileEditor .field-row,
   #raceProfileEditor .field-row[data-row-key="officialCp"],
-  #raceProfileEditor .field-row[data-row-key="climbSegments"] {
+  #raceProfileEditor .field-row[data-row-key="climbSegments"],
+  #raceProfileEditor .field-row[data-row-key="descentSegments"] {
     grid-column: auto;
     grid-row: auto;
   }

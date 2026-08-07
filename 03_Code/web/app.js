@@ -56,6 +56,7 @@ const TEXT = {
     legendLine: "路线海拔轮廓",
     legendCp: "CP / 补给站",
     legendClimbSeg: "爬坡路段",
+    legendDescentSeg: "下降路段",
     confirmStep4: "确认路线概况",
     step5Title: "规则引擎与 AI 解释",
     stepHint5: "本步将生成：规则契约 JSON、补给定量输出与 AI 可执行解释。",
@@ -93,6 +94,8 @@ const TEXT = {
     raceClimbExceedsDistance: "爬坡路段的“终点”不能超过路线总距离。",
     raceClimbExceedsAscent: "爬坡路段的“爬升高度”合计不能超过路线总爬升。",
     raceCpExceedsAscent: "官方补给点的“区间爬升”合计不能超过路线总爬升。",
+    raceDescentRangeInvalid: "下降路段的“下降起点”必须小于“下降终点”。",
+    raceDescentOrderInvalid: "下降路段必须从上到下依次排列，且不能与爬坡路段重叠。",
     statusReadyEngine: "可以开始运行 Trail Lab Rule Engine 与 AI Planner。",
     statusNeedActivity: "请先上传历史运动文件，或选择手动填写用户信息。",
     statusManualProfile: "未上传历史运动文件，已切换为手动填写用户能力画像。",
@@ -168,6 +171,7 @@ const TEXT = {
     legendLine: "Route elevation profile",
     legendCp: "CP / aid station",
     legendClimbSeg: "Climb segments",
+    legendDescentSeg: "Descent segments",
     confirmStep4: "Confirm route overview",
     step5Title: "Rule Engine and AI Explanation",
     stepHint5: "This step generates: rule-contract JSON, quantified fueling output, and AI execution guidance.",
@@ -205,6 +209,8 @@ const TEXT = {
     raceClimbExceedsDistance: "Climb segment end must not exceed the route's total distance.",
     raceClimbExceedsAscent: "Climb segment heights must not exceed the route's total ascent.",
     raceCpExceedsAscent: "Aid-station segment climbs must not exceed the route's total ascent.",
+    raceDescentRangeInvalid: "Descent segment start must be less than its end.",
+    raceDescentOrderInvalid: "Descent segments must be ordered top-to-bottom and must not overlap climb segments.",
     statusReadyEngine: "You can now run the Trail Lab Rule Engine and AI Planner.",
     statusNeedActivity: "Please upload a historical activity file, or choose to fill in your profile manually.",
     statusManualProfile: "No historical activity file uploaded. Switched to manual profile entry.",
@@ -700,7 +706,7 @@ class RaceProfileBuilder {
       .filter((km) => km > 0 && km < distanceKm)
       .sort((a, b) => a - b);
 
-    // 爬坡路段列表（JSON）：爬升起点/终点位置（距起点相对距离 km）
+    // 爬坡路段列表（JSON）：爬升起点/终点/爬升高度
     let climbList = [];
     try {
       const parsed = JSON.parse(input.climbSegments || "[]");
@@ -713,31 +719,57 @@ class RaceProfileBuilder {
       .filter((seg) => seg.start !== null && seg.end !== null && seg.end > seg.start);
     const hasClimbHeights = validClimbs.some((seg) => seg.height !== null && seg.height > 0);
 
-    // 爬坡分段：优先用爬坡路段（起点/终点）；若填写了“爬升高度”则直接使用，否则将总爬升按爬坡距离比例分配；平坦段爬升为 0
-    const climbSegments = [];
+    // 下降路段列表（JSON）：下降起点/终点/下降高度
+    let descentList = [];
+    try {
+      const parsed = JSON.parse(input.descentSegments || "[]");
+      if (Array.isArray(parsed)) descentList = parsed;
+    } catch (error) {
+      descentList = [];
+    }
+    const validDescents = descentList
+      .map((seg) => ({ start: safeFloat(seg.start), end: safeFloat(seg.end), height: safeFloat(seg.height) }))
+      .filter((seg) => seg.start !== null && seg.end !== null && seg.end > seg.start);
+
+    // 构建有序海拔分段：[距离, 海拔变化]（正=爬升且终点即最高点，负=下降，0=平坦）。
+    // 爬坡路段：填写了“爬升高度”则直接使用，否则将总爬升按爬坡距离比例分配；下降路段：使用“下降高度”（未填视为 0）
+    const events = [];
     if (validClimbs.length) {
       const climbTotalDist = validClimbs.reduce((sum, seg) => sum + (seg.end - seg.start), 0);
-      let prevKm = 0;
       for (const seg of validClimbs) {
-        if (seg.start > prevKm) {
-          climbSegments.push([Number((seg.start - prevKm).toFixed(2)), 0]);
-        }
         const segDist = seg.end - seg.start;
         const segAscent = hasClimbHeights
           ? Number(seg.height || 0)
           : Number((ascentM * (segDist / climbTotalDist)).toFixed(1));
-        climbSegments.push([Number(segDist.toFixed(2)), segAscent]);
-        prevKm = seg.end;
+        events.push({ start: seg.start, end: seg.end, delta: segAscent });
+      }
+    }
+    for (const seg of validDescents) {
+      const segDesc = Math.max(safeFloat(seg.height) || 0, 0);
+      events.push({ start: seg.start, end: seg.end, delta: -segDesc });
+    }
+    events.sort((a, b) => a.start - b.start || a.end - b.end);
+
+    const climbSegments = [];
+    if (events.length) {
+      let prevKm = 0;
+      for (const ev of events) {
+        if (ev.start > prevKm) {
+          climbSegments.push([Number((ev.start - prevKm).toFixed(2)), 0]);
+        }
+        climbSegments.push([Number((ev.end - ev.start).toFixed(2)), Number(ev.delta.toFixed(1))]);
+        prevKm = ev.end;
       }
       if (prevKm < distanceKm) {
         climbSegments.push([Number((distanceKm - prevKm).toFixed(2)), 0]);
       }
     }
 
-    // 爬坡分段只来源于“爬坡路段”；补给点信息仅用于图中标记，不作为绘制海拔曲线的依据
+    // 爬坡分段只来源于“爬坡路段/下降路段”；补给点信息仅用于图中标记，不作为绘制海拔曲线的依据
     const manualSegments = climbSegments.length ? climbSegments : parseClimbSegments(input.segmentGain || "");
-    // 若爬坡路段填了明确的“爬升高度”，直接采用（不再按总爬升缩放）；否则标准化到总爬升/总距离
-    const segments = hasClimbHeights ? manualSegments : this.normalizeSegments(distanceKm, ascentM, manualSegments);
+    // 显式提供爬升高度或下降路段时直接采用（不做缩放）；否则标准化到总爬升/总距离
+    const hasExplicitStructure = hasClimbHeights || validDescents.length > 0;
+    const segments = hasExplicitStructure ? manualSegments : this.normalizeSegments(distanceKm, ascentM, manualSegments);
 
     let cumulativeKm = 0;
     const steepSegments = [];
@@ -1141,6 +1173,11 @@ const CP_CLIMB_COLUMNS = [
   { key: "end", label: { zh: "爬升终点 (km)", en: "Climb end (km)" }, type: "number", step: "0.1", min: 0, flex: 1 },
   { key: "height", label: { zh: "爬升高度 (m)", en: "Climb height (m)" }, type: "number", step: "1", min: 0, flex: 0.8 },
 ];
+const CP_DESCENT_COLUMNS = [
+  { key: "start", label: { zh: "下降起点 (km)", en: "Descent start (km)" }, type: "number", step: "0.1", min: 0, flex: 1 },
+  { key: "end", label: { zh: "下降终点 (km)", en: "Descent end (km)" }, type: "number", step: "0.1", min: 0, flex: 1 },
+  { key: "height", label: { zh: "下降高度 (m)", en: "Descent height (m)" }, type: "number", step: "1", min: 0, flex: 0.8 },
+];
 
 const raceProfileFields = [
   // 左列：基础路线参数
@@ -1152,7 +1189,8 @@ const raceProfileFields = [
   { key: "locationNotes", label: { zh: "线路备注", en: "Route notes" }, type: "textarea", placeholder: "raceNotesPlaceholder" },
   // 右列：官方补给点 + 爬坡路段（位置均为距起点相对距离，提示统一在“!”悬浮中）
   { key: "officialCp", label: { zh: "官方补给点", en: "Official aid stations" }, type: "cplist", columns: CP_OFFICIAL_COLUMNS, addLabel: { zh: "新增补给点", en: "Add aid station" }, help: { zh: "FIT 有 CP 点会自动导入；也可手动新增。位置为距起点相对距离 (km)，每站可填名称、所在距离、关门时间、区间爬升与下降。列表从上到下需按距离递增排列。注意：补给点信息仅用于图中标记，不作为绘制海拔曲线的依据（不依据累计爬升/下降绘制图形）。", en: "CP points are auto-imported from FIT; add more manually. Position = relative distance (km) from the start. Each station: name, distance, cutoff, segment climb and descent. Rows must be ordered by increasing distance from top to bottom. Note: aid-station info is only used as chart markers and does not affect the elevation curve (the curve is not drawn from cumulative ascent/descent)." } },
-  { key: "climbSegments", label: { zh: "爬坡路段", en: "Climb segments" }, type: "cplist", columns: CP_CLIMB_COLUMNS, addLabel: { zh: "新增爬坡路段", en: "Add climb segment" }, help: { zh: "读取目标运动文件后会自动生成爬坡路段，可手动修改。记录每个爬坡路段的爬升起点、爬升终点（距起点相对距离，km）与爬升高度 (m)。列表从上到下需依次排列且不重叠。", en: "Climb segments are auto-generated after reading a target activity file; you can edit them manually. Record each climb segment's start, end (relative distance in km from the start) and climb height (m). Rows must be ordered top-to-bottom and must not overlap." } },
+  { key: "climbSegments", label: { zh: "爬坡路段", en: "Climb segments" }, type: "cplist", columns: CP_CLIMB_COLUMNS, addLabel: { zh: "新增爬坡路段", en: "Add climb segment" }, help: { zh: "读取目标运动文件后会自动生成爬坡路段，可手动修改。记录每个爬坡路段的爬升起点、爬升终点（距起点相对距离，km）与爬升高度 (m)。爬升段从起点爬升至终点，终点即该段海拔最高处。列表从上到下需依次排列且不重叠，也不能与下降路段重叠。", en: "Climb segments are auto-generated after reading a target activity file; you can edit them manually. Record each climb segment's start, end (relative distance in km from the start) and climb height (m). A climb rises from its start to its end, which is that segment's highest point. Rows must be ordered top-to-bottom and must not overlap, nor overlap descent segments." } },
+  { key: "descentSegments", label: { zh: "下降路段", en: "Descent segments" }, type: "cplist", columns: CP_DESCENT_COLUMNS, addLabel: { zh: "新增下降路段", en: "Add descent segment" }, help: { zh: "记录每个下降路段的下降起点、下降终点（距起点相对距离，km）与下降高度 (m)，用于在海拨曲线中体现下降。列表从上到下需依次排列且不重叠，也不能与爬坡路段重叠。", en: "Record each descent segment's start, end (relative distance in km from the start) and descent height (m), to show descents on the elevation curve. Rows must be ordered top-to-bottom and must not overlap, nor overlap climb segments." } },
 ];
 
 function renderEditor(container, fields, values) {
@@ -1497,20 +1535,58 @@ function validateRaceProfile(form) {
     return { ok: false, message: t("raceClimbExceedsAscent") };
   }
 
+  // 下降路段：范围与位置约束
+  let descentList = [];
+  try {
+    const parsed = JSON.parse(String(form.descentSegments || "[]"));
+    if (Array.isArray(parsed)) descentList = parsed;
+  } catch (error) {
+    descentList = [];
+  }
+  for (let i = 0; i < descentList.length; i++) {
+    const start = safeFloat(descentList[i].start);
+    const end = safeFloat(descentList[i].end);
+    const height = safeFloat(descentList[i].height);
+    if (start === null && end === null && height === null) continue;
+    if (start === null || end === null || start >= end) {
+      return { ok: false, message: t("raceDescentRangeInvalid") };
+    }
+    if (end > distanceKm) {
+      return { ok: false, message: t("raceClimbExceedsDistance") };
+    }
+  }
+  // 爬坡与下降路段位置合并检查：互不重叠
+  const boundaryList = [];
+  for (const item of climbList) {
+    const start = safeFloat(item.start);
+    const end = safeFloat(item.end);
+    if (start !== null && end !== null) boundaryList.push({ start, end });
+  }
+  for (const item of descentList) {
+    const start = safeFloat(item.start);
+    const end = safeFloat(item.end);
+    if (start !== null && end !== null) boundaryList.push({ start, end });
+  }
+  boundaryList.sort((a, b) => a.start - b.start || a.end - b.end);
+  let prevB = -1;
+  for (const b of boundaryList) {
+    if (b.start < prevB) {
+      return { ok: false, message: t("raceDescentOrderInvalid") };
+    }
+    prevB = b.end;
+  }
+
   return { ok: true };
 }
 
 function buildSimulatedElevation(raceProfile) {
-  // 不读取 FIT 线路信息时，爬升点起点默认海拔为 0
+  // 不读取 FIT 时，按步骤三爬坡/下降路段绘制：每段线性单调（爬升段终点即该段海拔最高处，下降段单调下降，平坦段水平），起点默认海拔 0
   const points = [{ km: 0, altitude: 0 }];
   let currentKm = 0;
   let currentAltitude = 0;
-  for (const [segmentDistance, segmentAscent] of raceProfile.climb_segments) {
-    const climbEndKm = currentKm + segmentDistance * 0.62;
-    const peakAltitude = currentAltitude + segmentAscent;
+  for (const [segmentDistance, segmentDelta] of raceProfile.climb_segments) {
     const endKm = currentKm + segmentDistance;
-    const endAltitude = Math.max(peakAltitude - segmentAscent * 0.78, 0);
-    points.push({ km: Number(climbEndKm.toFixed(2)), altitude: Number(peakAltitude.toFixed(1)) });
+    const endAltitude = currentAltitude + segmentDelta;
     points.push({ km: Number(endKm.toFixed(2)), altitude: Number(endAltitude.toFixed(1)) });
     currentKm = endKm;
     currentAltitude = endAltitude;
@@ -1590,6 +1666,75 @@ function extractClimbSegmentsFromFit(decoded) {
     .sort((a, b) => a.start - b.start);
 }
 
+// 从目标路线 FIT 的海拔记录自动提取下降路段（起点/终点/下降高度），可再手动修改
+function extractDescentSegmentsFromFit(decoded) {
+  const records = decoded?.record_mesgs || [];
+  const raw = [];
+  for (const record of records) {
+    const km = safeFloat(record.distance);
+    const alt = firstField(record, "enhanced_altitude", "altitude");
+    if (km === null || alt === null || km < 0) continue;
+    raw.push({ km: km / 1000, alt });
+  }
+  if (raw.length < 4) return [];
+  raw.sort((a, b) => a.km - b.km);
+
+  // 平滑采样：每 ~50m 取平均海拔，降低噪声
+  const step = 0.05;
+  const sampled = [];
+  let bucket = null;
+  let sumAlt = 0;
+  let count = 0;
+  const flush = () => {
+    if (bucket !== null && count) sampled.push({ km: bucket, alt: sumAlt / count });
+    bucket = null;
+    sumAlt = 0;
+    count = 0;
+  };
+  for (const point of raw) {
+    const b = Math.floor(point.km / step) * step;
+    if (bucket === null) bucket = b;
+    if (b > bucket) flush();
+    if (bucket === null) bucket = b;
+    sumAlt += point.alt;
+    count += 1;
+  }
+  flush();
+  if (sampled.length < 3) return [];
+
+  // 峰→谷检测：下降 ≥ minDescent，且谷后回升 ≥ hysteresis 记为一段下降
+  const minDescent = 30;
+  const minLen = 0.2;
+  const hysteresis = 15;
+  const descents = [];
+  let peak = 0;
+  let valley = 0;
+  for (let i = 0; i < sampled.length; i += 1) {
+    if (sampled[i].alt > sampled[peak].alt) peak = i;
+    if (sampled[i].alt < sampled[valley].alt) valley = i;
+    const isLast = i === sampled.length - 1;
+    if (sampled[i].alt - sampled[valley].alt >= hysteresis || isLast) {
+      const drop = sampled[peak].alt - sampled[valley].alt;
+      const length = sampled[valley].km - sampled[peak].km;
+      if (drop >= minDescent && length >= minLen) {
+        descents.push({
+          start: Number(sampled[peak].km.toFixed(2)),
+          end: Number(sampled[valley].km.toFixed(2)),
+          height: Math.round(drop),
+        });
+      }
+      peak = i;
+      valley = i;
+    }
+  }
+
+  // 最多保留 8 段（按高度取最大的），再按起点排序
+  return descents
+    .sort((a, b) => b.height - a.height)
+    .slice(0, 8)
+    .sort((a, b) => a.start - b.start);
+}
+
 function buildRoutePointsFromDecoded(decoded, fallbackDistanceKm) {
   if (!decoded?.record_mesgs?.length) {
     return null;
@@ -1661,6 +1806,27 @@ function getClimbSegmentsToDraw(raceProfile) {
   return segments;
 }
 
+// 提取需要在图中标注的下降路段：仅当步骤三填写了下降路段时才标注；位置与高度取自画像（与所绘海拔一致）
+function getDescentSegmentsToDraw(raceProfile) {
+  let hasFormDescents = false;
+  try {
+    const parsed = JSON.parse(String(state.raceProfileForm?.descentSegments || "[]"));
+    hasFormDescents = Array.isArray(parsed) && parsed.length > 0;
+  } catch (error) {
+    hasFormDescents = false;
+  }
+  if (!hasFormDescents) return [];
+  const segments = [];
+  let km = 0;
+  for (const [dist, delta] of raceProfile.climb_segments) {
+    if (delta < 0) {
+      segments.push({ start: Number(km.toFixed(2)), end: Number((km + dist).toFixed(2)), height: Math.round(-delta) });
+    }
+    km += dist;
+  }
+  return segments;
+}
+
 function renderRouteOverview(raceProfile) {
   // 图表只用当前步骤三确认的信息绘制：FIT 模式下用目标运动文件真实海拔轨迹；手动模式下始终用模拟（即使之前读取过 FIT）
   const useFitRoute = state.raceMode === "fit" && Boolean(state.decodedRace);
@@ -1668,6 +1834,7 @@ function renderRouteOverview(raceProfile) {
   const pathPoints = fitRoutePoints || buildSimulatedElevation(raceProfile);
   document.getElementById("step4Note").textContent = fitRoutePoints ? t("step4NoteFit") : t("step4NoteSim");
   const climbSegs = getClimbSegmentsToDraw(raceProfile);
+  const descentSegs = getDescentSegmentsToDraw(raceProfile);
   const width = 920;
   const height = 280;
   const padding = 32;
@@ -1772,6 +1939,16 @@ function renderRouteOverview(raceProfile) {
       <text x="${midX.toFixed(1)}" y="${padding + 14}" text-anchor="middle" font-size="11" fill="#ff6f95">↑${seg.height}m</text>`;
   }).join("");
 
+  // 下降路段：半透明蓝色带标出范围，标注下降高度
+  const renderDescentBands = descentSegs.map((seg) => {
+    const x1 = xForKm(seg.start);
+    const x2 = xForKm(seg.end);
+    const midX = (x1 + x2) / 2;
+    return `
+      <rect x="${x1.toFixed(1)}" y="${padding}" width="${Math.max(x2 - x1, 2).toFixed(1)}" height="${(height - padding * 2).toFixed(1)}" fill="rgba(79,156,240,0.10)" />
+      <text x="${midX.toFixed(1)}" y="${padding + 28}" text-anchor="middle" font-size="11" fill="#6fa9e8">↓${seg.height}m</text>`;
+  }).join("");
+
   const renderXTicks = Array.from({ length: xTicks + 1 }, (_, index) => {
     const km = (raceProfile.distance_km / xTicks) * index;
     const x = xForKm(km);
@@ -1803,6 +1980,7 @@ function renderRouteOverview(raceProfile) {
         ${renderXTicks}
         ${renderYTicks}
         ${renderClimbBands}
+        ${renderDescentBands}
         <polyline fill="none" stroke="#8c2f12" stroke-width="3" points="${polyline}" />
         ${renderMarkers(raceProfile.aid_stations_km, "#225ea8")}
         ${renderCpLabels}
@@ -1870,6 +2048,8 @@ function seedRaceEditor(values = null) {
     humidity: "",
     locationNotes: "",
     officialCp: "",
+    climbSegments: "",
+    descentSegments: "",
   };
   renderEditor(ui.raceProfileEditor, raceProfileFields, defaults);
 }
@@ -1927,6 +2107,7 @@ function applyLanguage() {
   setLegendItem("legendLine", "line", t("legendLine"));
   setLegendItem("legendCp", "cp", t("legendCp"));
   setLegendItem("legendClimbSeg", "climb", t("legendClimbSeg"));
+  setLegendItem("legendDescentSeg", "descent", t("legendDescentSeg"));
   document.getElementById("confirmStep4Btn").textContent = t("confirmStep4");
   document.getElementById("backStep4Btn").textContent = t("backStep");
   document.getElementById("step5Title").textContent = t("step5Title");
@@ -2085,6 +2266,7 @@ ui.parseRaceFitBtn.addEventListener("click", async () => {
         return true;
       });
     const autoClimbs = extractClimbSegmentsFromFit(state.decodedRace);
+    const autoDescents = extractDescentSegmentsFromFit(state.decodedRace);
     const values = {
       distanceKm: firstField(session, "total_distance") !== null ? (firstField(session, "total_distance") / 1000).toFixed(2) : "",
       ascentM: firstField(session, "total_ascent") !== null ? firstField(session, "total_ascent").toFixed(0) : "",
@@ -2094,6 +2276,7 @@ ui.parseRaceFitBtn.addEventListener("click", async () => {
       locationNotes: "",
       officialCp: officialCp.length ? JSON.stringify(officialCp) : "",
       climbSegments: autoClimbs.length ? JSON.stringify(autoClimbs) : "",
+      descentSegments: autoDescents.length ? JSON.stringify(autoDescents) : "",
     };
     state.raceProfileForm = values;
     renderEditor(ui.raceProfileEditor, raceProfileFields, values);
