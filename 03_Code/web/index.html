@@ -49,13 +49,13 @@
       <section class="panel step-panel is-active" id="step1Panel">
         <div class="step-heading">
           <span class="step-badge" id="stepBadge1">Step 1</span>
-          <h2 id="step1Title">上传你的活动 FIT 文件</h2>
+          <h2 id="step1Title">上传你的历史运动文件</h2>
         </div>
-        <p class="step-purpose" id="stepHint1">本步将生成：活动原始数据与可解析状态，用于后续用户画像推导。</p>
-        <p class="callout" id="step1Callout">提醒上传自己的文件</p>
+        <p class="step-purpose" id="stepHint1">本步将生成：历史运动原始数据与可解析状态，用于后续用户画像推导。</p>
+        <p class="callout" id="step1Callout">提醒上传自己的历史运动文件</p>
         <div class="grid single">
           <label>
-            <span id="activityFitLabel">选择活动 FIT 文件</span>
+            <span id="activityFitLabel">选择历史运动文件</span>
             <div class="file-picker">
               <input id="fitFile" class="sr-only-file" type="file" accept=".fit" />
               <button id="fitFileTrigger" class="ghost-btn" type="button">选择文件</button>
@@ -65,13 +65,14 @@
         </div>
         <div class="actions left">
           <button id="confirmStep1Btn" type="button">确认并解析</button>
+          <button id="manualProfileBtn" type="button" class="ghost-btn">手动填写用户信息</button>
         </div>
       </section>
 
       <section class="panel step-panel is-hidden" id="step2Panel">
         <div class="step-heading">
           <span class="step-badge" id="stepBadge2">Step 2</span>
-          <h2 id="step2Title">确认活动概括与 User Profile</h2>
+          <h2 id="step2Title">确认历史运动概括与 User Profile</h2>
         </div>
         <p class="step-purpose" id="stepHint2">本步将生成：可编辑 User Profile，用于规则引擎能力评估与风险判断。</p>
         <p class="note strong" id="step2Note">提醒：以下显示内容均为运动设备自带信息，如信息不适用，请手动去掉信息或更改。</p>
@@ -89,7 +90,7 @@
             </div>
           </div>
           <div class="subpanel summary-panel">
-            <h3 id="activitySummaryTitle">活动概括</h3>
+            <h3 id="activitySummaryTitle">历史运动概括</h3>
             <div id="activitySummaryEditor" class="kv-list"></div>
           </div>
           <div class="subpanel profile-panel">
@@ -216,6 +217,6 @@
     </main>
 
     <script src="./bg.js?v=20260806u"></script>
-    <script type="module" src="./app.js?v=20260807r"></script>
+    <script type="module" src="./app.js?v=20260807s"></script>
   </body>
 </html>

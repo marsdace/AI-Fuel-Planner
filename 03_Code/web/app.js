@@ -8,6 +8,7 @@ const state = {
   raceMode: "manual",
   raceProfileForm: null,
   routeRaceProfile: null,
+  manualUserProfile: false,
   language: "zh",
 };
 
@@ -16,7 +17,7 @@ const TEXT = {
     pageTitle: "Trail Lab · AI Fuel Planner",
     languageSwitcherLabel: "语言 / Language",
     heroTitle: "越野跑AI补给规划工具",
-    heroTagline: "上传.FIT运动文件，自动计算补给节奏与分段建议",
+    heroTagline: "上传历史运动文件，设定目标运动路线，自动计算补给节奏与分段建议",
     heroSubtitle: "五步完成补给规划-解析历史运动记录、校准用户能力画像、设定线路信息、确认线路信息、生成规则与 AI 解释。",
     labIntro: "Trail Lab · 山野实验室 — 用科技探索山野，让户外更有趣、更高效、更安全。",
     stepBadge1: "步骤 1",
@@ -24,32 +25,33 @@ const TEXT = {
     stepBadge3: "步骤 3",
     stepBadge4: "步骤 4",
     stepBadge5: "步骤 5",
-    step1Title: "上传你的活动 FIT 文件",
-    stepHint1: "本步将生成：活动原始数据与可解析状态，用于后续用户画像推导。",
-    step1Callout: "提醒上传自己的文件",
-    activityFitLabel: "选择活动 FIT 文件",
+    step1Title: "上传你的历史运动文件",
+    stepHint1: "本步将生成：历史运动原始数据与可解析状态，用于后续用户画像推导。",
+    step1Callout: "提醒上传自己的历史运动文件",
+    activityFitLabel: "选择历史运动文件",
     chooseFile: "选择文件",
     noFileChosen: "未选择文件",
     confirmStep1: "确认并解析",
-    step2Title: "确认活动概括与用户能力画像",
+    manualProfileBtn: "手动填写用户信息",
+    step2Title: "确认历史运动概括与用户能力画像",
     stepHint2: "本步将生成：可编辑用户能力画像，用于规则引擎能力评估与风险判断。",
     step2Note: "提醒：以下显示内容均为运动设备自带信息，如信息不适用，请手动去掉信息或更改。",
-    activitySummaryTitle: "活动概括",
+    activitySummaryTitle: "历史运动概括",
     userProfileTitle: "用户能力画像",
     backStep: "返回上一步",
     confirmStep2: "确认活动信息",
     step3Title: "目标路线参数 (Trail Only)",
     stepHint3: "本步将生成：目标路线画像（距离、爬升、CP 与触发参数）。",
     raceModeManual: "手动填写",
-    raceModeFit: "读取目标路线 FIT",
-    raceFitBlockTitle: "读取目标路线 FIT",
-    raceFitLabel: "选择目标路线 FIT 文件",
-    parseRaceFit: "读取目标路线 FIT",
+    raceModeFit: "读取目标运动文件",
+    raceFitBlockTitle: "读取目标运动文件",
+    raceFitLabel: "选择目标运动文件",
+    parseRaceFit: "读取目标运动文件",
     raceParamsTitle: "路线参数",
     confirmStep3: "确认路线参数",
     step4Title: "路线、海拔、补给点概况图",
     stepHint4: "本步将生成：路线海拔轮廓与补给点分布，帮助你直观确认线路结构。",
-    step4NoteFit: "基于目标路线 FIT 的真实海拔轨迹绘制；补给点来自步骤 3 确认的官方补给点。",
+    step4NoteFit: "基于目标运动文件的真实海拔轨迹绘制；补给点来自步骤 3 确认的官方补给点。",
     step4NoteSim: "基于步骤 3 确认的路线参数模拟生成（爬坡起点默认海拔 0）；补给点来自步骤 3 确认的官方补给点。",
     legendLine: "路线海拔轮廓",
     legendCp: "CP / 补给站",
@@ -72,26 +74,29 @@ const TEXT = {
     routeAscent: "爬升",
     routeCp: "CP",
     routeSource: "路线来源",
-    routeSourceFit: "目标路线 FIT",
+    routeSourceFit: "目标运动文件",
     routeSourceSimulated: "模拟",
     axisElevation: "海拔 (m)",
     axisDistance: "距离 (km)",
     kvTotalDistance: "总距离",
     kvTotalAscent: "总爬升",
     kvSportType: "运动类型",
-    statusUploadOwnFit: "请先上传自己的 FIT 文件。",
-    statusParsingActivity: "解析活动 FIT 中...",
-    statusActivityReady: "活动 FIT 已解析，请确认活动概括和用户能力画像。",
-    statusConfirmRace: "请确认目标路线参数，可手动填写或读取目标路线 FIT。",
-    statusSelectRaceFit: "请先选择目标路线 FIT 文件。",
-    statusParsingRace: "读取目标路线 FIT 中...",
-    statusRaceReady: "目标路线 FIT 已读取，可继续补充 CP、坡段和天气参数。",
+    statusUploadOwnFit: "请先上传自己的历史运动文件，或选择手动填写。",
+    statusParsingActivity: "解析历史运动文件中...",
+    statusActivityReady: "历史运动文件已解析，请确认历史运动概括和用户能力画像。",
+    statusConfirmRace: "请确认目标路线参数，可手动填写或读取目标运动文件。",
+    statusSelectRaceFit: "请先选择目标运动文件。",
+    statusParsingRace: "读取目标运动文件中...",
+    statusRaceReady: "目标运动文件已读取，可继续补充 CP、坡段和天气参数。",
     statusRouteReady: "路线、海拔与补给点概况已生成，请确认。",
     raceCpDistanceInvalid: "官方补给点的“所在距离”必须大于 0，且列表从上到下需依次递增。",
     raceClimbRangeInvalid: "爬坡路段的“爬升起点”必须小于“爬升终点”。",
     raceClimbOrderInvalid: "爬坡路段必须从上到下依次排列且不重叠（每段起点需 ≥ 上一段终点）。",
     statusReadyEngine: "可以开始运行 Trail Lab Rule Engine 与 AI Planner。",
-    statusNeedActivity: "请先完成活动 FIT 解析。",
+    statusNeedActivity: "请先上传历史运动文件，或选择手动填写用户信息。",
+    statusManualProfile: "未上传历史运动文件，已切换为手动填写用户能力画像。",
+    kvHistoricalFile: "历史运动文件",
+    manualSummaryNoFile: "未上传（手动填写）",
     statusEngineDone: "规则引擎完成，正在生成 AI 解释...",
     statusAllDone: "全部完成。",
     statusFailed: "失败",
@@ -102,7 +107,7 @@ const TEXT = {
     noExtraNumbers: "除非明确标注为假设，否则不得输出契约 JSON 之外的新数值。",
     plannerInstruction: "请输出可执行时间轴清单（跑前/跑中/跑后），并给出每个阶段简要解释。",
     mockResponse: "[Mock response] 请在实际环境中配置 AI API Key 并选择模型。",
-    activitySummaryReadonlyHint: "活动概括直接来自当前活动 FIT，仅展示，不参与勾选或编辑。",
+    activitySummaryReadonlyHint: "历史运动概括直接来自当前历史运动文件，仅展示，不参与勾选或编辑。",
     providerNeedsApiKey: "当前 provider 需要 API Key。请填写后重试，或切回 mock。",
     aiApiFailed: "AI API 调用失败：{status} {statusText}",
     aiApiEmpty: "AI API 返回为空。可能受 CORS 或模型策略限制。",
@@ -123,7 +128,7 @@ const TEXT = {
     pageTitle: "Trail Lab · AI Fuel Planner",
     languageSwitcherLabel: "Language / 语言",
     heroTitle: "Smart Nutrition Planning for Trail Running",
-    heroTagline: "Upload a .FIT activity file and automatically get fueling rhythm plus segment suggestions.",
+    heroTagline: "Upload your historical activity file, set your target route, and automatically get fueling rhythm plus segment suggestions.",
     heroSubtitle: "Finish fueling planning in five steps: parse activity history, calibrate your ability profile, set route info, confirm route info, then generate rules and an AI explanation.",
     labIntro: "Trail Lab · 山野实验室 — Explore the wilderness with technology—making the outdoors more fun, efficient, and safe.",
     stepBadge1: "Step 1",
@@ -131,32 +136,33 @@ const TEXT = {
     stepBadge3: "Step 3",
     stepBadge4: "Step 4",
     stepBadge5: "Step 5",
-    step1Title: "Upload Your Activity FIT File",
-    stepHint1: "This step generates: parsed activity baseline and readiness for profile extraction.",
-    step1Callout: "Reminder: upload your own FIT file",
-    activityFitLabel: "Choose activity FIT file",
+    step1Title: "Upload Your Historical Activity File",
+    stepHint1: "This step generates: raw historical-activity data and readiness for profile extraction.",
+    step1Callout: "Reminder: upload your own historical activity file",
+    activityFitLabel: "Choose historical activity file",
     chooseFile: "Choose file",
     noFileChosen: "No file chosen",
     confirmStep1: "Confirm and parse",
-    step2Title: "Review Activity Summary and User Profile",
+    manualProfileBtn: "Fill in profile manually",
+    step2Title: "Review Historical Activity Summary and User Profile",
     stepHint2: "This step generates: editable user profile for rule-engine ability and risk scoring.",
     step2Note: "Reminder: the following values come from device data. If any item does not apply, remove it or edit it manually.",
-    activitySummaryTitle: "Activity Summary",
+    activitySummaryTitle: "Historical Activity Summary",
     userProfileTitle: "User Profile",
     backStep: "Back",
     confirmStep2: "Confirm activity info",
     step3Title: "Target Route Parameters (Trail Only)",
     stepHint3: "This step generates: route profile (distance, ascent, CP and trigger parameters).",
     raceModeManual: "Manual input",
-    raceModeFit: "Read route FIT",
-    raceFitBlockTitle: "Read target route FIT",
-    raceFitLabel: "Choose target route FIT file",
-    parseRaceFit: "Read target route FIT",
+    raceModeFit: "Read target activity file",
+    raceFitBlockTitle: "Read target activity file",
+    raceFitLabel: "Choose target activity file",
+    parseRaceFit: "Read target activity file",
     raceParamsTitle: "Route parameters",
     confirmStep3: "Confirm route parameters",
     step4Title: "Route, Elevation, and Fuel Point Overview",
     stepHint4: "This step generates: route elevation profile and fuel-point layout for visual confirmation.",
-    step4NoteFit: "Drawn from the real elevation track of the target route FIT; aid stations come from the official CPs confirmed in step 3.",
+    step4NoteFit: "Drawn from the real elevation track of the target activity file; aid stations come from the official CPs confirmed in step 3.",
     step4NoteSim: "Simulated from the route parameters confirmed in step 3 (climb starts default to 0 m); aid stations come from the official CPs confirmed in step 3.",
     legendLine: "Route elevation profile",
     legendCp: "CP / aid station",
@@ -179,26 +185,29 @@ const TEXT = {
     routeAscent: "Ascent",
     routeCp: "CP",
     routeSource: "Route source",
-    routeSourceFit: "Route FIT",
+    routeSourceFit: "Target activity file",
     routeSourceSimulated: "Simulated",
     axisElevation: "Elevation (m)",
     axisDistance: "Distance (km)",
     kvTotalDistance: "Total distance",
     kvTotalAscent: "Total ascent",
     kvSportType: "Sport type",
-    statusUploadOwnFit: "Please upload your own FIT file first.",
-    statusParsingActivity: "Parsing activity FIT...",
-    statusActivityReady: "Activity FIT parsed. Review the activity summary and user profile.",
-    statusConfirmRace: "Review route parameters. You can fill them manually or read a target route FIT.",
-    statusSelectRaceFit: "Please choose a target route FIT file first.",
-    statusParsingRace: "Reading target route FIT...",
-    statusRaceReady: "Target route FIT loaded. You can continue editing CP, segments, and weather.",
+    statusUploadOwnFit: "Please upload your historical activity file, or choose manual entry.",
+    statusParsingActivity: "Parsing historical activity file...",
+    statusActivityReady: "Historical activity file parsed. Review the historical activity summary and user profile.",
+    statusConfirmRace: "Review route parameters. You can fill them manually or read a target activity file.",
+    statusSelectRaceFit: "Please choose a target activity file first.",
+    statusParsingRace: "Reading target activity file...",
+    statusRaceReady: "Target activity file loaded. You can continue editing CP, segments, and weather.",
     statusRouteReady: "Route, elevation, and fuel point overview generated. Please review it.",
     raceCpDistanceInvalid: "Aid-station distances must be greater than 0 and increase from top to bottom.",
     raceClimbRangeInvalid: "Climb segment start must be less than its end.",
     raceClimbOrderInvalid: "Climb segments must be ordered top-to-bottom and not overlap (each start ≥ previous end).",
     statusReadyEngine: "You can now run the Trail Lab Rule Engine and AI Planner.",
-    statusNeedActivity: "Please finish parsing the activity FIT first.",
+    statusNeedActivity: "Please upload a historical activity file, or choose to fill in your profile manually.",
+    statusManualProfile: "No historical activity file uploaded. Switched to manual profile entry.",
+    kvHistoricalFile: "Historical activity file",
+    manualSummaryNoFile: "Not uploaded (manual entry)",
     statusEngineDone: "Rule engine done. Generating AI explanation...",
     statusAllDone: "All done.",
     statusFailed: "Failed",
@@ -209,7 +218,7 @@ const TEXT = {
     noExtraNumbers: "Do not output any number outside the contract JSON unless clearly marked as an assumption.",
     plannerInstruction: "Output an actionable timeline checklist (pre-run / during-run / post-run) with brief explanations.",
     mockResponse: "[Mock response] Please configure an AI API key and choose a real model in production.",
-    activitySummaryReadonlyHint: "Activity summary comes directly from the current FIT file. It is display-only and not editable.",
+    activitySummaryReadonlyHint: "Historical activity summary comes directly from the current historical activity file. It is display-only and not editable.",
     providerNeedsApiKey: "This provider requires an API key. Fill it in, or switch back to mock.",
     aiApiFailed: "AI API call failed: {status} {statusText}",
     aiApiEmpty: "AI API returned empty content. This may be caused by CORS or model policy limits.",
@@ -440,9 +449,9 @@ async function decodeFitMessages(arrayBuffer) {
 }
 
 function extractFitMetrics(decoded) {
-  const session = decoded.session_mesgs[0] || {};
-  const lap = decoded.lap_mesgs[0] || {};
-  const records = sortedRecords(decoded.record_mesgs.filter((record) => record && record.timestamp));
+  const session = decoded?.session_mesgs?.[0] || {};
+  const lap = decoded?.lap_mesgs?.[0] || {};
+  const records = sortedRecords((decoded?.record_mesgs || []).filter((record) => record && record.timestamp));
   const metrics = {
     基础数据: {},
     耐力数据: {},
@@ -1153,7 +1162,7 @@ const raceProfileFields = [
   { key: "locationNotes", label: { zh: "线路备注", en: "Route notes" }, type: "textarea", placeholder: "raceNotesPlaceholder" },
   // 右列：官方补给点 + 爬坡路段（位置均为距起点相对距离，提示统一在“!”悬浮中）
   { key: "officialCp", label: { zh: "官方补给点", en: "Official aid stations" }, type: "cplist", columns: CP_OFFICIAL_COLUMNS, addLabel: { zh: "新增补给点", en: "Add aid station" }, help: { zh: "FIT 有 CP 点会自动导入；也可手动新增。位置为距起点相对距离 (km)，每站可填名称、所在距离、关门时间、区间爬升与下降。列表从上到下需按距离递增排列。", en: "CP points are auto-imported from FIT; add more manually. Position = relative distance (km) from the start. Each station: name, distance, cutoff, segment climb and descent. Rows must be ordered by increasing distance from top to bottom." } },
-  { key: "climbSegments", label: { zh: "爬坡路段", en: "Climb segments" }, type: "cplist", columns: CP_CLIMB_COLUMNS, addLabel: { zh: "新增爬坡路段", en: "Add climb segment" }, help: { zh: "读取目标路线 FIT 后会自动生成爬坡路段，可手动修改。记录每个爬坡路段的爬升起点、爬升终点（距起点相对距离，km）与爬升高度 (m)。列表从上到下需依次排列且不重叠。", en: "Climb segments are auto-generated after reading a target route FIT; you can edit them manually. Record each climb segment's start, end (relative distance in km from the start) and climb height (m). Rows must be ordered top-to-bottom and must not overlap." } },
+  { key: "climbSegments", label: { zh: "爬坡路段", en: "Climb segments" }, type: "cplist", columns: CP_CLIMB_COLUMNS, addLabel: { zh: "新增爬坡路段", en: "Add climb segment" }, help: { zh: "读取目标运动文件后会自动生成爬坡路段，可手动修改。记录每个爬坡路段的爬升起点、爬升终点（距起点相对距离，km）与爬升高度 (m)。列表从上到下需依次排列且不重叠。", en: "Climb segments are auto-generated after reading a target activity file; you can edit them manually. Record each climb segment's start, end (relative distance in km from the start) and climb height (m). Rows must be ordered top-to-bottom and must not overlap." } },
 ];
 
 function renderEditor(container, fields, values) {
@@ -1717,6 +1726,7 @@ const ui = {
   fitFileTrigger: document.getElementById("fitFileTrigger"),
   fitFileName: document.getElementById("fitFileName"),
   confirmStep1Btn: document.getElementById("confirmStep1Btn"),
+  manualProfileBtn: document.getElementById("manualProfileBtn"),
   confirmStep2Btn: document.getElementById("confirmStep2Btn"),
   confirmStep3Btn: document.getElementById("confirmStep3Btn"),
   confirmStep4Btn: document.getElementById("confirmStep4Btn"),
@@ -1804,6 +1814,7 @@ function applyLanguage() {
   document.getElementById("step1Callout").textContent = t("step1Callout");
   document.getElementById("activityFitLabel").textContent = t("activityFitLabel");
   document.getElementById("confirmStep1Btn").textContent = t("confirmStep1");
+  document.getElementById("manualProfileBtn").textContent = t("manualProfileBtn");
   document.getElementById("step2Title").textContent = t("step2Title");
   document.getElementById("stepHint2").textContent = t("stepHint2");
   document.getElementById("step2Note").textContent = t("step2Note");
@@ -1871,6 +1882,7 @@ ui.confirmStep1Btn.addEventListener("click", async () => {
     ui.confirmStep1Btn.disabled = true;
     setStatus(t("statusParsingActivity"));
     state.decodedActivity = await decodeFitMessages(await file.arrayBuffer());
+    state.manualUserProfile = false;
     const overview = buildActivityOverview(state.decodedActivity);
     if (!overview.userProfile.hrvStatus && overview.userProfile.hrv) {
       overview.userProfile.hrvStatus = getHrvStatus(overview.userProfile.hrv);
@@ -1892,6 +1904,20 @@ ui.confirmStep1Btn.addEventListener("click", async () => {
 
 ui.fitFileTrigger.addEventListener("click", () => {
   ui.fitFile.click();
+});
+
+// 手动填写用户信息：跳过历史运动文件解析，直接进入步骤 2 手动填写用户能力画像
+ui.manualProfileBtn.addEventListener("click", () => {
+  state.manualUserProfile = true;
+  state.decodedActivity = null;
+  state.activitySummaryForm = null;
+  state.userProfileForm = {};
+  renderKvPreview(ui.activitySummaryEditor, [[t("kvHistoricalFile"), t("manualSummaryNoFile")]]);
+  renderEditor(ui.userProfileEditor, userProfileFields, {});
+  refreshProfileStage({});
+  showOnlyStep(ui.step2Panel);
+  seedRaceEditor();
+  setStatus(t("statusManualProfile"));
 });
 
 ui.fitFile.addEventListener("change", () => {
@@ -2082,7 +2108,7 @@ ui.backStep5Btn.addEventListener("click", () => {
 
 ui.runBtn.addEventListener("click", async () => {
   try {
-    if (!state.decodedActivity) {
+    if (!state.decodedActivity && !state.manualUserProfile) {
       throw new Error(t("statusNeedActivity"));
     }
     ui.runBtn.disabled = true;
