@@ -52,8 +52,6 @@ const TEXT = {
     step4Note: "基于当前目标赛事参数模拟生成，用于确认补给点分布与坡段结构。",
     legendLine: "路线海拔轮廓",
     legendCp: "CP / 补给站",
-    legendSupplemental: "补充补给点",
-    legendClimb: "爬升触发点",
     confirmStep4: "确认路线概况",
     step5Title: "规则引擎与 AI 解释",
     stepHint5: "本步将生成：规则契约 JSON、补给定量输出与 AI 可执行解释。",
@@ -71,7 +69,6 @@ const TEXT = {
     routeDistance: "距离",
     routeAscent: "爬升",
     routeCp: "CP",
-    routeSupplemental: "补充点",
     routeSource: "路线来源",
     routeSourceFit: "目标赛事 FIT",
     routeSourceSimulated: "模拟",
@@ -160,8 +157,6 @@ const TEXT = {
     step4Note: "Generated from current race parameters to confirm fuel point distribution and climb structure.",
     legendLine: "Route elevation profile",
     legendCp: "CP / aid station",
-    legendSupplemental: "Supplemental fuel point",
-    legendClimb: "Climb trigger point",
     confirmStep4: "Confirm route overview",
     step5Title: "Rule Engine and AI Explanation",
     stepHint5: "This step generates: rule-contract JSON, quantified fueling output, and AI execution guidance.",
@@ -179,7 +174,6 @@ const TEXT = {
     routeDistance: "Distance",
     routeAscent: "Ascent",
     routeCp: "CP",
-    routeSupplemental: "Supplemental",
     routeSource: "Route source",
     routeSourceFit: "Race FIT",
     routeSourceSimulated: "Simulated",
@@ -1482,14 +1476,15 @@ function validateRaceProfile(form) {
 }
 
 function buildSimulatedElevation(raceProfile) {
-  const points = [{ km: 0, altitude: 1200 }];
+  // 不读取 FIT 线路信息时，爬升点起点默认海拔为 0
+  const points = [{ km: 0, altitude: 0 }];
   let currentKm = 0;
-  let currentAltitude = 1200;
+  let currentAltitude = 0;
   for (const [segmentDistance, segmentAscent] of raceProfile.climb_segments) {
     const climbEndKm = currentKm + segmentDistance * 0.62;
     const peakAltitude = currentAltitude + segmentAscent;
     const endKm = currentKm + segmentDistance;
-    const endAltitude = Math.max(peakAltitude - segmentAscent * 0.78, 880);
+    const endAltitude = Math.max(peakAltitude - segmentAscent * 0.78, 0);
     points.push({ km: Number(climbEndKm.toFixed(2)), altitude: Number(peakAltitude.toFixed(1)) });
     points.push({ km: Number(endKm.toFixed(2)), altitude: Number(endAltitude.toFixed(1)) });
     currentKm = endKm;
@@ -1499,6 +1494,43 @@ function buildSimulatedElevation(raceProfile) {
     points.push({ km: raceProfile.distance_km, altitude: currentAltitude });
   }
   return points;
+}
+
+function buildRoutePointsFromDecoded(decoded, fallbackDistanceKm) {
+  if (!decoded?.record_mesgs?.length) {
+    return null;
+  }
+
+  const rawPoints = decoded.record_mesgs
+    .map((record) => ({
+      km: safeFloat(record.distance) !== null ? safeFloat(record.distance) / 1000 : null,
+      altitude: firstField(record, "enhanced_altitude", "altitude"),
+    }))
+    .filter((point) => point.km !== null && point.altitude !== null);
+
+  if (rawPoints.length < 2) {
+    return null;
+  }
+
+  const maxKm = rawPoints[rawPoints.length - 1].km || fallbackDistanceKm || 1;
+  const targetDistance = fallbackDistanceKm || maxKm;
+  const scale = maxKm > 0 ? targetDistance / maxKm : 1;
+
+  const sampled = [];
+  const step = Math.max(Math.floor(rawPoints.length / 160), 1);
+  for (let i = 0; i < rawPoints.length; i += step) {
+    const point = rawPoints[i];
+    sampled.push({
+      km: Number((point.km * scale).toFixed(2)),
+      altitude: Number(point.altitude.toFixed(1)),
+    });
+  }
+  const last = rawPoints[rawPoints.length - 1];
+  const lastKm = Number((last.km * scale).toFixed(2));
+  if (!sampled.length || sampled[sampled.length - 1].km !== lastKm) {
+    sampled.push({ km: lastKm, altitude: Number(last.altitude.toFixed(1)) });
+  }
+  return sampled;
 }
 
 function interpolateAltitude(points, km) {
@@ -1515,11 +1547,9 @@ function interpolateAltitude(points, km) {
 }
 
 function renderRouteOverview(raceProfile) {
-  const engine = new TrailLabRuleEngine();
-  const climbPoints = engine.buildClimbTriggerPoints(raceProfile, raceProfile.climb_trigger_m);
-  // 第四步图表以步骤三确认的赛事参数绘制：海拔轮廓由步骤三的爬坡路段（分段位置+爬升高度）生成
-  const pathPoints = buildSimulatedElevation(raceProfile);
-  const raceFromFit = Boolean(state.decodedRace);
+  // 图表只用步骤三确认的信息绘制：读取了目标赛事 FIT 时用其真实海拔轨迹，否则按步骤三爬坡路段模拟（起点默认海拔 0）
+  const fitRoutePoints = buildRoutePointsFromDecoded(state.decodedRace, raceProfile.distance_km);
+  const pathPoints = fitRoutePoints || buildSimulatedElevation(raceProfile);
   const width = 920;
   const height = 280;
   const padding = 32;
@@ -1559,8 +1589,7 @@ function renderRouteOverview(raceProfile) {
         <span class="pill">${t("routeDistance")} ${raceProfile.distance_km.toFixed(1)} km</span>
         <span class="pill">${t("routeAscent")} ${raceProfile.ascent_m.toFixed(0)} m</span>
         <span class="pill">${t("routeCp")} ${raceProfile.aid_stations_km.length}</span>
-        <span class="pill">${t("routeSupplemental")} ${raceProfile.supplemental_points_km.length}</span>
-        <span class="pill">${t("routeSource")} ${raceFromFit ? t("routeSourceFit") : t("routeSourceSimulated")}</span>
+        <span class="pill">${t("routeSource")} ${fitRoutePoints ? t("routeSourceFit") : t("routeSourceSimulated")}</span>
       </div>
       <svg viewBox="0 0 ${width} ${height}" width="100%" height="320" role="img" aria-label="${t("chartAriaLabel")}">
         <rect x="0" y="0" width="${width}" height="${height}" fill="transparent"></rect>
@@ -1570,8 +1599,6 @@ function renderRouteOverview(raceProfile) {
         ${renderYTicks}
         <polyline fill="none" stroke="#8c2f12" stroke-width="3" points="${polyline}" />
         ${renderMarkers(raceProfile.aid_stations_km, "#225ea8")}
-        ${renderMarkers(raceProfile.supplemental_points_km, "#c06014")}
-        ${renderMarkers(climbPoints, "#a01f44")}
         <text x="${padding}" y="${padding - 8}" font-size="12">${t("axisElevation")}</text>
         <text x="${width - padding - 36}" y="${height - 8}" font-size="12">${t("axisDistance")}</text>
       </svg>
@@ -1692,8 +1719,6 @@ function applyLanguage() {
   document.getElementById("step4Note").textContent = t("step4Note");
   setLegendItem("legendLine", "line", t("legendLine"));
   setLegendItem("legendCp", "cp", t("legendCp"));
-  setLegendItem("legendSupplemental", "supplemental", t("legendSupplemental"));
-  setLegendItem("legendClimb", "climb", t("legendClimb"));
   document.getElementById("confirmStep4Btn").textContent = t("confirmStep4");
   document.getElementById("backStep4Btn").textContent = t("backStep");
   document.getElementById("step5Title").textContent = t("step5Title");
