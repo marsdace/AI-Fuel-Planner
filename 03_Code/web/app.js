@@ -38,19 +38,19 @@ const TEXT = {
     userProfileTitle: "用户能力画像",
     backStep: "返回上一步",
     confirmStep2: "确认活动信息",
-    step3Title: "目标赛事参数 (Trail Only)",
-    stepHint3: "本步将生成：目标赛事画像（距离、爬升、CP 与触发参数）。",
+    step3Title: "目标路线参数 (Trail Only)",
+    stepHint3: "本步将生成：目标路线画像（距离、爬升、CP 与触发参数）。",
     raceModeManual: "手动填写",
-    raceModeFit: "读取目标赛事 FIT",
-    raceFitBlockTitle: "读取目标赛事 FIT",
-    raceFitLabel: "选择目标赛事 FIT 文件",
-    parseRaceFit: "读取目标赛事 FIT",
-    raceParamsTitle: "赛事参数",
-    confirmStep3: "确认赛事参数",
+    raceModeFit: "读取目标路线 FIT",
+    raceFitBlockTitle: "读取目标路线 FIT",
+    raceFitLabel: "选择目标路线 FIT 文件",
+    parseRaceFit: "读取目标路线 FIT",
+    raceParamsTitle: "路线参数",
+    confirmStep3: "确认路线参数",
     step4Title: "路线、海拔、补给点概况图",
     stepHint4: "本步将生成：路线海拔轮廓与补给点分布，帮助你直观确认线路结构。",
-    step4NoteFit: "基于目标赛事 FIT 的真实海拔轨迹绘制；补给点来自步骤 3 确认的官方补给点。",
-    step4NoteSim: "基于步骤 3 确认的赛事参数模拟生成（爬坡起点默认海拔 0）；补给点来自步骤 3 确认的官方补给点。",
+    step4NoteFit: "基于目标路线 FIT 的真实海拔轨迹绘制；补给点来自步骤 3 确认的官方补给点。",
+    step4NoteSim: "基于步骤 3 确认的路线参数模拟生成（爬坡起点默认海拔 0）；补给点来自步骤 3 确认的官方补给点。",
     legendLine: "路线海拔轮廓",
     legendCp: "CP / 补给站",
     legendClimbSeg: "爬坡路段",
@@ -72,7 +72,7 @@ const TEXT = {
     routeAscent: "爬升",
     routeCp: "CP",
     routeSource: "路线来源",
-    routeSourceFit: "目标赛事 FIT",
+    routeSourceFit: "目标路线 FIT",
     routeSourceSimulated: "模拟",
     axisElevation: "海拔 (m)",
     axisDistance: "距离 (km)",
@@ -82,10 +82,10 @@ const TEXT = {
     statusUploadOwnFit: "请先上传自己的 FIT 文件。",
     statusParsingActivity: "解析活动 FIT 中...",
     statusActivityReady: "活动 FIT 已解析，请确认活动概括和用户能力画像。",
-    statusConfirmRace: "请确认目标赛事参数，可手动填写或读取目标赛事 FIT。",
-    statusSelectRaceFit: "请先选择目标赛事 FIT 文件。",
-    statusParsingRace: "读取目标赛事 FIT 中...",
-    statusRaceReady: "目标赛事 FIT 已读取，可继续补充 CP、坡段和天气参数。",
+    statusConfirmRace: "请确认目标路线参数，可手动填写或读取目标路线 FIT。",
+    statusSelectRaceFit: "请先选择目标路线 FIT 文件。",
+    statusParsingRace: "读取目标路线 FIT 中...",
+    statusRaceReady: "目标路线 FIT 已读取，可继续补充 CP、坡段和天气参数。",
     statusRouteReady: "路线、海拔与补给点概况已生成，请确认。",
     raceCpDistanceInvalid: "官方补给点的“所在距离”必须大于 0，且列表从上到下需依次递增。",
     raceClimbRangeInvalid: "爬坡路段的“爬升起点”必须小于“爬升终点”。",
@@ -100,7 +100,7 @@ const TEXT = {
     decodeInvalidMessages: "Garmin FIT SDK 解码失败：未返回有效消息字典。",
     decodeFatal: "Garmin FIT SDK 解码异常：{error}",
     noExtraNumbers: "除非明确标注为假设，否则不得输出契约 JSON 之外的新数值。",
-    plannerInstruction: "请输出可执行时间轴清单（赛前/赛中/赛后），并给出每个阶段简要解释。",
+    plannerInstruction: "请输出可执行时间轴清单（跑前/跑中/跑后），并给出每个阶段简要解释。",
     mockResponse: "[Mock response] 请在实际环境中配置 AI API Key 并选择模型。",
     activitySummaryReadonlyHint: "活动概括直接来自当前活动 FIT，仅展示，不参与勾选或编辑。",
     providerNeedsApiKey: "当前 provider 需要 API Key。请填写后重试，或切回 mock。",
@@ -145,19 +145,19 @@ const TEXT = {
     userProfileTitle: "User Profile",
     backStep: "Back",
     confirmStep2: "Confirm activity info",
-    step3Title: "Target Race Parameters (Trail Only)",
-    stepHint3: "This step generates: race profile (distance, ascent, CP and trigger parameters).",
+    step3Title: "Target Route Parameters (Trail Only)",
+    stepHint3: "This step generates: route profile (distance, ascent, CP and trigger parameters).",
     raceModeManual: "Manual input",
-    raceModeFit: "Read race FIT",
-    raceFitBlockTitle: "Read target race FIT",
-    raceFitLabel: "Choose target race FIT file",
-    parseRaceFit: "Read target race FIT",
-    raceParamsTitle: "Race parameters",
-    confirmStep3: "Confirm race parameters",
+    raceModeFit: "Read route FIT",
+    raceFitBlockTitle: "Read target route FIT",
+    raceFitLabel: "Choose target route FIT file",
+    parseRaceFit: "Read target route FIT",
+    raceParamsTitle: "Route parameters",
+    confirmStep3: "Confirm route parameters",
     step4Title: "Route, Elevation, and Fuel Point Overview",
     stepHint4: "This step generates: route elevation profile and fuel-point layout for visual confirmation.",
-    step4NoteFit: "Drawn from the real elevation track of the target race FIT; aid stations come from the official CPs confirmed in step 3.",
-    step4NoteSim: "Simulated from the race parameters confirmed in step 3 (climb starts default to 0 m); aid stations come from the official CPs confirmed in step 3.",
+    step4NoteFit: "Drawn from the real elevation track of the target route FIT; aid stations come from the official CPs confirmed in step 3.",
+    step4NoteSim: "Simulated from the route parameters confirmed in step 3 (climb starts default to 0 m); aid stations come from the official CPs confirmed in step 3.",
     legendLine: "Route elevation profile",
     legendCp: "CP / aid station",
     legendClimbSeg: "Climb segments",
@@ -179,7 +179,7 @@ const TEXT = {
     routeAscent: "Ascent",
     routeCp: "CP",
     routeSource: "Route source",
-    routeSourceFit: "Race FIT",
+    routeSourceFit: "Route FIT",
     routeSourceSimulated: "Simulated",
     axisElevation: "Elevation (m)",
     axisDistance: "Distance (km)",
@@ -189,10 +189,10 @@ const TEXT = {
     statusUploadOwnFit: "Please upload your own FIT file first.",
     statusParsingActivity: "Parsing activity FIT...",
     statusActivityReady: "Activity FIT parsed. Review the activity summary and user profile.",
-    statusConfirmRace: "Review race parameters. You can fill them manually or read a target race FIT.",
-    statusSelectRaceFit: "Please choose a target race FIT file first.",
-    statusParsingRace: "Reading target race FIT...",
-    statusRaceReady: "Target race FIT loaded. You can continue editing CP, segments, and weather.",
+    statusConfirmRace: "Review route parameters. You can fill them manually or read a target route FIT.",
+    statusSelectRaceFit: "Please choose a target route FIT file first.",
+    statusParsingRace: "Reading target route FIT...",
+    statusRaceReady: "Target route FIT loaded. You can continue editing CP, segments, and weather.",
     statusRouteReady: "Route, elevation, and fuel point overview generated. Please review it.",
     raceCpDistanceInvalid: "Aid-station distances must be greater than 0 and increase from top to bottom.",
     raceClimbRangeInvalid: "Climb segment start must be less than its end.",
@@ -207,7 +207,7 @@ const TEXT = {
     decodeInvalidMessages: "Garmin FIT SDK decode failed: no valid message map returned.",
     decodeFatal: "Garmin FIT SDK decode exception: {error}",
     noExtraNumbers: "Do not output any number outside the contract JSON unless clearly marked as an assumption.",
-    plannerInstruction: "Output an actionable timeline checklist (pre-race / during / post-race) with brief explanations.",
+    plannerInstruction: "Output an actionable timeline checklist (pre-run / during-run / post-run) with brief explanations.",
     mockResponse: "[Mock response] Please configure an AI API key and choose a real model in production.",
     activitySummaryReadonlyHint: "Activity summary comes directly from the current FIT file. It is display-only and not editable.",
     providerNeedsApiKey: "This provider requires an API key. Fill it in, or switch back to mock.",
@@ -1144,7 +1144,7 @@ const CP_CLIMB_COLUMNS = [
 ];
 
 const raceProfileFields = [
-  // 左列：基础赛事参数
+  // 左列：基础路线参数
   { key: "distanceKm", label: { zh: "距离 (km)", en: "Distance (km)" }, type: "number", step: "0.1", placeholder: "optionalPlaceholder" },
   { key: "ascentM", label: { zh: "总爬升 (m)", en: "Total ascent (m)" }, type: "number", step: "1", placeholder: "optionalPlaceholder" },
   { key: "expectedFinishH", label: { zh: "期望完赛时间 (h)", en: "Expected finish time (h)" }, type: "number", step: "0.1", placeholder: "optionalPlaceholder" },
@@ -1153,7 +1153,7 @@ const raceProfileFields = [
   { key: "locationNotes", label: { zh: "线路备注", en: "Route notes" }, type: "textarea", placeholder: "raceNotesPlaceholder" },
   // 右列：官方补给点 + 爬坡路段（位置均为距起点相对距离，提示统一在“!”悬浮中）
   { key: "officialCp", label: { zh: "官方补给点", en: "Official aid stations" }, type: "cplist", columns: CP_OFFICIAL_COLUMNS, addLabel: { zh: "新增补给点", en: "Add aid station" }, help: { zh: "FIT 有 CP 点会自动导入；也可手动新增。位置为距起点相对距离 (km)，每站可填名称、所在距离、关门时间、区间爬升与下降。列表从上到下需按距离递增排列。", en: "CP points are auto-imported from FIT; add more manually. Position = relative distance (km) from the start. Each station: name, distance, cutoff, segment climb and descent. Rows must be ordered by increasing distance from top to bottom." } },
-  { key: "climbSegments", label: { zh: "爬坡路段", en: "Climb segments" }, type: "cplist", columns: CP_CLIMB_COLUMNS, addLabel: { zh: "新增爬坡路段", en: "Add climb segment" }, help: { zh: "读取目标赛事 FIT 后会自动生成爬坡路段，可手动修改。记录每个爬坡路段的爬升起点、爬升终点（距起点相对距离，km）与爬升高度 (m)。列表从上到下需依次排列且不重叠。", en: "Climb segments are auto-generated after reading a target race FIT; you can edit them manually. Record each climb segment's start, end (relative distance in km from the start) and climb height (m). Rows must be ordered top-to-bottom and must not overlap." } },
+  { key: "climbSegments", label: { zh: "爬坡路段", en: "Climb segments" }, type: "cplist", columns: CP_CLIMB_COLUMNS, addLabel: { zh: "新增爬坡路段", en: "Add climb segment" }, help: { zh: "读取目标路线 FIT 后会自动生成爬坡路段，可手动修改。记录每个爬坡路段的爬升起点、爬升终点（距起点相对距离，km）与爬升高度 (m)。列表从上到下需依次排列且不重叠。", en: "Climb segments are auto-generated after reading a target route FIT; you can edit them manually. Record each climb segment's start, end (relative distance in km from the start) and climb height (m). Rows must be ordered top-to-bottom and must not overlap." } },
 ];
 
 function renderEditor(container, fields, values) {
@@ -1500,7 +1500,7 @@ function buildSimulatedElevation(raceProfile) {
   return points;
 }
 
-// 从目标赛事 FIT 的海拔记录自动提取爬坡路段（起点/终点/爬升高度），可再手动修改
+// 从目标路线 FIT 的海拔记录自动提取爬坡路段（起点/终点/爬升高度），可再手动修改
 function extractClimbSegmentsFromFit(decoded) {
   const records = decoded?.record_mesgs || [];
   const raw = [];
@@ -1641,7 +1641,7 @@ function getClimbSegmentsToDraw(raceProfile) {
 }
 
 function renderRouteOverview(raceProfile) {
-  // 图表只用步骤三确认的信息绘制：读取了目标赛事 FIT 时用其真实海拔轨迹，否则按步骤三爬坡路段模拟（起点默认海拔 0）
+  // 图表只用步骤三确认的信息绘制：读取了目标路线 FIT 时用其真实海拔轨迹，否则按步骤三爬坡路段模拟（起点默认海拔 0）
   const fitRoutePoints = buildRoutePointsFromDecoded(state.decodedRace, raceProfile.distance_km);
   const pathPoints = fitRoutePoints || buildSimulatedElevation(raceProfile);
   document.getElementById("step4Note").textContent = fitRoutePoints ? t("step4NoteFit") : t("step4NoteSim");

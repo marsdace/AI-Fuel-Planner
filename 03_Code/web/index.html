@@ -106,18 +106,18 @@
       <section class="panel step-panel is-hidden" id="step3Panel">
         <div class="step-heading">
           <span class="step-badge" id="stepBadge3">Step 3</span>
-          <h2 id="step3Title">目标赛事参数 (Trail Only)</h2>
+          <h2 id="step3Title">目标路线参数 (Trail Only)</h2>
         </div>
-        <p class="step-purpose" id="stepHint3">本步将生成：目标赛事画像（距离、爬升、CP 与触发参数）。</p>
+        <p class="step-purpose" id="stepHint3">本步将生成：目标路线画像（距离、爬升、CP 与触发参数）。</p>
         <div class="mode-toggle" id="raceModeToggle">
           <button class="chip is-active" data-mode="manual" type="button" id="raceModeManualBtn">手动填写</button>
-          <button class="chip" data-mode="fit" type="button" id="raceModeFitBtn">读取目标赛事 FIT</button>
+          <button class="chip" data-mode="fit" type="button" id="raceModeFitBtn">读取目标路线 FIT</button>
         </div>
         <div id="raceFitBlock" class="subpanel is-hidden">
-          <h3 id="raceFitBlockTitle">读取目标赛事 FIT</h3>
+          <h3 id="raceFitBlockTitle">读取目标路线 FIT</h3>
           <div class="grid single">
             <label>
-              <span id="raceFitLabel">选择目标赛事 FIT 文件</span>
+              <span id="raceFitLabel">选择目标路线 FIT 文件</span>
               <div class="file-picker">
                 <input id="raceFitFile" class="sr-only-file" type="file" accept=".fit" />
                 <button id="raceFitFileTrigger" class="ghost-btn" type="button">选择文件</button>
@@ -126,17 +126,17 @@
             </label>
           </div>
           <div class="actions left">
-            <button id="parseRaceFitBtn" type="button">读取目标赛事 FIT</button>
+            <button id="parseRaceFitBtn" type="button">读取目标路线 FIT</button>
           </div>
           <div id="raceFitPreview" class="kv-list"></div>
         </div>
         <div class="subpanel">
-          <h3 id="raceParamsTitle">赛事参数</h3>
+          <h3 id="raceParamsTitle">路线参数</h3>
           <div id="raceProfileEditor" class="grid two"></div>
         </div>
         <div class="actions left">
           <button id="backStep3Btn" class="ghost-btn back-btn" type="button">返回上一步</button>
-          <button id="confirmStep3Btn" type="button">确认赛事参数</button>
+          <button id="confirmStep3Btn" type="button">确认路线参数</button>
         </div>
       </section>
 
@@ -146,7 +146,7 @@
           <h2 id="step4Title">路线、海拔、补给点概况图</h2>
         </div>
         <p class="step-purpose" id="stepHint4">本步将生成：路线轮廓图与补给触发点，帮助你直观看到补给节奏。</p>
-        <p class="note" id="step4Note">基于当前目标赛事参数模拟生成，用于确认补给点分布与坡段结构。</p>
+        <p class="note" id="step4Note">基于当前目标路线参数模拟生成，用于确认补给点分布与坡段结构。</p>
         <div id="routeOverview" class="chart-card"></div>
         <div class="legend" id="routeLegend">
           <span id="legendLine"><i class="dot line"></i>路线海拔轮廓</span>
@@ -216,6 +216,6 @@
     </main>
 
     <script src="./bg.js?v=20260806u"></script>
-    <script type="module" src="./app.js?v=20260807q"></script>
+    <script type="module" src="./app.js?v=20260807r"></script>
   </body>
 </html>

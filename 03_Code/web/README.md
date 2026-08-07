@@ -3,7 +3,7 @@
 This folder contains a browser-based JavaScript implementation of the existing fuel planner pipeline:
 
 - User Profile
-- Race Profile
+- Route Profile
 - Trail Lab Rule Engine
 - AI Planner (explanation only)
 
