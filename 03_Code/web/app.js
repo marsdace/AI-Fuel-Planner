@@ -53,6 +53,7 @@ const TEXT = {
     step4NoteSim: "基于步骤 3 确认的赛事参数模拟生成（爬坡起点默认海拔 0）；补给点来自步骤 3 确认的官方补给点。",
     legendLine: "路线海拔轮廓",
     legendCp: "CP / 补给站",
+    legendClimbSeg: "爬坡路段",
     confirmStep4: "确认路线概况",
     step5Title: "规则引擎与 AI 解释",
     stepHint5: "本步将生成：规则契约 JSON、补给定量输出与 AI 可执行解释。",
@@ -159,6 +160,7 @@ const TEXT = {
     step4NoteSim: "Simulated from the race parameters confirmed in step 3 (climb starts default to 0 m); aid stations come from the official CPs confirmed in step 3.",
     legendLine: "Route elevation profile",
     legendCp: "CP / aid station",
+    legendClimbSeg: "Climb segments",
     confirmStep4: "Confirm route overview",
     step5Title: "Rule Engine and AI Explanation",
     stepHint5: "This step generates: rule-contract JSON, quantified fueling output, and AI execution guidance.",
@@ -1617,11 +1619,33 @@ function interpolateAltitude(points, km) {
   return points[points.length - 1]?.altitude || 0;
 }
 
+// 提取需要在图中标注的爬坡路段：仅当步骤三填写了爬坡路段时才标注；位置与高度取自画像（与所绘海拔一致）
+function getClimbSegmentsToDraw(raceProfile) {
+  let hasFormClimbs = false;
+  try {
+    const parsed = JSON.parse(String(state.raceProfileForm?.climbSegments || "[]"));
+    hasFormClimbs = Array.isArray(parsed) && parsed.length > 0;
+  } catch (error) {
+    hasFormClimbs = false;
+  }
+  if (!hasFormClimbs) return [];
+  const segments = [];
+  let km = 0;
+  for (const [dist, ascent] of raceProfile.climb_segments) {
+    if (ascent > 0) {
+      segments.push({ start: Number(km.toFixed(2)), end: Number((km + dist).toFixed(2)), height: Math.round(ascent) });
+    }
+    km += dist;
+  }
+  return segments;
+}
+
 function renderRouteOverview(raceProfile) {
   // 图表只用步骤三确认的信息绘制：读取了目标赛事 FIT 时用其真实海拔轨迹，否则按步骤三爬坡路段模拟（起点默认海拔 0）
   const fitRoutePoints = buildRoutePointsFromDecoded(state.decodedRace, raceProfile.distance_km);
   const pathPoints = fitRoutePoints || buildSimulatedElevation(raceProfile);
   document.getElementById("step4Note").textContent = fitRoutePoints ? t("step4NoteFit") : t("step4NoteSim");
+  const climbSegs = getClimbSegmentsToDraw(raceProfile);
   const width = 920;
   const height = 280;
   const padding = 32;
@@ -1637,6 +1661,16 @@ function renderRouteOverview(raceProfile) {
   const renderMarkers = (points, color) => points.map((point) => {
     const y = interpolateAltitude(pathPoints, point);
     return `<circle cx="${xForKm(point).toFixed(1)}" cy="${yForAlt(y).toFixed(1)}" r="5" fill="${color}" />`;
+  }).join("");
+
+  // 爬坡路段：半透明色带标出范围，顶部标注爬升高度
+  const renderClimbBands = climbSegs.map((seg) => {
+    const x1 = xForKm(seg.start);
+    const x2 = xForKm(seg.end);
+    const midX = (x1 + x2) / 2;
+    return `
+      <rect x="${x1.toFixed(1)}" y="${padding}" width="${Math.max(x2 - x1, 2).toFixed(1)}" height="${(height - padding * 2).toFixed(1)}" fill="rgba(255,79,126,0.10)" />
+      <text x="${midX.toFixed(1)}" y="${padding + 14}" text-anchor="middle" font-size="11" fill="#ff6f95">↑${seg.height}m</text>`;
   }).join("");
 
   const renderXTicks = Array.from({ length: xTicks + 1 }, (_, index) => {
@@ -1669,6 +1703,7 @@ function renderRouteOverview(raceProfile) {
         <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="#d7c5b2" stroke-width="1" />
         ${renderXTicks}
         ${renderYTicks}
+        ${renderClimbBands}
         <polyline fill="none" stroke="#8c2f12" stroke-width="3" points="${polyline}" />
         ${renderMarkers(raceProfile.aid_stations_km, "#225ea8")}
         <text x="${padding}" y="${padding - 8}" font-size="12">${t("axisElevation")}</text>
@@ -1790,6 +1825,7 @@ function applyLanguage() {
   document.getElementById("stepHint4").textContent = t("stepHint4");
   setLegendItem("legendLine", "line", t("legendLine"));
   setLegendItem("legendCp", "cp", t("legendCp"));
+  setLegendItem("legendClimbSeg", "climb", t("legendClimbSeg"));
   document.getElementById("confirmStep4Btn").textContent = t("confirmStep4");
   document.getElementById("backStep4Btn").textContent = t("backStep");
   document.getElementById("step5Title").textContent = t("step5Title");
