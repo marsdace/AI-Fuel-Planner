@@ -1501,43 +1501,6 @@ function buildSimulatedElevation(raceProfile) {
   return points;
 }
 
-function buildRoutePointsFromDecoded(decoded, fallbackDistanceKm) {
-  if (!decoded?.record_mesgs?.length) {
-    return null;
-  }
-
-  const rawPoints = decoded.record_mesgs
-    .map((record) => ({
-      km: safeFloat(record.distance) !== null ? safeFloat(record.distance) / 1000 : null,
-      altitude: firstField(record, "enhanced_altitude", "altitude"),
-    }))
-    .filter((point) => point.km !== null && point.altitude !== null);
-
-  if (rawPoints.length < 2) {
-    return null;
-  }
-
-  const maxKm = rawPoints[rawPoints.length - 1].km || fallbackDistanceKm || 1;
-  const targetDistance = fallbackDistanceKm || maxKm;
-  const scale = maxKm > 0 ? targetDistance / maxKm : 1;
-
-  const sampled = [];
-  const step = Math.max(Math.floor(rawPoints.length / 160), 1);
-  for (let i = 0; i < rawPoints.length; i += step) {
-    const point = rawPoints[i];
-    sampled.push({
-      km: Number((point.km * scale).toFixed(2)),
-      altitude: Number(point.altitude.toFixed(1)),
-    });
-  }
-  const last = rawPoints[rawPoints.length - 1];
-  const lastKm = Number((last.km * scale).toFixed(2));
-  if (!sampled.length || sampled[sampled.length - 1].km !== lastKm) {
-    sampled.push({ km: lastKm, altitude: Number(last.altitude.toFixed(1)) });
-  }
-  return sampled;
-}
-
 function interpolateAltitude(points, km) {
   for (let i = 1; i < points.length; i += 1) {
     const prev = points[i - 1];
@@ -1554,8 +1517,9 @@ function interpolateAltitude(points, km) {
 function renderRouteOverview(raceProfile) {
   const engine = new TrailLabRuleEngine();
   const climbPoints = engine.buildClimbTriggerPoints(raceProfile, raceProfile.climb_trigger_m);
-  const fitRoutePoints = buildRoutePointsFromDecoded(state.decodedRace, raceProfile.distance_km);
-  const pathPoints = fitRoutePoints || buildSimulatedElevation(raceProfile);
+  // 第四步图表以步骤三确认的赛事参数绘制：海拔轮廓由步骤三的爬坡路段（分段位置+爬升高度）生成
+  const pathPoints = buildSimulatedElevation(raceProfile);
+  const raceFromFit = Boolean(state.decodedRace);
   const width = 920;
   const height = 280;
   const padding = 32;
@@ -1596,7 +1560,7 @@ function renderRouteOverview(raceProfile) {
         <span class="pill">${t("routeAscent")} ${raceProfile.ascent_m.toFixed(0)} m</span>
         <span class="pill">${t("routeCp")} ${raceProfile.aid_stations_km.length}</span>
         <span class="pill">${t("routeSupplemental")} ${raceProfile.supplemental_points_km.length}</span>
-        <span class="pill">${t("routeSource")} ${fitRoutePoints ? t("routeSourceFit") : t("routeSourceSimulated")}</span>
+        <span class="pill">${t("routeSource")} ${raceFromFit ? t("routeSourceFit") : t("routeSourceSimulated")}</span>
       </div>
       <svg viewBox="0 0 ${width} ${height}" width="100%" height="320" role="img" aria-label="${t("chartAriaLabel")}">
         <rect x="0" y="0" width="${width}" height="${height}" fill="transparent"></rect>
