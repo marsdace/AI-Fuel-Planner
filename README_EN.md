@@ -1,5 +1,9 @@
 # 🏔️ Trail Lab · AI Fuel Planner
 
+<p align="right">
+  <a href="README.md"><img src="https://img.shields.io/badge/%E4%B8%AD%E6%96%87-%E7%89%88%E6%9C%AC-2f6b49?style=for-the-badge" alt="Switch to 中文" /></a>
+</p>
+
 > Experiment #001 — Trail-running AI fuel planner.
 > Upload Garmin activity data, set a target route, get a quantified fueling plan and an AI-generated, actionable explanation.
 
@@ -85,9 +89,9 @@ AI-Fuel-Planner/
 
 ---
 
-## 📦 All changes since the last release
+## 📦 All changes since Commit `7c4403b`
 
-> Last published commit: `4e1d6ef`. Below are all **20 commits** since then, grouped by topic.
+> Below are all **22 commits** between `7c4403b` and HEAD, grouped by topic.
 
 ### 🎯 Project direction
 
@@ -120,6 +124,10 @@ AI-Fuel-Planner/
 - `f3b966e` Aid-station name markers
 - `40a8715` Elevation curve drawn only from climb/descent segments (aid stations are markers only); CP info-card collision avoidance
 - `98ed5fe` Chart palette matched to the page theme (ember line + gradient area, mint axes, blue CP markers); **fixed 4-digit altitude labels being clipped on the left**
+
+### 📚 Docs & repo housekeeping
+
+- `b53583e` **Docs & housekeeping**: added top-level README (zh/en) and detailed web-app docs; `.gitignore` now ignores personal experiment/content folders; removed the redundant nested `03_Code/.git`
 
 ---
 

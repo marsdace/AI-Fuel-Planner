@@ -1,5 +1,9 @@
 # 🏔️ Trail Lab · AI Fuel Planner
 
+<p align="right">
+  <a href="README_EN.md"><img src="https://img.shields.io/badge/English-Version-2f6b49?style=for-the-badge" alt="Switch to English" /></a>
+</p>
+
 > Experiment #001 — 越野跑 AI 补给规划工具
 > 上传 Garmin 历史运动文件，设定目标路线，自动计算补给节奏与分段建议，并由 AI 生成可执行解释。
 
@@ -84,9 +88,9 @@ AI-Fuel-Planner/
 
 ---
 
-## 📦 自上次发布以来的全部更新
+## 📦 自 Commit `7c4403b` 以来的全部更新
 
-> 上次 GitHub 发布点为 `4e1d6ef`，以下为之后的 **20 个提交** 的全部改动（按主题分组）。
+> 以下为 `7c4403b` → HEAD 之间 **22 个提交** 的全部改动（按主题分组）。
 
 ### 🎯 项目方向
 
@@ -119,6 +123,10 @@ AI-Fuel-Planner/
 - `f3b966e` 补给点名称标记
 - `40a8715` 海拔曲线只由爬坡/下降路段绘制（补给点仅作标记）；CP 信息卡碰撞避让
 - `98ed5fe` 图表配色统一为页面主题（琥珀折线 + 渐变面积、薄荷坐标轴、蓝色 CP 标记）；**修复海拔为 4 位数时左侧标签被裁剪**
+
+### 📚 文档与仓库整理
+
+- `b53583e` **文档与仓库整理**：新增顶层 README（中 / 英）与 Web 版详细文档；`.gitignore` 忽略个人实验 / 内容目录；移除冗余的嵌套 `03_Code/.git`
 
 ---
 
