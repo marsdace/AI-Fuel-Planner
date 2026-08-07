@@ -7,13 +7,13 @@
 > Experiment #001 — 越野跑 AI 补给规划工具
 > 上传 Garmin 历史运动文件，设定目标路线，自动计算补给节奏与分段建议，并由 AI 生成可执行解释。
 
-**当前正式版**：纯 JavaScript 静态 Web 应用（`03_Code/web/`）—— 无框架、无构建步骤、可在浏览器直接打开运行。
+**当前正式版**：纯 JavaScript 静态 Web 应用（`web/`）—— 无框架、无构建步骤、可在浏览器直接打开运行。
 
 ---
 
 ## ✨ 新版本（JS 版）介绍
 
-上一版是基于 Python + Streamlit 的测试原型，现已**弃用并归档**（见 `03_Code/python_legacy/`）。当前正式版为纯前端静态 Web 应用：
+上一版是基于 Python + Streamlit 的测试原型，现已**弃用并归档**（见 `python_legacy/`）。当前正式版为纯前端静态 Web 应用：
 
 - **零依赖部署**：原生 ES2020+，无构建步骤；`file://` 双击或任意静态服务器均可运行
 - **浏览器端解析 Garmin FIT**：通过 `@garmin/fitsdk`（esm.sh CDN）在本地解码 FIT 文件，不上传原始数据
@@ -45,7 +45,7 @@
 ## 🚀 快速开始
 
 ```bash
-cd 03_Code/web
+cd web
 # 任选其一：
 open index.html                 # 直接打开（推荐现代浏览器）
 python3 -m http.server 8080     # 或本地静态服务器
@@ -70,20 +70,17 @@ python3 -m http.server 8080     # 或本地静态服务器
 ## 📁 项目结构
 
 ```
-AI-Fuel-Planner/
-├── README.md / README_EN.md     # 说明文档（本文档）
+AI-Fuel-Planner/                 # 仓库根目录 = 03_Code 文件夹
+├── README.md / README_EN.md     # 说明文档（本文档，登录仓库即显示）
 ├── .gitignore
 ├── .devcontainer/               # VS Code Dev Container 配置
-├── 03_Code/
-│   ├── web/                     # ★ 当前正式版：纯 JS 静态 Web 应用
-│   │   ├── index.html           #   页面结构（含版本号 ?v= 缓存刷新）
-│   │   ├── app.js               #   逻辑：FIT 解析 / 画像 / 规则引擎 / 图表 / AI 调用
-│   │   ├── styles.css           #   页面样式（深林绿 × 探索橙主题）
-│   │   ├── bg.js                #   森林夜空动效背景
-│   │   └── README.md            #   Web 版详细说明
-│   └── python_legacy/           # ⚠️ 已弃用的 Python 测试版（历史存档，不再维护）
-└── 04_Data/                     # 实测数据说明（.fit 个人数据不入库）
-    └── test01_20260726/
+├── web/                         # ★ 当前正式版：纯 JS 静态 Web 应用
+│   ├── index.html               #   页面结构（含版本号 ?v= 缓存刷新）
+│   ├── app.js                   #   逻辑：FIT 解析 / 画像 / 规则引擎 / 图表 / AI 调用
+│   ├── styles.css               #   页面样式（深林绿 × 探索橙主题）
+│   ├── bg.js                    #   森林夜空动效背景
+│   └── README.md                #   Web 版详细说明
+└── python_legacy/               # ⚠️ 已弃用的 Python 测试版（历史存档，不再维护）
 ```
 
 ---
@@ -94,7 +91,7 @@ AI-Fuel-Planner/
 
 ### 🎯 项目方向
 
-- `7654820` **项目聚焦 JS Web 应用**：弃用的 Python 测试版归档至 `03_Code/python_legacy/`（保留历史存档与说明），正式版为 `03_Code/web/`
+- `7654820` **项目聚焦 JS Web 应用**：弃用的 Python 测试版归档至 `python_legacy/`（保留历史存档与说明），正式版为 `web/`
 - `2e2d7be` / `4e1d6ef` **目录结构重整**：程序文件归位到 `03_Code/`，仓库根目录作为说明文档层
 
 ### 🧭 术语与文件定位
@@ -127,7 +124,6 @@ AI-Fuel-Planner/
 ### 📚 文档与仓库整理
 
 - `b53583e` **文档与仓库整理**：新增顶层 README（中 / 英）与 Web 版详细文档；`.gitignore` 忽略个人实验 / 内容目录；移除冗余的嵌套 `03_Code/.git`
-- `47c058d` **仓库根目录重整**：`web/` 与 `python_legacy/` 直接置于仓库根（与 GitHub「以 03_Code 为根」一致）；`README.md` 位于根层，登录仓库即显示；取消跟踪个人实测数据目录 `04_Data/`
 
 ---
 
@@ -151,6 +147,5 @@ AI-Fuel-Planner/
 
 ## 🔗 相关文档
 
-- Web 版详细说明：[`03_Code/web/README.md`](03_Code/web/README.md)
-- 弃用的 Python 版说明：[`03_Code/python_legacy/README_DEPRECATED.md`](03_Code/python_legacy/README_DEPRECATED.md)
-- 实测数据说明：[`04_Data/test01_20260726/README.md`](04_Data/test01_20260726/README.md)
+- Web 版详细说明：[`web/README.md`](web/README.md)
+- 弃用的 Python 版说明：[`python_legacy/README_DEPRECATED.md`](python_legacy/README_DEPRECATED.md)

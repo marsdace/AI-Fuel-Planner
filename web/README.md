@@ -53,7 +53,7 @@
 ## 如何运行
 
 ```bash
-cd 03_Code/web
+cd web
 open index.html                 # 直接打开（推荐现代浏览器）
 # 或本地静态服务器（更稳妥，避免 file:// 下 CDN 加载问题）：
 python3 -m http.server 8080

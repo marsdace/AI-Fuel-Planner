@@ -7,13 +7,13 @@
 > Experiment #001 — Trail-running AI fuel planner.
 > Upload Garmin activity data, set a target route, get a quantified fueling plan and an AI-generated, actionable explanation.
 
-**Current release**: pure JavaScript static web app (`03_Code/web/`) — no framework, no build step, runs directly in the browser.
+**Current release**: pure JavaScript static web app (`web/`) — no framework, no build step, runs directly in the browser.
 
 ---
 
 ## ✨ About the new JS version
 
-The previous Python + Streamlit prototype is **deprecated and archived** (see `03_Code/python_legacy/`). The current release is a fully static, client-side web app:
+The previous Python + Streamlit prototype is **deprecated and archived** (see `python_legacy/`). The current release is a fully static, client-side web app:
 
 - **Zero-dependency deployment**: vanilla ES2020+, no build step; run from `file://` or any static server
 - **In-browser Garmin FIT parsing**: decodes FIT files locally via `@garmin/fitsdk` (esm.sh CDN) — raw data never leaves your machine
@@ -45,7 +45,7 @@ The previous Python + Streamlit prototype is **deprecated and archived** (see `0
 ## 🚀 Quick start
 
 ```bash
-cd 03_Code/web
+cd web
 # Either:
 open index.html                 # open directly (modern browser)
 # Or a local static server:
@@ -71,20 +71,17 @@ python3 -m http.server 8080
 ## 📁 Project structure
 
 ```
-AI-Fuel-Planner/
-├── README.md / README_EN.md     # Documentation (this file)
+AI-Fuel-Planner/                 # Repo root = the 03_Code folder
+├── README.md / README_EN.md     # Documentation (this file, shown on repo entry)
 ├── .gitignore
 ├── .devcontainer/               # VS Code Dev Container config
-├── 03_Code/
-│   ├── web/                     # ★ Current release: pure JS static web app
-│   │   ├── index.html           #   Page structure (incl. ?v= cache busting)
-│   │   ├── app.js               #   Logic: FIT parsing / profile / rule engine / chart / AI
-│   │   ├── styles.css           #   Page styles (forest-green × ember theme)
-│   │   ├── bg.js                #   Forest-night animated background
-│   │   └── README.md            #   Detailed web app docs
-│   └── python_legacy/           # ⚠️ Deprecated Python prototype (archived, unmaintained)
-└── 04_Data/                     # Field-test data docs (.fit personal data not committed)
-    └── test01_20260726/
+├── web/                         # ★ Current release: pure JS static web app
+│   ├── index.html               #   Page structure (incl. ?v= cache busting)
+│   ├── app.js                   #   Logic: FIT parsing / profile / rule engine / chart / AI
+│   ├── styles.css               #   Page styles (forest-green × ember theme)
+│   ├── bg.js                    #   Forest-night animated background
+│   └── README.md                #   Detailed web app docs
+└── python_legacy/               # ⚠️ Deprecated Python prototype (archived, unmaintained)
 ```
 
 ---
@@ -95,7 +92,7 @@ AI-Fuel-Planner/
 
 ### 🎯 Project direction
 
-- `7654820` **Focused on the JS web app**: deprecated Python prototype archived to `03_Code/python_legacy/`; the web app in `03_Code/web/` is the official version
+- `7654820` **Focused on the JS web app**: deprecated Python prototype archived to `python_legacy/`; the web app in `web/` is the official version
 - `2e2d7be` / `4e1d6ef` **Restructured folders**: program files moved back into `03_Code/`; repo root holds docs
 
 ### 🧭 Terminology & file roles
@@ -128,7 +125,6 @@ AI-Fuel-Planner/
 ### 📚 Docs & repo housekeeping
 
 - `b53583e` **Docs & housekeeping**: added top-level README (zh/en) and detailed web-app docs; `.gitignore` now ignores personal experiment/content folders; removed the redundant nested `03_Code/.git`
-- `47c058d` **Repo-root restructure**: `web/` and `python_legacy/` placed directly at the repo root (matching GitHub's "03_Code as root"); `README.md` at the root so it shows on entry; untracked the personal field-test data folder `04_Data/`
 
 ---
 
@@ -152,6 +148,5 @@ AI-Fuel-Planner/
 
 ## 🔗 Related docs
 
-- Web app details: [`03_Code/web/README.md`](03_Code/web/README.md)
-- Deprecated Python docs: [`03_Code/python_legacy/README_DEPRECATED.md`](03_Code/python_legacy/README_DEPRECATED.md)
-- Field-test data docs: [`04_Data/test01_20260726/README.md`](04_Data/test01_20260726/README.md)
+- Web app details: [`web/README.md`](web/README.md)
+- Deprecated Python docs: [`python_legacy/README_DEPRECATED.md`](python_legacy/README_DEPRECATED.md)
