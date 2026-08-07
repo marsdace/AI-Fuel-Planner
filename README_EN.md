@@ -123,6 +123,7 @@ AI-Fuel-Planner/                 # Repo root = the 03_Code folder
 
 - `b53583e` **Docs & housekeeping**: added top-level README (zh/en) and detailed web-app docs; `.gitignore` now ignores personal experiment/content folders; removed the redundant nested `03_Code/.git`
 - `efd8f6e` **Repo root = the `03_Code` folder**: rooted the git repository at `03_Code/`, so `web/`, `python_legacy/` and `README*` sit at the repo root and the README shows when you open the GitHub repo; moved the personal `04_Data/` folder out of the repository
+- `41e314f` **Main app at repo root**: removed the `web/` folder; `index.html` / `app.js` / `styles.css` / `bg.js` now live at the repo root (= 03_Code), so opening `index.html` on GitHub runs the app; README structure/quick-start updated
 
 ---
 

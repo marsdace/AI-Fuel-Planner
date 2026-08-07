@@ -122,6 +122,7 @@ AI-Fuel-Planner/                 # 仓库根目录 = 03_Code 文件夹
 
 - `b53583e` **文档与仓库整理**：新增顶层 README（中 / 英）与 Web 版详细文档；`.gitignore` 忽略个人实验 / 内容目录；移除冗余的嵌套 `03_Code/.git`
 - `efd8f6e` **仓库根目录 = `03_Code` 文件夹**：将 git 仓库根定位到 `03_Code/`，`web/`、`python_legacy/`、`README*` 直接置于仓库根；登录 GitHub 仓库即显示 README；个人实测数据目录 `04_Data/` 移出仓库
+- `41e314f` **主程序置于仓库根**：移除 `web/` 文件夹，`index.html` / `app.js` / `styles.css` / `bg.js` 直接位于仓库根目录（= 03_Code），登录 GitHub 打开 `index.html` 即可使用；README 结构与快速开始同步更新
 
 ---
 
