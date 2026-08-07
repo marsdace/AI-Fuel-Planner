@@ -153,6 +153,16 @@ body {
   color: rgba(229, 247, 235, 0.8);
 }
 
+/* 英文 hero 更紧凑，避免被主功能区域遮挡 */
+html:lang(en) .background-copy #heroTitle {
+  font-size: clamp(22px, 2.6vw, 34px);
+  line-height: 1.16;
+}
+
+html:lang(en) .app-shell {
+  margin-top: clamp(240px, 30vh, 330px);
+}
+
 .intro-line {
   font-size: clamp(11px, 1.15vw, 15px);
   letter-spacing: 0.04em;
@@ -833,13 +843,34 @@ body {
 
 .step2-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
   gap: 12px;
-  align-items: start;
+  align-items: stretch;
+}
+
+/* L 型布局：用户能力画像占左列 + 底行，活动概况位于右上角 */
+.step2-layout > .profile-stage {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: stretch;
+}
+
+.step2-layout > .summary-panel {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: stretch;
+  margin-top: 0;
+}
+
+.step2-layout > .profile-panel {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  margin-top: 0;
 }
 
 .summary-panel .kv-list {
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .profile-panel {
@@ -896,8 +927,8 @@ body {
 
 .profile-pulse {
   position: absolute;
-  left: 78px;
-  top: 42px;
+  left: 14px;
+  bottom: 16px;
   width: 120px;
   height: 120px;
   border-radius: 50%;
@@ -993,6 +1024,46 @@ body {
   grid-template-columns: 1fr;
 }
 
+/* 用户能力画像：左列 = HRV / HRV 状态 / ITRA / UTMB；心率区间在右列跨 3 行，与左列三字段同高 */
+#userProfileEditor .field-row[data-row-key="hrv"],
+#userProfileEditor .field-row[data-row-key="hrvStatus"] {
+  grid-column: 1;
+}
+
+#userProfileEditor .field-row[data-row-key="hrvStatus"] {
+  grid-row: 4;
+  align-self: stretch;
+}
+
+#userProfileEditor .field-row[data-row-key="itraPoints"] {
+  grid-column: 1;
+  grid-row: 5;
+  align-self: stretch;
+}
+
+#userProfileEditor .field-row[data-row-key="utmbPoints"] {
+  grid-column: 1;
+  grid-row: 6;
+  align-self: stretch;
+}
+
+#userProfileEditor .field-row[data-row-key="heartRateZones"] {
+  grid-column: 2;
+  grid-row: 4 / 7;
+}
+
+/* 用户能力画像：字段顶部对齐（不随同排高字段拉伸），输入框统一高度、宽度自然 */
+#userProfileEditor .field-row {
+  align-self: start;
+}
+
+#userProfileEditor input[data-field],
+#userProfileEditor select[data-field],
+#userProfileEditor .hrzone-input {
+  height: 42px;
+  box-sizing: border-box;
+}
+
 .auto-fit {
   align-items: start;
 }
@@ -1007,6 +1078,57 @@ label {
 .field-help {
   font-size: 12px;
   color: var(--muted);
+}
+
+.field-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(126, 168, 142, 0.55);
+  background: rgba(24, 56, 38, 0.62);
+  color: #d8ecdd;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.field-info::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 9px);
+  transform: translateX(-50%) translateY(4px);
+  width: max-content;
+  max-width: 280px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: rgba(9, 20, 14, 0.97);
+  border: 1px solid rgba(126, 168, 142, 0.45);
+  color: #e9f3ec;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  white-space: normal;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
+}
+
+.field-info:hover::after,
+.field-info:focus::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 input,
@@ -1381,6 +1503,118 @@ button:disabled {
   accent-color: var(--ember);
 }
 
+.hrzone-list {
+  display: grid;
+  gap: 6px;
+}
+
+.hrzone-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px 96px;
+  gap: 8px;
+  align-items: center;
+  padding-left: 14px;
+}
+
+.hrzone-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px 96px;
+  gap: 8px;
+  align-items: center;
+  padding-left: 14px;
+  font-size: 11.5px;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+}
+
+/* 步骤三：官方补给点列表（cplist） */
+#raceProfileEditor .field-row {
+  grid-column: 1;
+  align-self: start;
+}
+
+/* 右列：官方补给点从顶部开始（与左列第一行对齐），爬坡路段紧随其后，
+   避免官方补给点上方的空白区 */
+#raceProfileEditor .field-row[data-row-key="officialCp"] {
+  grid-column: 2;
+  grid-row: 1 / 6;
+  align-self: start;
+}
+
+#raceProfileEditor .field-row[data-row-key="climbSegments"] {
+  grid-column: 2;
+  grid-row: 6;
+  align-self: start;
+}
+
+/* 步骤三：输入框统一高度，避免被右侧高字段拉伸 */
+#raceProfileEditor input[data-field],
+#raceProfileEditor select[data-field] {
+  height: 42px;
+  box-sizing: border-box;
+}
+
+.cplist {
+  display: grid;
+  gap: 6px;
+}
+
+.cp-head,
+.cpline {
+  display: grid;
+  gap: 6px;
+  align-items: center;
+}
+
+.cp-head {
+  font-size: 11.5px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.cp-input {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  box-sizing: border-box;
+}
+
+.cp-remove {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(255, 122, 0, 0.12);
+  border: 1px solid rgba(255, 122, 0, 0.35);
+  color: #ffd9ae;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cp-add {
+  justify-self: start;
+  margin-top: 4px;
+}
+
+.hrzone-name {
+  min-width: 0;
+  font-size: 13px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hrzone-input {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+}
+
 .inline-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1435,6 +1669,13 @@ svg text {
     grid-template-columns: 1fr;
   }
 
+  .step2-layout > .profile-stage,
+  .step2-layout > .summary-panel,
+  .step2-layout > .profile-panel {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
   .background-copy {
     width: 92vw;
   }
@@ -1480,6 +1721,17 @@ svg text {
   .grid.two,
   .kv-list,
   .inline-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #raceProfileEditor .field-row,
+  #raceProfileEditor .field-row[data-row-key="officialCp"],
+  #raceProfileEditor .field-row[data-row-key="climbSegments"] {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .summary-panel .kv-list {
     grid-template-columns: 1fr;
   }
 

@@ -31,11 +31,11 @@ const TEXT = {
     chooseFile: "选择文件",
     noFileChosen: "未选择文件",
     confirmStep1: "确认并解析",
-    step2Title: "确认活动概括与 User Profile",
-    stepHint2: "本步将生成：可编辑 User Profile，用于规则引擎能力评估与风险判断。",
+    step2Title: "确认活动概括与用户能力画像",
+    stepHint2: "本步将生成：可编辑用户能力画像，用于规则引擎能力评估与风险判断。",
     step2Note: "提醒：以下显示内容均为运动设备自带信息，如信息不适用，请手动去掉信息或更改。",
     activitySummaryTitle: "活动概括",
-    userProfileTitle: "User Profile",
+    userProfileTitle: "用户能力画像",
     backStep: "返回上一步",
     confirmStep2: "确认活动信息",
     step3Title: "目标赛事参数 (Trail Only)",
@@ -82,12 +82,15 @@ const TEXT = {
     kvSportType: "运动类型",
     statusUploadOwnFit: "请先上传自己的 FIT 文件。",
     statusParsingActivity: "解析活动 FIT 中...",
-    statusActivityReady: "活动 FIT 已解析，请确认活动概括和 User Profile。",
+    statusActivityReady: "活动 FIT 已解析，请确认活动概括和用户能力画像。",
     statusConfirmRace: "请确认目标赛事参数，可手动填写或读取目标赛事 FIT。",
     statusSelectRaceFit: "请先选择目标赛事 FIT 文件。",
     statusParsingRace: "读取目标赛事 FIT 中...",
     statusRaceReady: "目标赛事 FIT 已读取，可继续补充 CP、坡段和天气参数。",
     statusRouteReady: "路线、海拔与补给点概况已生成，请确认。",
+    raceCpDistanceInvalid: "官方补给点的“所在距离”必须大于 0，且列表从上到下需依次递增。",
+    raceClimbRangeInvalid: "爬坡路段的“爬升起点”必须小于“爬升终点”。",
+    raceClimbOrderInvalid: "爬坡路段必须从上到下依次排列且不重叠（每段起点需 ≥ 上一段终点）。",
     statusReadyEngine: "可以开始运行 Trail Lab Rule Engine 与 AI Planner。",
     statusNeedActivity: "请先完成活动 FIT 解析。",
     statusEngineDone: "规则引擎完成，正在生成 AI 解释...",
@@ -193,6 +196,9 @@ const TEXT = {
     statusParsingRace: "Reading target race FIT...",
     statusRaceReady: "Target race FIT loaded. You can continue editing CP, segments, and weather.",
     statusRouteReady: "Route, elevation, and fuel point overview generated. Please review it.",
+    raceCpDistanceInvalid: "Aid-station distances must be greater than 0 and increase from top to bottom.",
+    raceClimbRangeInvalid: "Climb segment start must be less than its end.",
+    raceClimbOrderInvalid: "Climb segments must be ordered top-to-bottom and not overlap (each start ≥ previous end).",
     statusReadyEngine: "You can now run the Trail Lab Rule Engine and AI Planner.",
     statusNeedActivity: "Please finish parsing the activity FIT first.",
     statusEngineDone: "Rule engine done. Generating AI explanation...",
@@ -556,24 +562,35 @@ function extractFitMetrics(decoded) {
   return { metrics, unavailable };
 }
 
+const HR_ZONE_NAMES = [
+  { zh: "恢复区", en: "Very Light" },
+  { zh: "有氧基础区", en: "Aerobic" },
+  { zh: "节奏区", en: "Tempo" },
+  { zh: "乳酸阈值区", en: "Threshold" },
+  { zh: "无氧冲刺区", en: "Very Hard" },
+];
+
+// 将设备区间边界转换为 5 个区间（每行 "下限-上限"，供逐区上下限编辑框使用）。
+// 设备若含 6 个边界（新固件常含一个极低强度区间），去掉第一个，保留 5 个。
 function stringifyHrBoundaries(boundaries) {
-  if (!Array.isArray(boundaries) || boundaries.length < 5) {
+  if (!Array.isArray(boundaries) || boundaries.length === 0) {
     return "";
   }
-  const lines = [];
-  let lower = 0;
-  for (let index = 0; index < 5; index += 1) {
+  const highs = [];
+  for (let index = 0; index < boundaries.length; index += 1) {
     const upper = safeFloat(boundaries[index]);
-    if (upper === null) {
-      continue;
+    if (upper !== null) {
+      highs.push(Math.round(upper));
     }
-    const label = state.language === "en" ? `Zone ${index + 1}` : `区间 ${index + 1}`;
-    if (index === 0) {
-      lines.push(`${label}: <= ${upper.toFixed(0)} bpm`);
-    } else {
-      lines.push(`${label}: ${Math.round(lower + 1)} - ${upper.toFixed(0)} bpm`);
-    }
-    lower = upper;
+  }
+  const dropFirst = highs.length >= 6;
+  const kept = dropFirst ? highs.slice(1, 1 + HR_ZONE_NAMES.length) : highs.slice(0, HR_ZONE_NAMES.length);
+  const lines = [];
+  let lower = dropFirst ? highs[0] + 1 : 0;
+  for (let index = 0; index < kept.length; index += 1) {
+    const upper = kept[index];
+    lines.push(`${lower}-${upper}`);
+    lower = upper + 1;
   }
   return lines.join("\n");
 }
@@ -656,8 +673,74 @@ class RaceProfileBuilder {
   build(input) {
     const distanceKm = Math.max(safeFloat(input.distanceKm) || 30, 1);
     const ascentM = Math.max(safeFloat(input.ascentM) || 0, 0);
-    const manualSegments = parseClimbSegments(input.segmentGain || "");
-    const segments = this.normalizeSegments(distanceKm, ascentM, manualSegments);
+
+    // 官方补给点列表（JSON）：名称 / 距离 / 关门时间 / 区间爬升 / 区间下降
+    let cpList = [];
+    try {
+      const parsed = JSON.parse(input.officialCp || "[]");
+      if (Array.isArray(parsed)) cpList = parsed;
+    } catch (error) {
+      cpList = [];
+    }
+    const validCps = cpList
+      .map((cp) => ({ ...cp, distance: safeFloat(cp.distance) }))
+      .filter((cp) => cp.distance !== null && cp.distance > 0);
+
+    // 补给站里程 = 各 CP 距离
+    let aidStations = [...new Set(validCps.map((cp) => Number(cp.distance.toFixed(2))))]
+      .filter((km) => km > 0 && km < distanceKm)
+      .sort((a, b) => a - b);
+
+    // 爬坡路段列表（JSON）：爬升起点/终点位置（距起点相对距离 km）
+    let climbList = [];
+    try {
+      const parsed = JSON.parse(input.climbSegments || "[]");
+      if (Array.isArray(parsed)) climbList = parsed;
+    } catch (error) {
+      climbList = [];
+    }
+    const validClimbs = climbList
+      .map((seg) => ({ start: safeFloat(seg.start), end: safeFloat(seg.end), height: safeFloat(seg.height) }))
+      .filter((seg) => seg.start !== null && seg.end !== null && seg.end > seg.start);
+    const hasClimbHeights = validClimbs.some((seg) => seg.height !== null && seg.height > 0);
+
+    // 爬坡分段：优先用爬坡路段（起点/终点）；若填写了“爬升高度”则直接使用，否则将总爬升按爬坡距离比例分配；平坦段爬升为 0
+    const climbSegments = [];
+    if (validClimbs.length) {
+      const climbTotalDist = validClimbs.reduce((sum, seg) => sum + (seg.end - seg.start), 0);
+      let prevKm = 0;
+      for (const seg of validClimbs) {
+        if (seg.start > prevKm) {
+          climbSegments.push([Number((seg.start - prevKm).toFixed(2)), 0]);
+        }
+        const segDist = seg.end - seg.start;
+        const segAscent = hasClimbHeights
+          ? Number(seg.height || 0)
+          : Number((ascentM * (segDist / climbTotalDist)).toFixed(1));
+        climbSegments.push([Number(segDist.toFixed(2)), segAscent]);
+        prevKm = seg.end;
+      }
+      if (prevKm < distanceKm) {
+        climbSegments.push([Number((distanceKm - prevKm).toFixed(2)), 0]);
+      }
+    }
+
+    // 兜底：官方补给点区间爬升 → 爬升分段（相邻 CP 之间）
+    const cpSegments = [];
+    let prevKm = 0;
+    for (const cp of validCps) {
+      const km = cp.distance;
+      if (km > prevKm) {
+        cpSegments.push([Number((km - prevKm).toFixed(2)), Number(safeFloat(cp.climb) || 0)]);
+        prevKm = km;
+      }
+    }
+    if (cpSegments.length && prevKm < distanceKm) {
+      cpSegments.push([Number((distanceKm - prevKm).toFixed(2)), 0]);
+    }
+    const manualSegments = climbSegments.length ? climbSegments : (cpSegments.length ? cpSegments : parseClimbSegments(input.segmentGain || ""));
+    // 若爬坡路段填了明确的“爬升高度”，直接采用（不再按总爬升缩放）；否则标准化到总爬升/总距离
+    const segments = hasClimbHeights ? manualSegments : this.normalizeSegments(distanceKm, ascentM, manualSegments);
 
     let cumulativeKm = 0;
     const steepSegments = [];
@@ -676,14 +759,13 @@ class RaceProfileBuilder {
       cumulativeKm = endKm;
     }
 
-    let cpPoints = parseKmPoints(input.cpKm || "", distanceKm);
-    if (!cpPoints.length) {
-      cpPoints = [distanceKm * 0.25, distanceKm * 0.5, distanceKm * 0.75]
+    if (!aidStations.length) {
+      aidStations = [distanceKm * 0.25, distanceKm * 0.5, distanceKm * 0.75]
         .filter((value) => value > 0 && value < distanceKm)
         .map((value) => Number(value.toFixed(1)));
     }
+    aidStations = [...new Set(aidStations)].sort((a, b) => a - b);
 
-    const aidStations = [...new Set(cpPoints)].sort((a, b) => a - b);
     const dedupSupplemental = [...new Set(supplementalPoints)].filter((value) => !aidStations.includes(value)).sort((a, b) => a - b);
 
     return {
@@ -695,6 +777,7 @@ class RaceProfileBuilder {
       supplemental_points_km: dedupSupplemental,
       climb_trigger_m: Math.max(safeFloat(input.climbTriggerM) || 250, 100),
       max_interval_min: Math.max(safeFloat(input.maxIntervalMin) || 45, 20),
+      expected_finish_time_h: safeFloat(input.expectedFinishH),
       weather_temp_c: safeFloat(input.weatherTemp),
       humidity_pct: safeFloat(input.humidity),
       location_history_notes: input.locationNotes || null,
@@ -756,6 +839,9 @@ class TrailLabRuleEngine {
     const fatiguePenalty = userProfile.fatigue_risk === "high" ? 1.12 : userProfile.fatigue_risk === "low" ? 0.96 : 1;
 
     let finishTimeH = (raceProfile.distance_km * basePaceMinPerKm / 60) * climbPenalty * fatiguePenalty;
+    if (raceProfile.expected_finish_time_h && raceProfile.expected_finish_time_h > 0) {
+      finishTimeH = raceProfile.expected_finish_time_h;
+    }
     finishTimeH = Number(Math.max(finishTimeH, 1).toFixed(2));
 
     let carbsPerHour = 55 + (1 - abilityScale) * 8 + clamp((climbFactor - 35) / 12, 0, 10);
@@ -1014,8 +1100,8 @@ const activitySummaryFields = [
 ];
 
 const userProfileFields = [
-  { key: "height", label: { zh: "身高 (m)", en: "Height (m)" }, type: "text", help: { zh: "设备画像值，可改。", en: "Device profile value. Editable." }, placeholder: "optionalPlaceholder" },
-  { key: "weight", label: { zh: "体重 (kg)", en: "Weight (kg)" }, type: "text", help: { zh: "最终规则引擎会优先使用这里的体重。", en: "The rule engine will prioritize this weight." }, placeholder: "optionalPlaceholder" },
+  { key: "height", label: { zh: "身高 (m)", en: "Height (m)" }, type: "text", placeholder: "optionalPlaceholder" },
+  { key: "weight", label: { zh: "体重 (kg)", en: "Weight (kg)" }, type: "text", placeholder: "optionalPlaceholder" },
   {
     key: "gender",
     label: { zh: "性别", en: "Gender" },
@@ -1028,8 +1114,8 @@ const userProfileFields = [
     ],
   },
   { key: "restingHeartRate", label: { zh: "静息心率 (bpm)", en: "Resting HR (bpm)" }, type: "text", placeholder: "optionalPlaceholder" },
-  { key: "physiologicalMaxHr", label: { zh: "physiological_max_hr / 生物最大心率 (bpm)", en: "physiological_max_hr / physiological max HR (bpm)" }, type: "number", step: "1", help: { zh: "设备读取值，可改。", en: "Device-read value. Editable." }, placeholder: "optionalPlaceholder" },
   { key: "hrv", label: { zh: "HRV", en: "HRV" }, type: "number", step: "0.1", placeholder: "optionalPlaceholder" },
+  { key: "physiologicalMaxHr", label: { zh: "生物最大心率 (bpm)", en: "physiological max HR (bpm)" }, type: "number", step: "1", placeholder: "optionalPlaceholder" },
   {
     key: "hrvStatus",
     label: { zh: "HRV 状态", en: "HRV status" },
@@ -1041,21 +1127,35 @@ const userProfileFields = [
       { value: "good", label: { zh: "良好", en: "Good" } },
     ],
   },
-  { key: "heartRateZones", label: { zh: "设备心率区间 (bpm)", en: "Device HR zones (bpm)" }, type: "textarea", placeholder: "optionalPlaceholder" },
+  { key: "heartRateZones", label: { zh: "心率区间 (bpm)", en: "HR zones (bpm)" }, type: "hrzones", help: { zh: "按 5 区划分：恢复区 / 有氧基础区 / 节奏区 / 乳酸阈值区 / 无氧冲刺区。每格填写该区间上限 (bpm)。", en: "5 zones: Very Light / Aerobic / Tempo / Threshold / Very Hard. Enter each zone's upper bound (bpm)." } },
   { key: "itraPoints", label: { zh: "ITRA 积分 (pts)", en: "ITRA points (pts)" }, type: "number", step: "1", placeholder: "optionalPlaceholder" },
   { key: "utmbPoints", label: { zh: "UTMB 积分 (pts)", en: "UTMB points (pts)" }, type: "number", step: "1", placeholder: "optionalPlaceholder" },
 ];
 
+const CP_OFFICIAL_COLUMNS = [
+  { key: "name", label: { zh: "名称", en: "Name" }, type: "text", flex: 1.3 },
+  { key: "distance", label: { zh: "所在距离 (km)", en: "Distance (km)" }, type: "number", step: "0.1", min: 0, flex: 0.55 },
+  { key: "cutoff", label: { zh: "关门时间", en: "Cutoff" }, type: "time", flex: 1.1 },
+  { key: "climb", label: { zh: "区间爬升 (m)", en: "Climb (m)" }, type: "number", step: "1", min: 0, flex: 0.55 },
+  { key: "descent", label: { zh: "区间下降 (m)", en: "Descent (m)" }, type: "number", step: "1", min: 0, flex: 0.55 },
+];
+const CP_CLIMB_COLUMNS = [
+  { key: "start", label: { zh: "爬升起点 (km)", en: "Climb start (km)" }, type: "number", step: "0.1", min: 0, flex: 1 },
+  { key: "end", label: { zh: "爬升终点 (km)", en: "Climb end (km)" }, type: "number", step: "0.1", min: 0, flex: 1 },
+  { key: "height", label: { zh: "爬升高度 (m)", en: "Climb height (m)" }, type: "number", step: "1", min: 0, flex: 0.8 },
+];
+
 const raceProfileFields = [
+  // 左列：基础赛事参数
   { key: "distanceKm", label: { zh: "距离 (km)", en: "Distance (km)" }, type: "number", step: "0.1", placeholder: "optionalPlaceholder" },
-  { key: "ascentM", label: { zh: "爬升 (m)", en: "Ascent (m)" }, type: "number", step: "1", placeholder: "optionalPlaceholder" },
-  { key: "cpKm", label: { zh: "CP 点位 (km，逗号分隔)", en: "CP points (km, comma separated)" }, type: "text", placeholder: "raceCpPlaceholder" },
-  { key: "segmentGain", label: { zh: "分段爬升 (distance:ascent)", en: "Segment climbs (distance:ascent)" }, type: "text", placeholder: "raceSegmentPlaceholder" },
-  { key: "climbTriggerM", label: { zh: "爬升触发阈值 (m)", en: "Climb trigger threshold (m)" }, type: "number", step: "10", placeholder: "optionalPlaceholder" },
-  { key: "maxIntervalMin", label: { zh: "最大补给间隔 (min)", en: "Max fuel interval (min)" }, type: "number", step: "1", placeholder: "optionalPlaceholder" },
+  { key: "ascentM", label: { zh: "总爬升 (m)", en: "Total ascent (m)" }, type: "number", step: "1", placeholder: "optionalPlaceholder" },
+  { key: "expectedFinishH", label: { zh: "期望完赛时间 (h)", en: "Expected finish time (h)" }, type: "number", step: "0.1", placeholder: "optionalPlaceholder" },
   { key: "weatherTemp", label: { zh: "预计温度 (°C)", en: "Expected temperature (°C)" }, type: "number", step: "0.1", placeholder: "optionalPlaceholder" },
   { key: "humidity", label: { zh: "预计湿度 (%)", en: "Expected humidity (%)" }, type: "number", step: "1", placeholder: "optionalPlaceholder" },
   { key: "locationNotes", label: { zh: "线路备注", en: "Route notes" }, type: "textarea", placeholder: "raceNotesPlaceholder" },
+  // 右列：官方补给点 + 爬坡路段（位置均为距起点相对距离，提示统一在“!”悬浮中）
+  { key: "officialCp", label: { zh: "官方补给点", en: "Official aid stations" }, type: "cplist", columns: CP_OFFICIAL_COLUMNS, addLabel: { zh: "新增补给点", en: "Add aid station" }, help: { zh: "FIT 有 CP 点会自动导入；也可手动新增。位置为距起点相对距离 (km)，每站可填名称、所在距离、关门时间、区间爬升与下降。列表从上到下需按距离递增排列。", en: "CP points are auto-imported from FIT; add more manually. Position = relative distance (km) from the start. Each station: name, distance, cutoff, segment climb and descent. Rows must be ordered by increasing distance from top to bottom." } },
+  { key: "climbSegments", label: { zh: "爬坡路段", en: "Climb segments" }, type: "cplist", columns: CP_CLIMB_COLUMNS, addLabel: { zh: "新增爬坡路段", en: "Add climb segment" }, help: { zh: "记录每个爬坡路段的爬升起点、爬升终点（距起点相对距离，km）与爬升高度 (m)。列表从上到下需依次排列且不重叠。", en: "Record each climb segment's start, end (relative distance in km from the start) and climb height (m). Rows must be ordered top-to-bottom and must not overlap." } },
 ];
 
 function renderEditor(container, fields, values) {
@@ -1072,12 +1172,86 @@ function renderEditor(container, fields, values) {
     const rawValue = String(value);
     const valueText = escapeHtml(rawValue);
     const valueAttr = escapeAttr(rawValue);
+    if (field.type === "cplist") {
+      const columns = Array.isArray(field.columns) ? field.columns : [];
+      const colLabel = (col) => (typeof col.label === "object" ? col.label[state.language] : col.label);
+      const colType = (col) => col.type || "text";
+      const gridTemplate = `${columns.map((col) => `${col.flex || 1}fr`).join(" ")} 26px`;
+      let cpItems = [];
+      try {
+        const parsed = JSON.parse(String(value) || "[]");
+        if (Array.isArray(parsed)) cpItems = parsed;
+      } catch (error) {
+        cpItems = [];
+      }
+      if (!cpItems.length) {
+        const empty = {};
+        columns.forEach((col) => {
+          empty[col.key] = "";
+        });
+        cpItems = [empty];
+      }
+      const en = state.language === "en";
+      const header = `
+          <span class="cp-head" style="grid-template-columns:${gridTemplate}">${columns.map((col) => `<span>${escapeHtml(colLabel(col))}</span>`).join("")}<span></span></span>`;
+      const rows = cpItems.map((cp, index) => {
+        const cells = columns.map((col) => {
+          const type = colType(col);
+          const extra = type === "number"
+            ? `step="${col.step || "any"}" min="${col.min ?? 0}" placeholder="0"`
+            : type === "time" ? "" : `placeholder="${escapeHtml(colLabel(col))}"`;
+          return `<input class="cp-input" data-cp-field="${fieldKeyAttr}" data-cp-index="${index}" data-cp-key="${col.key}" type="${type}" value="${escapeAttr(cp?.[col.key] ?? "")}" ${extra} />`;
+        }).join("");
+        return `
+          <span class="cpline" style="grid-template-columns:${gridTemplate}" data-cp-index="${index}">
+            ${cells}
+            <button type="button" class="cp-remove" data-cp-remove="${index}" aria-label="${en ? "Remove" : "删除"}">×</button>
+          </span>`;
+      }).join("");
+      const tooltip = typeof field.help === "object" ? field.help[state.language] : field.help;
+      const tooltipAttr = tooltip ? ` data-tooltip="${escapeAttr(tooltip)}"` : "";
+      const addLabel = typeof field.addLabel === "object" ? field.addLabel[state.language] : (field.addLabel || (en ? "Add" : "新增"));
+      return `
+        <label class="field-row" data-row-key="${fieldKeyAttr}">
+          <span class="field-topline"><input data-enabled-field="${fieldKeyAttr}" type="checkbox" ${enabled ? "checked" : ""} /> <span>${label}</span><span class="field-info" tabindex="0" role="note" aria-label="${escapeAttr(tooltip || "")}"${tooltipAttr}>!</span></span>
+          <span class="cplist">${header}${rows}</span>
+          <button type="button" class="cp-add" data-cp-add="${fieldKeyAttr}">+ ${escapeHtml(addLabel)}</button>
+        </label>`;
+    }
     if (field.type === "textarea") {
       return `
-        <label class="field-row">
+        <label class="field-row" data-row-key="${fieldKeyAttr}">
           <span class="field-topline"><input data-enabled-field="${fieldKeyAttr}" type="checkbox" ${enabled ? "checked" : ""} /> <span>${label}</span></span>
           <textarea data-field="${fieldKeyAttr}" placeholder="${placeholder}">${valueText}</textarea>
           ${escapedHelp ? `<span class="field-help">${escapedHelp}</span>` : ""}
+        </label>`;
+    }
+    if (field.type === "hrzones") {
+      const zoneValues = String(value).split("\n");
+      const header = `
+          <span class="hrzone-head">
+            <span></span>
+            <span>${state.language === "en" ? "Lower" : "下限"}</span>
+            <span>${state.language === "en" ? "Upper" : "上限"}</span>
+          </span>`;
+      const rows = HR_ZONE_NAMES.map((zoneName, index) => {
+        const zoneLabel = state.language === "en" ? zoneName.en : zoneName.zh;
+        const parts = (zoneValues[index] ?? "").split("-");
+        const lowerVal = escapeAttr(parts[0] ?? "");
+        const upperVal = escapeAttr(parts[1] ?? "");
+        return `
+          <span class="hrzone-line">
+            <span class="hrzone-name">${escapeHtml(zoneLabel)}</span>
+            <input class="hrzone-input" data-hrzone-field="${fieldKeyAttr}" data-hrzone-index="${index}" data-hrzone-bound="lower" type="number" step="1" min="0" value="${lowerVal}" placeholder="—" />
+            <input class="hrzone-input" data-hrzone-field="${fieldKeyAttr}" data-hrzone-index="${index}" data-hrzone-bound="upper" type="number" step="1" min="0" value="${upperVal}" placeholder="—" />
+          </span>`;
+      }).join("");
+      const tooltip = typeof field.help === "object" ? field.help[state.language] : field.help;
+      const tooltipAttr = tooltip ? ` data-tooltip="${escapeAttr(tooltip)}"` : "";
+      return `
+        <label class="field-row" data-row-key="${fieldKeyAttr}">
+          <span class="field-topline"><input data-enabled-field="${fieldKeyAttr}" type="checkbox" ${enabled ? "checked" : ""} /> <span>${label}</span><span class="field-info" tabindex="0" role="note" aria-label="${escapeAttr(tooltip || "")}"${tooltipAttr}>!</span></span>
+          <span class="hrzone-list">${header}${rows}</span>
         </label>`;
     }
     if (field.type === "select") {
@@ -1092,7 +1266,7 @@ function renderEditor(container, fields, values) {
         return `<option value="${optionValue}" ${String(value) === option.value ? "selected" : ""}>${display}</option>`;
       }).join("");
       return `
-        <label class="field-row">
+        <label class="field-row" data-row-key="${fieldKeyAttr}">
           <span class="field-topline"><input data-enabled-field="${fieldKeyAttr}" type="checkbox" ${enabled ? "checked" : ""} /> <span>${label}</span></span>
           <select data-field="${fieldKeyAttr}">
             ${renderedOptions}
@@ -1101,7 +1275,7 @@ function renderEditor(container, fields, values) {
         </label>`;
     }
     return `
-      <label class="field-row">
+      <label class="field-row" data-row-key="${fieldKeyAttr}">
         <span class="field-topline"><input data-enabled-field="${fieldKeyAttr}" type="checkbox" ${enabled ? "checked" : ""} /> <span>${label}</span></span>
         <input data-field="${fieldKeyAttr}" type="${fieldTypeAttr}" value="${valueAttr}" step="${stepAttr}" placeholder="${placeholder}" />
         ${escapedHelp ? `<span class="field-help">${escapedHelp}</span>` : ""}
@@ -1159,8 +1333,48 @@ function refreshProfileStage(values = null) {
 function readEditorValues(container, fields) {
   const values = { __enabled: {} };
   for (const field of fields) {
-    const el = container.querySelector(`[data-field="${field.key}"]`);
     const enabledEl = container.querySelector(`[data-enabled-field="${field.key}"]`);
+    if (field.type === "hrzones") {
+      const inputs = Array.from(container.querySelectorAll(`[data-hrzone-field="${field.key}"]`));
+      const byIndex = new Map();
+      for (const input of inputs) {
+        const idx = Number(input.dataset.hrzoneIndex);
+        if (!byIndex.has(idx)) byIndex.set(idx, {});
+        byIndex.get(idx)[input.dataset.hrzoneBound] = input.value.trim();
+      }
+      const rawValue = [...byIndex.keys()]
+        .sort((a, b) => a - b)
+        .map((idx) => {
+          const zone = byIndex.get(idx);
+          const lo = zone.lower || "";
+          const hi = zone.upper || "";
+          return lo === "" && hi === "" ? "" : `${lo}-${hi}`;
+        })
+        .filter(Boolean)
+        .join("\n");
+      const enabled = Boolean(enabledEl?.checked) && rawValue !== "";
+      values.__enabled[field.key] = enabled;
+      values[field.key] = enabled ? rawValue : "";
+      continue;
+    }
+    if (field.type === "cplist") {
+      const inputs = Array.from(container.querySelectorAll(`[data-cp-field="${field.key}"]`));
+      const byIndex = new Map();
+      for (const input of inputs) {
+        const idx = Number(input.dataset.cpIndex);
+        if (!byIndex.has(idx)) byIndex.set(idx, {});
+        byIndex.get(idx)[input.dataset.cpKey] = input.value.trim();
+      }
+      const list = [...byIndex.keys()]
+        .sort((a, b) => a - b)
+        .map((idx) => byIndex.get(idx));
+      const rawValue = list.length ? JSON.stringify(list) : "";
+      const enabled = Boolean(enabledEl?.checked) && rawValue !== "";
+      values.__enabled[field.key] = enabled;
+      values[field.key] = enabled ? rawValue : "";
+      continue;
+    }
+    const el = container.querySelector(`[data-field="${field.key}"]`);
     const rawValue = el ? el.value.trim() : "";
     const enabled = Boolean(enabledEl?.checked) && rawValue !== "";
     values.__enabled[field.key] = enabled;
@@ -1222,6 +1436,49 @@ function buildProfileFromActivityForm() {
 
 function buildRaceProfileFromEditor() {
   return { ...readEditorValues(ui.raceProfileEditor, raceProfileFields) };
+}
+
+// 校验官方补给点与爬坡路段位置：必须从上到下依次递增/排列且不重叠，不合法则返回错误提示
+function validateRaceProfile(form) {
+  let cpList = [];
+  try {
+    const parsed = JSON.parse(String(form.officialCp || "[]"));
+    if (Array.isArray(parsed)) cpList = parsed;
+  } catch (error) {
+    cpList = [];
+  }
+  let prevDist = -1;
+  for (let i = 0; i < cpList.length; i++) {
+    const dist = safeFloat(cpList[i].distance);
+    if (dist === null) continue;
+    if (dist <= 0 || dist <= prevDist) {
+      return { ok: false, message: t("raceCpDistanceInvalid") };
+    }
+    prevDist = dist;
+  }
+
+  let climbList = [];
+  try {
+    const parsed = JSON.parse(String(form.climbSegments || "[]"));
+    if (Array.isArray(parsed)) climbList = parsed;
+  } catch (error) {
+    climbList = [];
+  }
+  let prevEnd = -1;
+  for (let i = 0; i < climbList.length; i++) {
+    const start = safeFloat(climbList[i].start);
+    const end = safeFloat(climbList[i].end);
+    if (start === null && end === null) continue;
+    if (start === null || end === null || start >= end) {
+      return { ok: false, message: t("raceClimbRangeInvalid") };
+    }
+    if (start < prevEnd) {
+      return { ok: false, message: t("raceClimbOrderInvalid") };
+    }
+    prevEnd = end;
+  }
+
+  return { ok: true };
 }
 
 function buildSimulatedElevation(raceProfile) {
@@ -1409,13 +1666,11 @@ function seedRaceEditor(values = null) {
   const defaults = values || {
     distanceKm: "30",
     ascentM: "1200",
-    cpKm: "8,16,24",
-    segmentGain: "6:200,8:800,10:300",
-    climbTriggerM: "250",
-    maxIntervalMin: "45",
+    expectedFinishH: "",
     weatherTemp: "",
     humidity: "",
     locationNotes: "",
+    officialCp: "",
   };
   renderEditor(ui.raceProfileEditor, raceProfileFields, defaults);
 }
@@ -1599,10 +1854,32 @@ ui.parseRaceFitBtn.addEventListener("click", async () => {
     setStatus(t("statusParsingRace"));
     state.decodedRace = await decodeFitMessages(await file.arrayBuffer());
     const session = state.decodedRace.session_mesgs[0] || {};
+    const coursePoints = state.decodedRace.course_point_mesgs || [];
+    const seenCp = new Set();
+    const officialCp = coursePoints
+      .filter((cp) => cp && cp.distance !== undefined && cp.distance !== null)
+      .map((cp) => ({
+        name: String(cp.name || "CP"),
+        distance: (cp.distance / 1000).toFixed(2),
+        cutoff: "",
+        climb: "",
+        descent: "",
+      }))
+      .filter((cp) => {
+        const key = `${cp.name}|${cp.distance}`;
+        if (seenCp.has(key)) return false;
+        seenCp.add(key);
+        return true;
+      });
     const values = {
-      ...buildRaceProfileFromEditor(),
       distanceKm: firstField(session, "total_distance") !== null ? (firstField(session, "total_distance") / 1000).toFixed(2) : "",
       ascentM: firstField(session, "total_ascent") !== null ? firstField(session, "total_ascent").toFixed(0) : "",
+      expectedFinishH: "",
+      weatherTemp: "",
+      humidity: "",
+      locationNotes: "",
+      officialCp: officialCp.length ? JSON.stringify(officialCp) : "",
+      climbSegments: "",
     };
     renderKvPreview(ui.raceFitPreview, [
       [t("kvTotalDistance"), values.distanceKm ? `${values.distanceKm} km` : ""],
@@ -1621,12 +1898,66 @@ ui.raceFitFileTrigger.addEventListener("click", () => {
   ui.raceFitFile.click();
 });
 
+ui.raceProfileEditor.addEventListener("click", (event) => {
+  const addBtn = event.target.closest("[data-cp-add]");
+  if (addBtn) {
+    event.preventDefault();
+    const fieldKey = addBtn.dataset.cpAdd;
+    const field = raceProfileFields.find((f) => f.key === fieldKey);
+    const columns = (field && field.columns) || [];
+    const current = readEditorValues(ui.raceProfileEditor, raceProfileFields);
+    let list = [];
+    try {
+      const parsed = JSON.parse(current[fieldKey] || "[]");
+      if (Array.isArray(parsed)) list = parsed;
+    } catch (error) {
+      list = [];
+    }
+    const empty = {};
+    columns.forEach((col) => {
+      empty[col.key] = "";
+    });
+    list.push(empty);
+    current[fieldKey] = JSON.stringify(list);
+    current.__enabled = current.__enabled || {};
+    current.__enabled[fieldKey] = true;
+    renderEditor(ui.raceProfileEditor, raceProfileFields, current);
+    return;
+  }
+  const removeBtn = event.target.closest("[data-cp-remove]");
+  if (removeBtn) {
+    event.preventDefault();
+    const idx = Number(removeBtn.dataset.cpRemove);
+    const fieldKey = removeBtn.closest(".field-row").dataset.rowKey;
+    const current = readEditorValues(ui.raceProfileEditor, raceProfileFields);
+    let list = [];
+    try {
+      const parsed = JSON.parse(current[fieldKey] || "[]");
+      if (Array.isArray(parsed)) list = parsed;
+    } catch (error) {
+      list = [];
+    }
+    list.splice(idx, 1);
+    current[fieldKey] = list.length ? JSON.stringify(list) : "";
+    current.__enabled = current.__enabled || {};
+    current.__enabled[fieldKey] = true;
+    renderEditor(ui.raceProfileEditor, raceProfileFields, current);
+    return;
+  }
+});
+
 ui.raceFitFile.addEventListener("change", () => {
   refreshFileNameLabel(ui.raceFitFile, ui.raceFitFileName);
 });
 
 ui.confirmStep3Btn.addEventListener("click", () => {
-  state.raceProfileForm = buildRaceProfileFromEditor();
+  const form = buildRaceProfileFromEditor();
+  const check = validateRaceProfile(form);
+  if (!check.ok) {
+    setStatus(check.message);
+    return;
+  }
+  state.raceProfileForm = form;
   const raceProfile = new RaceProfileBuilder().build(state.raceProfileForm);
   state.routeRaceProfile = raceProfile;
   hidePanel(ui.step5Panel);

@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260806" />
+    <link rel="stylesheet" href="./styles.css?v=20260807l" />
   </head>
   <body>
     <!-- 梦幻山野夜空背景层 -->
@@ -76,25 +76,25 @@
         <p class="step-purpose" id="stepHint2">本步将生成：可编辑 User Profile，用于规则引擎能力评估与风险判断。</p>
         <p class="note strong" id="step2Note">提醒：以下显示内容均为运动设备自带信息，如信息不适用，请手动去掉信息或更改。</p>
         <div class="step2-layout">
+          <div class="profile-stage" id="profileStage" aria-hidden="true">
+            <div class="profile-silhouette" id="profileSilhouette">
+              <span class="silhouette-head"></span>
+              <span class="silhouette-body"></span>
+            </div>
+            <div class="profile-pulse"></div>
+            <div class="profile-stats">
+              <span id="profileGenderTag">Gender</span>
+              <span id="profileWeightTag">Weight -</span>
+              <span id="profileHrTag">MaxHR -</span>
+            </div>
+          </div>
           <div class="subpanel summary-panel">
             <h3 id="activitySummaryTitle">活动概括</h3>
             <div id="activitySummaryEditor" class="kv-list"></div>
           </div>
           <div class="subpanel profile-panel">
-            <div class="profile-stage" id="profileStage" aria-hidden="true">
-              <div class="profile-silhouette" id="profileSilhouette">
-                <span class="silhouette-head"></span>
-                <span class="silhouette-body"></span>
-              </div>
-              <div class="profile-pulse"></div>
-              <div class="profile-stats">
-                <span id="profileGenderTag">Gender</span>
-                <span id="profileWeightTag">Weight -</span>
-                <span id="profileHrTag">MaxHR -</span>
-              </div>
-            </div>
             <h3 id="userProfileTitle">User Profile</h3>
-            <div id="userProfileEditor" class="grid single"></div>
+            <div id="userProfileEditor" class="grid two"></div>
           </div>
         </div>
         <div class="actions left">
@@ -217,6 +217,6 @@
     </main>
 
     <script src="./bg.js?v=20260806u"></script>
-    <script type="module" src="./app.js?v=20260806w"></script>
+    <script type="module" src="./app.js?v=20260807k"></script>
   </body>
 </html>
