@@ -7,7 +7,7 @@
 > Experiment #001 — 越野跑 AI 补给规划工具
 > 上传 Garmin 历史运动文件，设定目标路线，自动计算补给节奏与分段建议，并由 AI 生成可执行解释。
 
-**当前正式版**：纯 JavaScript 静态 Web 应用（`web/`）—— 无框架、无构建步骤、可在浏览器直接打开运行。
+**当前正式版**：纯 JavaScript 静态 Web 应用（仓库根目录 `index.html`）—— 无框架、无构建步骤、可在浏览器直接打开运行。
 
 ---
 
@@ -45,8 +45,7 @@
 ## 🚀 快速开始
 
 ```bash
-cd web
-# 任选其一：
+# 在仓库根目录（= 03_Code 文件夹）任选其一：
 open index.html                 # 直接打开（推荐现代浏览器）
 python3 -m http.server 8080     # 或本地静态服务器
 # 然后访问 http://localhost:8080
@@ -74,12 +73,10 @@ AI-Fuel-Planner/                 # 仓库根目录 = 03_Code 文件夹
 ├── README.md / README_EN.md     # 说明文档（本文档，登录仓库即显示）
 ├── .gitignore
 ├── .devcontainer/               # VS Code Dev Container 配置
-├── web/                         # ★ 当前正式版：纯 JS 静态 Web 应用
-│   ├── index.html               #   页面结构（含版本号 ?v= 缓存刷新）
-│   ├── app.js                   #   逻辑：FIT 解析 / 画像 / 规则引擎 / 图表 / AI 调用
-│   ├── styles.css               #   页面样式（深林绿 × 探索橙主题）
-│   ├── bg.js                    #   森林夜空动效背景
-│   └── README.md                #   Web 版详细说明
+├── index.html                   # ★ 当前正式版（纯 JS 静态 Web 应用）主程序
+├── app.js                       #   逻辑：FIT 解析 / 画像 / 规则引擎 / 图表 / AI 调用
+├── styles.css                   #   页面样式（深林绿 × 探索橙主题）
+├── bg.js                        #   森林夜空动效背景
 └── python_legacy/               # ⚠️ 已弃用的 Python 测试版（历史存档，不再维护）
 ```
 
@@ -91,7 +88,7 @@ AI-Fuel-Planner/                 # 仓库根目录 = 03_Code 文件夹
 
 ### 🎯 项目方向
 
-- `7654820` **项目聚焦 JS Web 应用**：弃用的 Python 测试版归档至 `python_legacy/`（保留历史存档与说明），正式版为 `web/`
+- `7654820` **项目聚焦 JS Web 应用**：弃用的 Python 测试版归档至 `python_legacy/`（保留历史存档与说明），正式版为仓库根目录的 JS 应用
 - `2e2d7be` / `4e1d6ef` **目录结构重整**：程序文件归位到 `03_Code/`，仓库根目录作为说明文档层
 
 ### 🧭 术语与文件定位
@@ -148,5 +145,4 @@ AI-Fuel-Planner/                 # 仓库根目录 = 03_Code 文件夹
 
 ## 🔗 相关文档
 
-- Web 版详细说明：[`web/README.md`](web/README.md)
 - 弃用的 Python 版说明：[`python_legacy/README_DEPRECATED.md`](python_legacy/README_DEPRECATED.md)

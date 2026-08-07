@@ -7,7 +7,7 @@
 > Experiment #001 — Trail-running AI fuel planner.
 > Upload Garmin activity data, set a target route, get a quantified fueling plan and an AI-generated, actionable explanation.
 
-**Current release**: pure JavaScript static web app (`web/`) — no framework, no build step, runs directly in the browser.
+**Current release**: pure JavaScript static web app (repo root `index.html`) — no framework, no build step, runs directly in the browser.
 
 ---
 
@@ -45,8 +45,7 @@ The previous Python + Streamlit prototype is **deprecated and archived** (see `p
 ## 🚀 Quick start
 
 ```bash
-cd web
-# Either:
+# From the repo root (= the 03_Code folder), either:
 open index.html                 # open directly (modern browser)
 # Or a local static server:
 python3 -m http.server 8080
@@ -75,12 +74,10 @@ AI-Fuel-Planner/                 # Repo root = the 03_Code folder
 ├── README.md / README_EN.md     # Documentation (this file, shown on repo entry)
 ├── .gitignore
 ├── .devcontainer/               # VS Code Dev Container config
-├── web/                         # ★ Current release: pure JS static web app
-│   ├── index.html               #   Page structure (incl. ?v= cache busting)
-│   ├── app.js                   #   Logic: FIT parsing / profile / rule engine / chart / AI
-│   ├── styles.css               #   Page styles (forest-green × ember theme)
-│   ├── bg.js                    #   Forest-night animated background
-│   └── README.md                #   Detailed web app docs
+├── index.html                   # ★ Current release (pure JS static web app) main entry
+├── app.js                       #   Logic: FIT parsing / profile / rule engine / chart / AI
+├── styles.css                   #   Page styles (forest-green × ember theme)
+├── bg.js                        #   Forest-night animated background
 └── python_legacy/               # ⚠️ Deprecated Python prototype (archived, unmaintained)
 ```
 
@@ -92,7 +89,7 @@ AI-Fuel-Planner/                 # Repo root = the 03_Code folder
 
 ### 🎯 Project direction
 
-- `7654820` **Focused on the JS web app**: deprecated Python prototype archived to `python_legacy/`; the web app in `web/` is the official version
+- `7654820` **Focused on the JS web app**: deprecated Python prototype archived to `python_legacy/`; the web app at the repo root is the official version
 - `2e2d7be` / `4e1d6ef` **Restructured folders**: program files moved back into `03_Code/`; repo root holds docs
 
 ### 🧭 Terminology & file roles
@@ -149,5 +146,4 @@ AI-Fuel-Planner/                 # Repo root = the 03_Code folder
 
 ## 🔗 Related docs
 
-- Web app details: [`web/README.md`](web/README.md)
 - Deprecated Python docs: [`python_legacy/README_DEPRECATED.md`](python_legacy/README_DEPRECATED.md)
