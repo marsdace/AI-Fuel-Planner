@@ -92,6 +92,9 @@ const TEXT = {
     raceCpDistanceInvalid: "官方补给点的“所在距离”必须大于 0，且列表从上到下需依次递增。",
     raceClimbRangeInvalid: "爬坡路段的“爬升起点”必须小于“爬升终点”。",
     raceClimbOrderInvalid: "爬坡路段必须从上到下依次排列且不重叠（每段起点需 ≥ 上一段终点）。",
+    raceCpExceedsDistance: "官方补给点的“所在距离”不能超过路线总距离。",
+    raceClimbExceedsDistance: "爬坡路段的“终点”不能超过路线总距离。",
+    raceClimbExceedsAscent: "爬坡路段的“爬升高度”合计不能超过路线总爬升。",
     statusReadyEngine: "可以开始运行 Trail Lab Rule Engine 与 AI Planner。",
     statusNeedActivity: "请先上传历史运动文件，或选择手动填写用户信息。",
     statusManualProfile: "未上传历史运动文件，已切换为手动填写用户能力画像。",
@@ -203,6 +206,9 @@ const TEXT = {
     raceCpDistanceInvalid: "Aid-station distances must be greater than 0 and increase from top to bottom.",
     raceClimbRangeInvalid: "Climb segment start must be less than its end.",
     raceClimbOrderInvalid: "Climb segments must be ordered top-to-bottom and not overlap (each start ≥ previous end).",
+    raceCpExceedsDistance: "Aid-station distance must not exceed the route's total distance.",
+    raceClimbExceedsDistance: "Climb segment end must not exceed the route's total distance.",
+    raceClimbExceedsAscent: "Climb segment heights must not exceed the route's total ascent.",
     statusReadyEngine: "You can now run the Trail Lab Rule Engine and AI Planner.",
     statusNeedActivity: "Please upload a historical activity file, or choose to fill in your profile manually.",
     statusManualProfile: "No historical activity file uploaded. Switched to manual profile entry.",
@@ -1447,8 +1453,11 @@ function buildRaceProfileFromEditor() {
   return { ...readEditorValues(ui.raceProfileEditor, raceProfileFields) };
 }
 
-// 校验官方补给点与爬坡路段位置：必须从上到下依次递增/排列且不重叠，不合法则返回错误提示
+// 校验官方补给点与爬坡路段：位置递增且不重叠、位置不超过总距离、爬升高度合计不超过总爬升
 function validateRaceProfile(form) {
+  const distanceKm = Math.max(safeFloat(form.distanceKm) || 30, 1);
+  const ascentM = Math.max(safeFloat(form.ascentM) || 0, 0);
+
   let cpList = [];
   try {
     const parsed = JSON.parse(String(form.officialCp || "[]"));
@@ -1463,6 +1472,9 @@ function validateRaceProfile(form) {
     if (dist <= 0 || dist <= prevDist) {
       return { ok: false, message: t("raceCpDistanceInvalid") };
     }
+    if (dist > distanceKm) {
+      return { ok: false, message: t("raceCpExceedsDistance") };
+    }
     prevDist = dist;
   }
 
@@ -1474,17 +1486,26 @@ function validateRaceProfile(form) {
     climbList = [];
   }
   let prevEnd = -1;
+  let totalHeight = 0;
   for (let i = 0; i < climbList.length; i++) {
     const start = safeFloat(climbList[i].start);
     const end = safeFloat(climbList[i].end);
-    if (start === null && end === null) continue;
+    const height = safeFloat(climbList[i].height);
+    if (start === null && end === null && height === null) continue;
     if (start === null || end === null || start >= end) {
       return { ok: false, message: t("raceClimbRangeInvalid") };
     }
     if (start < prevEnd) {
       return { ok: false, message: t("raceClimbOrderInvalid") };
     }
+    if (end > distanceKm) {
+      return { ok: false, message: t("raceClimbExceedsDistance") };
+    }
+    totalHeight += Math.max(height || 0, 0);
     prevEnd = end;
+  }
+  if (ascentM > 0 && totalHeight > ascentM) {
+    return { ok: false, message: t("raceClimbExceedsAscent") };
   }
 
   return { ok: true };
