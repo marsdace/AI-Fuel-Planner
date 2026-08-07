@@ -48,8 +48,9 @@ const TEXT = {
     raceParamsTitle: "赛事参数",
     confirmStep3: "确认赛事参数",
     step4Title: "路线、海拔、补给点概况图",
-    stepHint4: "本步将生成：路线轮廓图与补给触发点，帮助你直观看到补给节奏。",
-    step4Note: "基于当前目标赛事参数模拟生成，用于确认补给点分布与坡段结构。",
+    stepHint4: "本步将生成：路线海拔轮廓与补给点分布，帮助你直观确认线路结构。",
+    step4NoteFit: "基于目标赛事 FIT 的真实海拔轨迹绘制；补给点来自步骤 3 确认的官方补给点。",
+    step4NoteSim: "基于步骤 3 确认的赛事参数模拟生成（爬坡起点默认海拔 0）；补给点来自步骤 3 确认的官方补给点。",
     legendLine: "路线海拔轮廓",
     legendCp: "CP / 补给站",
     confirmStep4: "确认路线概况",
@@ -153,8 +154,9 @@ const TEXT = {
     raceParamsTitle: "Race parameters",
     confirmStep3: "Confirm race parameters",
     step4Title: "Route, Elevation, and Fuel Point Overview",
-    stepHint4: "This step generates: route contour and fueling trigger points for visual verification.",
-    step4Note: "Generated from current race parameters to confirm fuel point distribution and climb structure.",
+    stepHint4: "This step generates: route elevation profile and fuel-point layout for visual confirmation.",
+    step4NoteFit: "Drawn from the real elevation track of the target race FIT; aid stations come from the official CPs confirmed in step 3.",
+    step4NoteSim: "Simulated from the race parameters confirmed in step 3 (climb starts default to 0 m); aid stations come from the official CPs confirmed in step 3.",
     legendLine: "Route elevation profile",
     legendCp: "CP / aid station",
     confirmStep4: "Confirm route overview",
@@ -1619,6 +1621,7 @@ function renderRouteOverview(raceProfile) {
   // 图表只用步骤三确认的信息绘制：读取了目标赛事 FIT 时用其真实海拔轨迹，否则按步骤三爬坡路段模拟（起点默认海拔 0）
   const fitRoutePoints = buildRoutePointsFromDecoded(state.decodedRace, raceProfile.distance_km);
   const pathPoints = fitRoutePoints || buildSimulatedElevation(raceProfile);
+  document.getElementById("step4Note").textContent = fitRoutePoints ? t("step4NoteFit") : t("step4NoteSim");
   const width = 920;
   const height = 280;
   const padding = 32;
@@ -1785,7 +1788,6 @@ function applyLanguage() {
   document.getElementById("backStep3Btn").textContent = t("backStep");
   document.getElementById("step4Title").textContent = t("step4Title");
   document.getElementById("stepHint4").textContent = t("stepHint4");
-  document.getElementById("step4Note").textContent = t("step4Note");
   setLegendItem("legendLine", "line", t("legendLine"));
   setLegendItem("legendCp", "cp", t("legendCp"));
   document.getElementById("confirmStep4Btn").textContent = t("confirmStep4");
