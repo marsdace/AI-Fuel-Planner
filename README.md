@@ -127,6 +127,7 @@ AI-Fuel-Planner/
 ### 📚 文档与仓库整理
 
 - `b53583e` **文档与仓库整理**：新增顶层 README（中 / 英）与 Web 版详细文档；`.gitignore` 忽略个人实验 / 内容目录；移除冗余的嵌套 `03_Code/.git`
+- `47c058d` **仓库根目录重整**：`web/` 与 `python_legacy/` 直接置于仓库根（与 GitHub「以 03_Code 为根」一致）；`README.md` 位于根层，登录仓库即显示；取消跟踪个人实测数据目录 `04_Data/`
 
 ---
 

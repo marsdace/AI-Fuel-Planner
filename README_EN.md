@@ -128,6 +128,7 @@ AI-Fuel-Planner/
 ### 📚 Docs & repo housekeeping
 
 - `b53583e` **Docs & housekeeping**: added top-level README (zh/en) and detailed web-app docs; `.gitignore` now ignores personal experiment/content folders; removed the redundant nested `03_Code/.git`
+- `47c058d` **Repo-root restructure**: `web/` and `python_legacy/` placed directly at the repo root (matching GitHub's "03_Code as root"); `README.md` at the root so it shows on entry; untracked the personal field-test data folder `04_Data/`
 
 ---
 
