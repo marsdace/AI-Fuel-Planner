@@ -1231,8 +1231,30 @@ button:disabled {
 }
 
 #status {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: block;
+  margin: 0 0 14px;
+  padding: 10px 14px;
   font-size: 13.5px;
-  color: var(--muted);
+  line-height: 1.5;
+  color: var(--ink);
+  background: linear-gradient(90deg, rgba(30, 66, 47, 0.94), rgba(30, 66, 47, 0.86));
+  border-left: 3px solid var(--ember);
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 6px 18px rgba(10, 26, 18, 0.35);
+  backdrop-filter: blur(8px);
+}
+
+#status:empty {
+  display: none;
+}
+
+#status.is-error {
+  color: #ffe4de;
+  background: linear-gradient(90deg, rgba(74, 30, 26, 0.94), rgba(74, 30, 26, 0.86));
+  border-left-color: #ff6b5e;
 }
 
 .callout {

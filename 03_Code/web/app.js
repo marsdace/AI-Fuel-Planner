@@ -1658,8 +1658,9 @@ const ui = {
   aiOutput: document.getElementById("aiOutput"),
 };
 
-function setStatus(text) {
+function setStatus(text, kind) {
   ui.status.textContent = text;
+  ui.status.classList.toggle("is-error", kind === "error");
 }
 
 function seedRaceEditor(values = null) {
@@ -1787,7 +1788,7 @@ ui.confirmStep1Btn.addEventListener("click", async () => {
     seedRaceEditor();
     setStatus(t("statusActivityReady"));
   } catch (error) {
-    setStatus(error instanceof Error ? error.message : String(error));
+    setStatus(error instanceof Error ? error.message : String(error), "error");
   } finally {
     ui.confirmStep1Btn.disabled = false;
   }
@@ -1890,7 +1891,7 @@ ui.parseRaceFitBtn.addEventListener("click", async () => {
     renderEditor(ui.raceProfileEditor, raceProfileFields, values);
     setStatus(t("statusRaceReady"));
   } catch (error) {
-    setStatus(error instanceof Error ? error.message : String(error));
+    setStatus(error instanceof Error ? error.message : String(error), "error");
   }
 });
 
@@ -1954,7 +1955,7 @@ ui.confirmStep3Btn.addEventListener("click", () => {
   const form = buildRaceProfileFromEditor();
   const check = validateRaceProfile(form);
   if (!check.ok) {
-    setStatus(check.message);
+    setStatus(check.message, "error");
     return;
   }
   state.raceProfileForm = form;
@@ -2021,7 +2022,7 @@ ui.runBtn.addEventListener("click", async () => {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     ui.aiOutput.textContent = `${t("errorPrefix")}: ${message}`;
-    setStatus(`${t("statusFailed")}: ${message}`);
+    setStatus(`${t("statusFailed")}: ${message}`, "error");
   } finally {
     ui.runBtn.disabled = false;
   }
