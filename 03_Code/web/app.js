@@ -734,20 +734,8 @@ class RaceProfileBuilder {
       }
     }
 
-    // 兜底：官方补给点区间爬升 → 爬升分段（相邻 CP 之间）
-    const cpSegments = [];
-    let prevKm = 0;
-    for (const cp of validCps) {
-      const km = cp.distance;
-      if (km > prevKm) {
-        cpSegments.push([Number((km - prevKm).toFixed(2)), Number(safeFloat(cp.climb) || 0)]);
-        prevKm = km;
-      }
-    }
-    if (cpSegments.length && prevKm < distanceKm) {
-      cpSegments.push([Number((distanceKm - prevKm).toFixed(2)), 0]);
-    }
-    const manualSegments = climbSegments.length ? climbSegments : (cpSegments.length ? cpSegments : parseClimbSegments(input.segmentGain || ""));
+    // 爬坡分段只来源于“爬坡路段”；补给点信息仅用于图中标记，不作为绘制海拔曲线的依据
+    const manualSegments = climbSegments.length ? climbSegments : parseClimbSegments(input.segmentGain || "");
     // 若爬坡路段填了明确的“爬升高度”，直接采用（不再按总爬升缩放）；否则标准化到总爬升/总距离
     const segments = hasClimbHeights ? manualSegments : this.normalizeSegments(distanceKm, ascentM, manualSegments);
 
@@ -1163,7 +1151,7 @@ const raceProfileFields = [
   { key: "humidity", label: { zh: "预计湿度 (%)", en: "Expected humidity (%)" }, type: "number", step: "1", min: 0, max: 100, placeholder: "optionalPlaceholder" },
   { key: "locationNotes", label: { zh: "线路备注", en: "Route notes" }, type: "textarea", placeholder: "raceNotesPlaceholder" },
   // 右列：官方补给点 + 爬坡路段（位置均为距起点相对距离，提示统一在“!”悬浮中）
-  { key: "officialCp", label: { zh: "官方补给点", en: "Official aid stations" }, type: "cplist", columns: CP_OFFICIAL_COLUMNS, addLabel: { zh: "新增补给点", en: "Add aid station" }, help: { zh: "FIT 有 CP 点会自动导入；也可手动新增。位置为距起点相对距离 (km)，每站可填名称、所在距离、关门时间、区间爬升与下降。列表从上到下需按距离递增排列。", en: "CP points are auto-imported from FIT; add more manually. Position = relative distance (km) from the start. Each station: name, distance, cutoff, segment climb and descent. Rows must be ordered by increasing distance from top to bottom." } },
+  { key: "officialCp", label: { zh: "官方补给点", en: "Official aid stations" }, type: "cplist", columns: CP_OFFICIAL_COLUMNS, addLabel: { zh: "新增补给点", en: "Add aid station" }, help: { zh: "FIT 有 CP 点会自动导入；也可手动新增。位置为距起点相对距离 (km)，每站可填名称、所在距离、关门时间、区间爬升与下降。列表从上到下需按距离递增排列。注意：补给点信息仅用于图中标记，不作为绘制海拔曲线的依据（不依据累计爬升/下降绘制图形）。", en: "CP points are auto-imported from FIT; add more manually. Position = relative distance (km) from the start. Each station: name, distance, cutoff, segment climb and descent. Rows must be ordered by increasing distance from top to bottom. Note: aid-station info is only used as chart markers and does not affect the elevation curve (the curve is not drawn from cumulative ascent/descent)." } },
   { key: "climbSegments", label: { zh: "爬坡路段", en: "Climb segments" }, type: "cplist", columns: CP_CLIMB_COLUMNS, addLabel: { zh: "新增爬坡路段", en: "Add climb segment" }, help: { zh: "读取目标运动文件后会自动生成爬坡路段，可手动修改。记录每个爬坡路段的爬升起点、爬升终点（距起点相对距离，km）与爬升高度 (m)。列表从上到下需依次排列且不重叠。", en: "Climb segments are auto-generated after reading a target activity file; you can edit them manually. Record each climb segment's start, end (relative distance in km from the start) and climb height (m). Rows must be ordered top-to-bottom and must not overlap." } },
 ];
 
@@ -1706,7 +1694,12 @@ function renderRouteOverview(raceProfile) {
     cpInfo = [];
   }
   const cjkCount = (text) => (String(text).match(/[\u4e00-\u9fff]/g) || []).length;
-  const renderCpLabels = raceProfile.aid_stations_km.map((km, idx) => {
+  const charW = 6.3;
+  const padX = 7;
+  const padY = 5;
+  const lineH = 13;
+  const lineWidth = (line) => line.length * charW + cjkCount(line) * 4.6;
+  const chipLayouts = raceProfile.aid_stations_km.map((km, idx) => {
     const cp = cpInfo.find((item) => Math.abs((safeFloat(item.distance) || -1) - km) < 0.001);
     const name = cp && cp.name ? String(cp.name) : `CP${idx + 1}`;
     const climbVal = cp ? safeFloat(cp.climb) : null;
@@ -1720,25 +1713,51 @@ function renderRouteOverview(raceProfile) {
     const lines = [name, distText];
     if (gainLine) lines.push(gainLine);
     if (cutoff) lines.push(cutoff);
-    const charW = 6.3;
-    const padX = 7;
-    const padY = 5;
-    const lineH = 13;
-    const lineWidth = (line) => line.length * charW + cjkCount(line) * 4.6;
     const boxW = Math.max(...lines.map(lineWidth)) + padX * 2;
     const boxH = lines.length * lineH + padY * 2;
     const mx = xForKm(km);
     const my = yForAlt(interpolateAltitude(pathPoints, km));
-    const boxX = mx - boxW / 2;
-    const boxY = Math.min(Math.max(my - 10 - boxH, padding + 2), height - padding - boxH - 2);
-    const linesSvg = lines.map((line, li) => {
+    return { mx, my, x: mx - boxW / 2, w: boxW, h: boxH, lines };
+  });
+
+  // 碰撞避让：优先放标记上方，重叠则试下方，再从上方向下逐段跳到已放置盒下方，保证标记互不重叠
+  const intersects = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  const placedBoxes = [];
+  const sortedChips = [...chipLayouts].sort((a, b) => a.mx - b.mx);
+  for (const chip of sortedChips) {
+    const aboveY = chip.my - 10 - chip.h;
+    const belowY = chip.my + 12;
+    const tryPlace = (yy) => {
+      const box = { x: chip.x, y: yy, w: chip.w, h: chip.h };
+      return placedBoxes.some((p) => intersects(box, p)) ? null : yy;
+    };
+    let y = tryPlace(aboveY);
+    if (y === null) y = tryPlace(belowY);
+    if (y === null) {
+      y = aboveY;
+      let guard = 0;
+      while (guard < 300) {
+        const box = { x: chip.x, y, w: chip.w, h: chip.h };
+        const hit = placedBoxes.find((p) => intersects(box, p));
+        if (!hit) break;
+        y = hit.y + hit.h + 2;
+        guard += 1;
+      }
+    }
+    y = Math.max(y, padding + 2); // 仅限制不高于绘图区顶部，必要时允许下探被裁剪，避免重叠
+    chip.y = y;
+    placedBoxes.push({ x: chip.x, y: chip.y, w: chip.w, h: chip.h });
+  }
+
+  const renderCpLabels = sortedChips.map((chip) => {
+    const linesSvg = chip.lines.map((line, li) => {
       const weight = li === 0 ? ' font-weight="600"' : "";
-      const lineY = boxY + padY + 11 + li * lineH;
-      return `<text x="${mx.toFixed(1)}" y="${lineY.toFixed(1)}" text-anchor="middle" font-size="11" fill="#a8d3ff"${weight}>${escapeHtml(line)}</text>`;
+      const lineY = chip.y + padY + 11 + li * lineH;
+      return `<text x="${chip.mx.toFixed(1)}" y="${lineY.toFixed(1)}" text-anchor="middle" font-size="11" fill="#a8d3ff"${weight}>${escapeHtml(line)}</text>`;
     }).join("");
     return `
       <g style="pointer-events:none">
-        <rect x="${boxX.toFixed(1)}" y="${boxY.toFixed(1)}" width="${boxW.toFixed(1)}" height="${boxH.toFixed(1)}" rx="6" fill="rgba(9,22,15,0.88)" stroke="rgba(124,192,255,0.55)" stroke-width="1" />
+        <rect x="${chip.x.toFixed(1)}" y="${chip.y.toFixed(1)}" width="${chip.w.toFixed(1)}" height="${chip.h.toFixed(1)}" rx="6" fill="rgba(9,22,15,0.88)" stroke="rgba(124,192,255,0.55)" stroke-width="1" />
         ${linesSvg}
       </g>`;
   }).join("");
