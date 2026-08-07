@@ -1785,15 +1785,19 @@ function renderRouteOverview(raceProfile) {
   const descentSegs = getDescentSegmentsToDraw(raceProfile);
   const width = 920;
   const height = 280;
-  const padding = 32;
   const minAlt = Math.min(...pathPoints.map((point) => point.altitude));
   const maxAlt = Math.max(...pathPoints.map((point) => point.altitude));
   const altRange = Math.max(maxAlt - minAlt, 1);
+  const xTicks = 5;
+  const yTicks = 4;
+  // 左侧边距自适应 Y 轴标签宽度：海拔为 4 位及以上时预留足够空间，避免被 SVG 左缘裁剪
+  const yTickValues = Array.from({ length: yTicks + 1 }, (_, index) => minAlt + (altRange / yTicks) * index);
+  const maxTickLen = Math.max(...yTickValues.map((v) => String(Math.round(v)).length));
+  const padding = Math.max(44, 14 + maxTickLen * 7);
   const xForKm = (km) => padding + (km / Math.max(raceProfile.distance_km, 1)) * (width - padding * 2);
   const yForAlt = (altitude) => height - padding - ((altitude - minAlt) / altRange) * (height - padding * 2);
   const polyline = pathPoints.map((point) => `${xForKm(point.km).toFixed(1)},${yForAlt(point.altitude).toFixed(1)}`).join(" ");
-  const xTicks = 5;
-  const yTicks = 4;
+  const areaPolygon = `${polyline} ${xForKm(raceProfile.distance_km).toFixed(1)},${(height - padding).toFixed(1)} ${padding.toFixed(1)},${(height - padding).toFixed(1)}`;
 
   const renderMarkers = (points, color) => points.map((point) => {
     const y = interpolateAltitude(pathPoints, point);
@@ -1901,7 +1905,7 @@ function renderRouteOverview(raceProfile) {
     const km = (raceProfile.distance_km / xTicks) * index;
     const x = xForKm(km);
     return `
-      <line x1="${x.toFixed(1)}" y1="${height - padding}" x2="${x.toFixed(1)}" y2="${height - padding + 6}" stroke="#c9b9aa" stroke-width="1" />
+      <line x1="${x.toFixed(1)}" y1="${height - padding}" x2="${x.toFixed(1)}" y2="${height - padding + 6}" stroke="rgba(171,219,189,0.4)" stroke-width="1" />
       <text x="${x.toFixed(1)}" y="${height - padding + 20}" text-anchor="middle" font-size="11">${km.toFixed(1)}</text>`;
   }).join("");
 
@@ -1909,7 +1913,7 @@ function renderRouteOverview(raceProfile) {
     const altitude = minAlt + ((altRange / yTicks) * index);
     const y = yForAlt(altitude);
     return `
-      <line x1="${padding - 6}" y1="${y.toFixed(1)}" x2="${padding}" y2="${y.toFixed(1)}" stroke="#c9b9aa" stroke-width="1" />
+      <line x1="${padding - 6}" y1="${y.toFixed(1)}" x2="${padding}" y2="${y.toFixed(1)}" stroke="rgba(171,219,189,0.4)" stroke-width="1" />
       <text x="${padding - 10}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="11">${altitude.toFixed(0)}</text>`;
   }).join("");
 
@@ -1922,15 +1926,23 @@ function renderRouteOverview(raceProfile) {
         <span class="pill">${t("routeSource")} ${fitRoutePoints ? t("routeSourceFit") : t("routeSourceSimulated")}</span>
       </div>
       <svg viewBox="0 0 ${width} ${height}" width="100%" height="320" role="img" aria-label="${t("chartAriaLabel")}">
+        <defs>
+          <linearGradient id="elevFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f08828" stop-opacity="0.32" />
+            <stop offset="100%" stop-color="#f08828" stop-opacity="0.04" />
+          </linearGradient>
+        </defs>
         <rect x="0" y="0" width="${width}" height="${height}" fill="transparent"></rect>
-        <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="#d7c5b2" stroke-width="1" />
-        <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="#d7c5b2" stroke-width="1" />
+        <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="rgba(171,219,189,0.35)" stroke-width="1" />
+        <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="rgba(171,219,189,0.35)" stroke-width="1" />
         ${renderXTicks}
         ${renderYTicks}
         ${renderClimbBands}
         ${renderDescentBands}
-        <polyline fill="none" stroke="#8c2f12" stroke-width="3" points="${polyline}" />
-        ${renderMarkers(raceProfile.aid_stations_km, "#225ea8")}
+        <polygon points="${areaPolygon}" fill="url(#elevFill)" stroke="none" />
+        <polyline fill="none" stroke="rgba(240,136,40,0.25)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" points="${polyline}" />
+        <polyline fill="none" stroke="#f7b054" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="${polyline}" />
+        ${renderMarkers(raceProfile.aid_stations_km, "#4f9cf0")}
         ${renderCpLabels}
         <text x="${padding}" y="${padding - 8}" font-size="12">${t("axisElevation")}</text>
         <text x="${width - padding - 36}" y="${height - 8}" font-size="12">${t("axisDistance")}</text>
