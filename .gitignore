@@ -32,3 +32,11 @@ __pycache__/
 # Ignore local project context notes
 PROJECT_CONTEXT.md
 PROJECT_CONTEXT_CN.md
+
+# Personal experiment / research / content folders (not for the public repo)
+01_Research/
+02_PRD/
+04_Footage/
+05_Images/
+06_Content/
+08_Mission_Reports/
