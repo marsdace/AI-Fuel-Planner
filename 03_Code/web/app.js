@@ -1696,6 +1696,22 @@ function renderRouteOverview(raceProfile) {
     return `<circle cx="${xForKm(point).toFixed(1)}" cy="${yForAlt(y).toFixed(1)}" r="5" fill="${color}" />`;
   }).join("");
 
+  // 补给点名称标注：在蓝点上方显示名称，带深色描边光晕以免压住海拔线/爬坡色带
+  let cpInfo = [];
+  try {
+    const parsed = JSON.parse(String(state.raceProfileForm?.officialCp || "[]"));
+    if (Array.isArray(parsed)) cpInfo = parsed;
+  } catch (error) {
+    cpInfo = [];
+  }
+  const renderCpLabels = raceProfile.aid_stations_km.map((km) => {
+    const cp = cpInfo.find((item) => Math.abs((safeFloat(item.distance) || -1) - km) < 0.001);
+    const name = cp && cp.name ? String(cp.name) : "CP";
+    const x = xForKm(km);
+    const labelY = Math.min(Math.max(yForAlt(interpolateAltitude(pathPoints, km)) - 9, padding + 12), height - padding - 4);
+    return `<text x="${x.toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#7cc0ff" stroke="rgba(8,20,14,0.92)" stroke-width="3" paint-order="stroke" style="pointer-events:none">${escapeHtml(name)}</text>`;
+  }).join("");
+
   // 爬坡路段：半透明色带标出范围，顶部标注爬升高度
   const renderClimbBands = climbSegs.map((seg) => {
     const x1 = xForKm(seg.start);
@@ -1739,6 +1755,7 @@ function renderRouteOverview(raceProfile) {
         ${renderClimbBands}
         <polyline fill="none" stroke="#8c2f12" stroke-width="3" points="${polyline}" />
         ${renderMarkers(raceProfile.aid_stations_km, "#225ea8")}
+        ${renderCpLabels}
         <text x="${padding}" y="${padding - 8}" font-size="12">${t("axisElevation")}</text>
         <text x="${width - padding - 36}" y="${height - 8}" font-size="12">${t("axisDistance")}</text>
       </svg>
