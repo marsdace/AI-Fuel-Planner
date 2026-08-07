@@ -1144,9 +1144,9 @@ const userProfileFields = [
 const CP_OFFICIAL_COLUMNS = [
   { key: "name", label: { zh: "名称", en: "Name" }, type: "text", flex: 1.3 },
   { key: "distance", label: { zh: "所在距离 (km)", en: "Distance (km)" }, type: "number", step: "0.1", min: 0, flex: 0.55 },
-  { key: "cutoff", label: { zh: "关门时间", en: "Cutoff" }, type: "time", flex: 1.1 },
-  { key: "climb", label: { zh: "区间爬升 (m)", en: "Climb (m)" }, type: "number", step: "1", min: 0, flex: 0.55 },
-  { key: "descent", label: { zh: "区间下降 (m)", en: "Descent (m)" }, type: "number", step: "1", min: 0, flex: 0.55 },
+  { key: "cutoff", label: { zh: "关门时间", en: "Cutoff" }, type: "time", flex: 0.9 },
+  { key: "climb", label: { zh: "区间爬升 (m)", en: "Climb (m)" }, type: "number", step: "1", min: 0, flex: 0.7 },
+  { key: "descent", label: { zh: "区间下降 (m)", en: "Descent (m)" }, type: "number", step: "1", min: 0, flex: 0.7 },
 ];
 const CP_CLIMB_COLUMNS = [
   { key: "start", label: { zh: "爬升起点 (km)", en: "Climb start (km)" }, type: "number", step: "0.1", min: 0, flex: 1 },
@@ -1697,7 +1697,7 @@ function renderRouteOverview(raceProfile) {
     return `<circle cx="${xForKm(point).toFixed(1)}" cy="${yForAlt(y).toFixed(1)}" r="5" fill="${color}" />`;
   }).join("");
 
-  // 补给点名称标注：在蓝点上方显示名称，带深色描边光晕以免压住海拔线/爬坡色带
+  // 补给点信息标注：在蓝点上方显示完整信息（名称/距离/D+爬升/D-下降/关门时间），带半透明背景便于阅读
   let cpInfo = [];
   try {
     const parsed = JSON.parse(String(state.raceProfileForm?.officialCp || "[]"));
@@ -1705,12 +1705,42 @@ function renderRouteOverview(raceProfile) {
   } catch (error) {
     cpInfo = [];
   }
-  const renderCpLabels = raceProfile.aid_stations_km.map((km) => {
+  const cjkCount = (text) => (String(text).match(/[\u4e00-\u9fff]/g) || []).length;
+  const renderCpLabels = raceProfile.aid_stations_km.map((km, idx) => {
     const cp = cpInfo.find((item) => Math.abs((safeFloat(item.distance) || -1) - km) < 0.001);
-    const name = cp && cp.name ? String(cp.name) : "CP";
-    const x = xForKm(km);
-    const labelY = Math.min(Math.max(yForAlt(interpolateAltitude(pathPoints, km)) - 9, padding + 12), height - padding - 4);
-    return `<text x="${x.toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#7cc0ff" stroke="rgba(8,20,14,0.92)" stroke-width="3" paint-order="stroke" style="pointer-events:none">${escapeHtml(name)}</text>`;
+    const name = cp && cp.name ? String(cp.name) : `CP${idx + 1}`;
+    const climbVal = cp ? safeFloat(cp.climb) : null;
+    const descentVal = cp ? safeFloat(cp.descent) : null;
+    const cutoff = cp && cp.cutoff ? String(cp.cutoff).trim() : "";
+    const distText = `${Math.round(km)}km`;
+    const gainLine = [
+      climbVal !== null && climbVal > 0 ? `D+${Math.round(climbVal)}` : "",
+      descentVal !== null && descentVal > 0 ? `D-${Math.round(descentVal)}` : "",
+    ].filter(Boolean).join("  ");
+    const lines = [name, distText];
+    if (gainLine) lines.push(gainLine);
+    if (cutoff) lines.push(cutoff);
+    const charW = 6.3;
+    const padX = 7;
+    const padY = 5;
+    const lineH = 13;
+    const lineWidth = (line) => line.length * charW + cjkCount(line) * 4.6;
+    const boxW = Math.max(...lines.map(lineWidth)) + padX * 2;
+    const boxH = lines.length * lineH + padY * 2;
+    const mx = xForKm(km);
+    const my = yForAlt(interpolateAltitude(pathPoints, km));
+    const boxX = mx - boxW / 2;
+    const boxY = Math.min(Math.max(my - 10 - boxH, padding + 2), height - padding - boxH - 2);
+    const linesSvg = lines.map((line, li) => {
+      const weight = li === 0 ? ' font-weight="600"' : "";
+      const lineY = boxY + padY + 11 + li * lineH;
+      return `<text x="${mx.toFixed(1)}" y="${lineY.toFixed(1)}" text-anchor="middle" font-size="11" fill="#a8d3ff"${weight}>${escapeHtml(line)}</text>`;
+    }).join("");
+    return `
+      <g style="pointer-events:none">
+        <rect x="${boxX.toFixed(1)}" y="${boxY.toFixed(1)}" width="${boxW.toFixed(1)}" height="${boxH.toFixed(1)}" rx="6" fill="rgba(9,22,15,0.88)" stroke="rgba(124,192,255,0.55)" stroke-width="1" />
+        ${linesSvg}
+      </g>`;
   }).join("");
 
   // 爬坡路段：半透明色带标出范围，顶部标注爬升高度
