@@ -1107,8 +1107,8 @@ const activitySummaryFields = [
 ];
 
 const userProfileFields = [
-  { key: "height", label: { zh: "身高 (m)", en: "Height (m)" }, type: "text", placeholder: "optionalPlaceholder" },
-  { key: "weight", label: { zh: "体重 (kg)", en: "Weight (kg)" }, type: "text", placeholder: "optionalPlaceholder" },
+  { key: "height", label: { zh: "身高 (m)", en: "Height (m)" }, type: "number", step: "0.01", min: 0, placeholder: "optionalPlaceholder" },
+  { key: "weight", label: { zh: "体重 (kg)", en: "Weight (kg)" }, type: "number", step: "0.1", min: 0, placeholder: "optionalPlaceholder" },
   {
     key: "gender",
     label: { zh: "性别", en: "Gender" },
@@ -1120,9 +1120,9 @@ const userProfileFields = [
       { value: "nonbinary", label: { zh: "非二元", en: "Non-binary" } },
     ],
   },
-  { key: "restingHeartRate", label: { zh: "静息心率 (bpm)", en: "Resting HR (bpm)" }, type: "text", placeholder: "optionalPlaceholder" },
-  { key: "hrv", label: { zh: "HRV", en: "HRV" }, type: "number", step: "0.1", placeholder: "optionalPlaceholder" },
-  { key: "physiologicalMaxHr", label: { zh: "生物最大心率 (bpm)", en: "physiological max HR (bpm)" }, type: "number", step: "1", placeholder: "optionalPlaceholder" },
+  { key: "restingHeartRate", label: { zh: "静息心率 (bpm)", en: "Resting HR (bpm)" }, type: "number", step: "1", min: 0, placeholder: "optionalPlaceholder" },
+  { key: "hrv", label: { zh: "HRV", en: "HRV" }, type: "number", step: "0.1", min: 0, placeholder: "optionalPlaceholder" },
+  { key: "physiologicalMaxHr", label: { zh: "生物最大心率 (bpm)", en: "physiological max HR (bpm)" }, type: "number", step: "1", min: 0, placeholder: "optionalPlaceholder" },
   {
     key: "hrvStatus",
     label: { zh: "HRV 状态", en: "HRV status" },
@@ -1135,8 +1135,8 @@ const userProfileFields = [
     ],
   },
   { key: "heartRateZones", label: { zh: "心率区间 (bpm)", en: "HR zones (bpm)" }, type: "hrzones", help: { zh: "按 5 区划分：恢复区 / 有氧基础区 / 节奏区 / 乳酸阈值区 / 无氧冲刺区。每格填写该区间上限 (bpm)。", en: "5 zones: Very Light / Aerobic / Tempo / Threshold / Very Hard. Enter each zone's upper bound (bpm)." } },
-  { key: "itraPoints", label: { zh: "ITRA 积分 (pts)", en: "ITRA points (pts)" }, type: "number", step: "1", placeholder: "optionalPlaceholder" },
-  { key: "utmbPoints", label: { zh: "UTMB 积分 (pts)", en: "UTMB points (pts)" }, type: "number", step: "1", placeholder: "optionalPlaceholder" },
+  { key: "itraPoints", label: { zh: "ITRA 积分 (pts)", en: "ITRA points (pts)" }, type: "number", step: "1", min: 0, placeholder: "optionalPlaceholder" },
+  { key: "utmbPoints", label: { zh: "UTMB 积分 (pts)", en: "UTMB points (pts)" }, type: "number", step: "1", min: 0, placeholder: "optionalPlaceholder" },
 ];
 
 const CP_OFFICIAL_COLUMNS = [
@@ -1154,11 +1154,11 @@ const CP_CLIMB_COLUMNS = [
 
 const raceProfileFields = [
   // 左列：基础路线参数
-  { key: "distanceKm", label: { zh: "距离 (km)", en: "Distance (km)" }, type: "number", step: "0.1", placeholder: "optionalPlaceholder" },
-  { key: "ascentM", label: { zh: "总爬升 (m)", en: "Total ascent (m)" }, type: "number", step: "1", placeholder: "optionalPlaceholder" },
-  { key: "expectedFinishH", label: { zh: "期望完赛时间 (h)", en: "Expected finish time (h)" }, type: "number", step: "0.1", placeholder: "optionalPlaceholder" },
+  { key: "distanceKm", label: { zh: "距离 (km)", en: "Distance (km)" }, type: "number", step: "0.1", min: 0, placeholder: "optionalPlaceholder" },
+  { key: "ascentM", label: { zh: "总爬升 (m)", en: "Total ascent (m)" }, type: "number", step: "1", min: 0, placeholder: "optionalPlaceholder" },
+  { key: "expectedFinishH", label: { zh: "期望完赛时间 (h)", en: "Expected finish time (h)" }, type: "number", step: "0.1", min: 0, placeholder: "optionalPlaceholder" },
   { key: "weatherTemp", label: { zh: "预计温度 (°C)", en: "Expected temperature (°C)" }, type: "number", step: "0.1", placeholder: "optionalPlaceholder" },
-  { key: "humidity", label: { zh: "预计湿度 (%)", en: "Expected humidity (%)" }, type: "number", step: "1", placeholder: "optionalPlaceholder" },
+  { key: "humidity", label: { zh: "预计湿度 (%)", en: "Expected humidity (%)" }, type: "number", step: "1", min: 0, max: 100, placeholder: "optionalPlaceholder" },
   { key: "locationNotes", label: { zh: "线路备注", en: "Route notes" }, type: "textarea", placeholder: "raceNotesPlaceholder" },
   // 右列：官方补给点 + 爬坡路段（位置均为距起点相对距离，提示统一在“!”悬浮中）
   { key: "officialCp", label: { zh: "官方补给点", en: "Official aid stations" }, type: "cplist", columns: CP_OFFICIAL_COLUMNS, addLabel: { zh: "新增补给点", en: "Add aid station" }, help: { zh: "FIT 有 CP 点会自动导入；也可手动新增。位置为距起点相对距离 (km)，每站可填名称、所在距离、关门时间、区间爬升与下降。列表从上到下需按距离递增排列。", en: "CP points are auto-imported from FIT; add more manually. Position = relative distance (km) from the start. Each station: name, distance, cutoff, segment climb and descent. Rows must be ordered by increasing distance from top to bottom." } },
@@ -1176,6 +1176,8 @@ function renderEditor(container, fields, values) {
     const fieldKeyAttr = escapeAttr(field.key);
     const fieldTypeAttr = escapeAttr(field.type || "text");
     const stepAttr = escapeAttr(field.step || "any");
+    const minAttr = field.min !== undefined ? escapeAttr(String(field.min)) : "";
+    const maxAttr = field.max !== undefined ? escapeAttr(String(field.max)) : "";
     const rawValue = String(value);
     const valueText = escapeHtml(rawValue);
     const valueAttr = escapeAttr(rawValue);
@@ -1284,7 +1286,7 @@ function renderEditor(container, fields, values) {
     return `
       <label class="field-row" data-row-key="${fieldKeyAttr}">
         <span class="field-topline"><input data-enabled-field="${fieldKeyAttr}" type="checkbox" ${enabled ? "checked" : ""} /> <span>${label}</span></span>
-        <input data-field="${fieldKeyAttr}" type="${fieldTypeAttr}" value="${valueAttr}" step="${stepAttr}" placeholder="${placeholder}" />
+        <input data-field="${fieldKeyAttr}" type="${fieldTypeAttr}" value="${valueAttr}" step="${stepAttr}" ${minAttr ? `min="${minAttr}"` : ""} ${maxAttr ? `max="${maxAttr}"` : ""} placeholder="${placeholder}" />
         ${escapedHelp ? `<span class="field-help">${escapedHelp}</span>` : ""}
       </label>`;
   }).join("");
@@ -1650,8 +1652,9 @@ function getClimbSegmentsToDraw(raceProfile) {
 }
 
 function renderRouteOverview(raceProfile) {
-  // 图表只用步骤三确认的信息绘制：读取了目标路线 FIT 时用其真实海拔轨迹，否则按步骤三爬坡路段模拟（起点默认海拔 0）
-  const fitRoutePoints = buildRoutePointsFromDecoded(state.decodedRace, raceProfile.distance_km);
+  // 图表只用当前步骤三确认的信息绘制：FIT 模式下用目标运动文件真实海拔轨迹；手动模式下始终用模拟（即使之前读取过 FIT）
+  const useFitRoute = state.raceMode === "fit" && Boolean(state.decodedRace);
+  const fitRoutePoints = useFitRoute ? buildRoutePointsFromDecoded(state.decodedRace, raceProfile.distance_km) : null;
   const pathPoints = fitRoutePoints || buildSimulatedElevation(raceProfile);
   document.getElementById("step4Note").textContent = fitRoutePoints ? t("step4NoteFit") : t("step4NoteSim");
   const climbSegs = getClimbSegmentsToDraw(raceProfile);
