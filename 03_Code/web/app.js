@@ -78,9 +78,6 @@ const TEXT = {
     routeSourceSimulated: "模拟",
     axisElevation: "海拔 (m)",
     axisDistance: "距离 (km)",
-    kvTotalDistance: "总距离",
-    kvTotalAscent: "总爬升",
-    kvSportType: "运动类型",
     statusUploadOwnFit: "请先上传自己的历史运动文件，或选择手动填写。",
     statusParsingActivity: "解析历史运动文件中...",
     statusActivityReady: "历史运动文件已解析，请确认历史运动概括和用户能力画像。",
@@ -95,6 +92,7 @@ const TEXT = {
     raceCpExceedsDistance: "官方补给点的“所在距离”不能超过路线总距离。",
     raceClimbExceedsDistance: "爬坡路段的“终点”不能超过路线总距离。",
     raceClimbExceedsAscent: "爬坡路段的“爬升高度”合计不能超过路线总爬升。",
+    raceCpExceedsAscent: "官方补给点的“区间爬升”合计不能超过路线总爬升。",
     statusReadyEngine: "可以开始运行 Trail Lab Rule Engine 与 AI Planner。",
     statusNeedActivity: "请先上传历史运动文件，或选择手动填写用户信息。",
     statusManualProfile: "未上传历史运动文件，已切换为手动填写用户能力画像。",
@@ -192,9 +190,6 @@ const TEXT = {
     routeSourceSimulated: "Simulated",
     axisElevation: "Elevation (m)",
     axisDistance: "Distance (km)",
-    kvTotalDistance: "Total distance",
-    kvTotalAscent: "Total ascent",
-    kvSportType: "Sport type",
     statusUploadOwnFit: "Please upload your historical activity file, or choose manual entry.",
     statusParsingActivity: "Parsing historical activity file...",
     statusActivityReady: "Historical activity file parsed. Review the historical activity summary and user profile.",
@@ -209,6 +204,7 @@ const TEXT = {
     raceCpExceedsDistance: "Aid-station distance must not exceed the route's total distance.",
     raceClimbExceedsDistance: "Climb segment end must not exceed the route's total distance.",
     raceClimbExceedsAscent: "Climb segment heights must not exceed the route's total ascent.",
+    raceCpExceedsAscent: "Aid-station segment climbs must not exceed the route's total ascent.",
     statusReadyEngine: "You can now run the Trail Lab Rule Engine and AI Planner.",
     statusNeedActivity: "Please upload a historical activity file, or choose to fill in your profile manually.",
     statusManualProfile: "No historical activity file uploaded. Switched to manual profile entry.",
@@ -1466,6 +1462,7 @@ function validateRaceProfile(form) {
     cpList = [];
   }
   let prevDist = -1;
+  let totalCpClimb = 0;
   for (let i = 0; i < cpList.length; i++) {
     const dist = safeFloat(cpList[i].distance);
     if (dist === null) continue;
@@ -1475,7 +1472,11 @@ function validateRaceProfile(form) {
     if (dist > distanceKm) {
       return { ok: false, message: t("raceCpExceedsDistance") };
     }
+    totalCpClimb += Math.max(safeFloat(cpList[i].climb) || 0, 0);
     prevDist = dist;
+  }
+  if (ascentM > 0 && totalCpClimb > ascentM) {
+    return { ok: false, message: t("raceCpExceedsAscent") };
   }
 
   let climbList = [];
@@ -1800,7 +1801,6 @@ const ui = {
   raceProfileEditor: document.getElementById("raceProfileEditor"),
   raceModeToggle: document.getElementById("raceModeToggle"),
   raceFitBlock: document.getElementById("raceFitBlock"),
-  raceFitPreview: document.getElementById("raceFitPreview"),
   routeOverview: document.getElementById("routeOverview"),
   contractOutput: document.getElementById("contractOutput"),
   engineOutput: document.getElementById("engineOutput"),
@@ -2046,11 +2046,6 @@ ui.parseRaceFitBtn.addEventListener("click", async () => {
       officialCp: officialCp.length ? JSON.stringify(officialCp) : "",
       climbSegments: autoClimbs.length ? JSON.stringify(autoClimbs) : "",
     };
-    renderKvPreview(ui.raceFitPreview, [
-      [t("kvTotalDistance"), values.distanceKm ? `${values.distanceKm} km` : ""],
-      [t("kvTotalAscent"), values.ascentM ? `${values.ascentM} m` : ""],
-      [t("kvSportType"), String(session.sport_profile_name || session.sub_sport || session.sport || "")],
-    ]);
     state.raceProfileForm = values;
     renderEditor(ui.raceProfileEditor, raceProfileFields, values);
     setStatus(t("statusRaceReady"));
