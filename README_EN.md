@@ -1,69 +1,100 @@
-# 🏔️ Trail Lab · AI Fuel Planner
-
-<p align="right">
-  <a href="README.md"><img src="https://img.shields.io/badge/%E4%B8%AD%E6%96%87-%E7%89%88%E6%9C%AC-2f6b49?style=for-the-badge" alt="Switch to 中文" /></a>
+<p align="center">
+  <img src="banner.png" alt="Trail Lab · AI Fuel Planner — AI-powered trail running fueling planner" width="100%" />
 </p>
 
-> Experiment #001 — Trail-running AI fuel planner.
-> Upload Garmin activity data, set a target route, get a quantified fueling plan and an AI-generated, actionable explanation.
+<h1 align="center">🏔️ Trail Lab · AI Fuel Planner</h1>
 
-**Current release**: pure JavaScript static web app (repo root `index.html`) — no framework, no build step, runs directly in the browser.
+<p align="center">
+  <strong>AI-powered trail running fueling planner</strong> ·
+  <em>Garmin .FIT data + rule engine + AI fueling timeline</em>
+</p>
+
+<p align="center">
+  <a href="https://marsdace.github.io/AI-Fuel-Planner/"><img src="https://img.shields.io/badge/🚀-Live%20Demo-FF7A00?style=for-the-badge" alt="Live Demo" /></a>
+  <a href="https://github.com/marsdace/AI-Fuel-Planner"><img src="https://img.shields.io/github/stars/marsdace/AI-Fuel-Planner?style=for-the-badge&color=FF7A00" alt="GitHub stars" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-1F3D2E?style=for-the-badge" alt="License MIT" /></a>
+  <a href="README.md"><img src="https://img.shields.io/badge/🌐-中文-2f6b49?style=for-the-badge" alt="中文" /></a>
+</p>
+
+<p align="center">
+  <b>Trail Lab Experiment #001</b> — verifying whether technology is worth taking outdoors.<br/>
+  <em>Explore the wilderness with technology — making the outdoors more fun, efficient, and safe.</em>
+</p>
 
 ---
 
-## ✨ About the new JS version
+## 🚀 Try it live (GitHub Pages)
 
-The previous Python + Streamlit prototype is **deprecated and archived** (see `python_legacy/`). The current release is a fully static, client-side web app:
+> No install, no server needed — open it in your browser, upload your own Garmin `.fit` file. Parsed locally, data never uploaded.
 
-- **Zero-dependency deployment**: vanilla ES2020+, no build step; run from `file://` or any static server
-- **In-browser Garmin FIT parsing**: decodes FIT files locally via `@garmin/fitsdk` (esm.sh CDN) — raw data never leaves your machine
-- **5-step guided flow**: Historical activity → User profile → Route parameters → Elevation/fuel overview → Rule engine + AI explanation
-- **Bilingual**: 中文 / English toggle
-- **Animated background**: forest-night sky (`bg.js`)
-- **AI explains, code computes**: the rule engine does all calculations; AI only translates results into plain language (data over AI)
+### 👉 https://marsdace.github.io/AI-Fuel-Planner/
 
-### The 5 steps
+**5-step fueling workflow**: upload historical FIT → calibrate ability profile → set target route → confirm elevation/aid stations → rule engine + AI fueling timeline.
 
-| Step | What it does |
-|------|--------------|
-| 1️⃣ Historical activity | Upload a Garmin `.fit` file, or choose "manual profile entry" to skip parsing |
-| 2️⃣ User profile | Calibrate HR zones, weight, resting HR, ITRA/UTMB points, etc. |
-| 3️⃣ Route parameters | Manual input or read a target activity file; set distance, ascent, weather, official aid stations, and **climb/descent segments (with threshold)** |
-| 4️⃣ Route overview | Elevation profile + aid-station layout + climb/descent segment bands for visual confirmation |
-| 5️⃣ Rule engine + AI | Generate rule-contract JSON, quantified fueling output, and an AI execution timeline |
+---
 
-### Key new features
+## ✨ What is this?
 
-- **Unified climb/descent segment input**: set each segment in distance order (type: climb/descent), with a configurable **climb/descent threshold (default 50 m)** — only segments above the threshold count; smaller ones are treated as flat
-- **Monotonic elevation curve**: each climb rises linearly from start to end, **its end being that segment's highest point**; descents fall monotonically
-- **Auto-extract segments from a target FIT**: climbs/descents are derived from the real elevation track (threshold-filtered) and can be edited manually
-- **Full aid-station info cards**: name / distance / D+ climb / D- descent / cutoff, with collision avoidance
-- **Chart matches page theme**: forest-green × ember-orange palette, ember line + gradient area; 4-digit altitudes fully visible
+**AI Fuel Planner** solves a concrete problem for trail runners and hikers: *how to turn historical activity data into a fueling decision for the next outing.*
+
+Upload your Garmin watch's historical activity file (`.fit`), set the target route (distance, ascent, aid stations, weather), and the program computes **carbohydrate / fluid / sodium intake and a fueling timeline** using a sports-nutrition rule engine, then an **AI generates an actionable natural-language explanation**.
+
+**Core design principle — data first, AI second**:
+
+```
+Upload Garmin .FIT file
+      ↓  (parsed locally in the browser, no upload)
+Rule engine computes fueling (carbs / fluid / sodium / points)
+      ↓  (deterministic — the program's job)
+AI generates the natural-language explanation (optional — explain only)
+```
+
+> The program does all the math; AI only translates the results into actionable advice — AI is forbidden from inventing numbers.
+
+---
+
+## 🎯 Who is it for?
+
+- 🏃 Trail runners / hikers / endurance athletes
+- ⌚ Garmin, Coros, Apple Watch users (FIT format)
+- 📊 Data-driven athletes who trust verification over marketing
+- 🧪 Runners interested in sports nutrition (carbs, electrolytes, fueling rhythm)
+
+---
+
+## ⚡ Key features
+
+- **In-browser Garmin FIT parsing**: decodes via the official `@garmin/fitsdk`; runs from `file://` or any static server — **raw activity data never leaves your machine**
+- **5-step guided flow**: activity history → user profile → route params → elevation/fuel overview → rule engine + AI
+- **Climb/descent segment modeling**: segmented by gradient with a configurable threshold (default 50 m) to tune fueling density
+- **Fuel-point planning**: official CP input + automatic equivalence splitting + climb triggers + time fallback
+- **Rule-contract JSON**: every number comes from the rule engine as a fixed contract; AI only explains, never fabricates
+- **Bilingual**: Chinese / English one-click switch
+- **Zero-dependency deploy**: native ES2020+, no framework, no build step
+- **Swappable AI**: DeepSeek / OpenAI / Gemini / mock
 
 ---
 
 ## 🚀 Quick start
 
 ```bash
-# From the repo root (= the 03_Code folder), either:
-open index.html                 # open directly (modern browser)
-# Or a local static server:
+# Option 1: open directly (modern browser)
+open index.html
+
+# Option 2: local static server
 python3 -m http.server 8080
-# Then visit http://localhost:8080
+# visit http://localhost:8080
 ```
 
 > Tip: if the FIT SDK (esm.sh) fails to load from `file://`, use the local static server instead.
 
 ### A full planning flow
 
-1. **Step 1** — Upload your historical activity file (Garmin `.fit`) and click "Confirm & parse", or click "manual profile entry"
-2. **Step 2** — Review/adjust your profile (HR zones, weight, etc.), click "Confirm activity"
-3. **Step 3** — Choose "Manual input" or "Read target activity file":
-   - Enter distance, total ascent, expected finish time, weather, route notes
-   - Set official aid stations (distance/name/cutoff/segment climb/segment descent)
-   - Set **climb/descent segments** (type/start/end/height) and the **climb/descent threshold**
-4. **Step 4** — Confirm the route elevation overview (segment bands + aid-station info cards)
-5. **Step 5** — Pick an AI Provider (start with `mock` to validate), click "Run engine and generate explanation"
+1. **Step 1** — Upload your historical activity file (Garmin `.fit`), or choose "manual profile entry"
+2. **Step 2** — Calibrate your ability profile (HR zones, weight, resting HR, ITRA/UTMB points)
+3. **Step 3** — Set the target route: distance, ascent, weather, official aid stations, climb/descent segments (with threshold)
+4. **Step 4** — Confirm the route elevation overview (elevation profile + aid-station layout + segment bands)
+5. **Step 5** — Pick an AI provider (start with `mock` to validate), click "Run engine and generate explanation"
 
 ---
 
@@ -71,15 +102,36 @@ python3 -m http.server 8080
 
 ```
 AI-Fuel-Planner/                 # Repo root = the 03_Code folder
-├── README.md / README_EN.md     # Documentation (this file, shown on repo entry)
-├── .gitignore
-├── .devcontainer/               # VS Code Dev Container config
-├── index.html                   # ★ Current release (pure JS static web app) main entry
+├── index.html                   # ★ Main app (pure JS static web app)
 ├── app.js                       #   Logic: FIT parsing / profile / rule engine / chart / AI
 ├── styles.css                   #   Page styles (forest-green × ember theme)
 ├── bg.js                        #   Forest-night animated background
-└── python_legacy/               # ⚠️ Deprecated Python prototype (archived, unmaintained)
+├── logo.png                     #   Trail Lab brand avatar
+├── banner.png                   #   README banner
+├── LICENSE                      #   MIT license
+├── PROTOCOL_ZH.md / _EN.md      #   Usage agreement & license notices (EN/中文)
+├── THIRD_PARTY_NOTICES.md       #   Third-party licenses
+├── README.md / README_EN.md     #   Documentation (this file)
+└── python_legacy/               # ⚠️ Deprecated Python prototype (archived)
 ```
+
+---
+
+## 🧰 Tech stack
+
+- **Frontend**: native JavaScript (ES2020+), HTML5, CSS3 — no framework, no build
+- **FIT parsing**: official Garmin JS SDK `@garmin/fitsdk` (via esm.sh CDN, decoded locally in-browser)
+- **AI explanation**: optional providers (DeepSeek / OpenAI / Gemini / mock), called directly from the browser
+- **Architecture**: `app.js` business logic / `bg.js` animation, modular separation of concerns
+
+---
+
+## ⚠️ Known limitations
+
+- Trail Running sport mode only
+- Browser-side calls to third-party AI models may be blocked by CORS; use `mock` first to validate the full flow
+- `physiological_max_hr` is optional; a hint is shown when omitted
+- `.fit` files are personal activity data and are not committed by default (see `.gitignore`)
 
 ---
 
@@ -94,57 +146,68 @@ AI-Fuel-Planner/                 # Repo root = the 03_Code folder
 
 ### 🧭 Terminology & file roles
 
-- `ce65ca1` User-visible "race/赛事" wording unified to "route/路线" (for non-competition trail users)
-- `02a0675` Distinguished the two FIT files: steps 1–2 = "historical activity file", steps 3–4 = "target activity file"; added a "manual profile entry" button in step 1
+- `ce65ca1` Renamed user-facing "race/赛事" wording to "route/路线" for non-competition trail users
+- `02a0675` Distinguished the two FIT files (historical vs target activity); added a "manual profile entry" option to step 1
 
 ### ⚙️ Step 3 · Route parameters
 
-- `0f47287` Step-3 polish: tooltip-only hints ("!"), aid-station top alignment, climb-height column, column widths, position validation
-- `94a097f` Fixed invisible status bar on steps 2–5 (moved to `stepWorkspace`, sticky + error styling)
-- `bd2b6ee` Constrained aid-station distance/climb positions and climb heights (≤ total distance/ascent) with reminders
-- `02d5053` Removed the step-3 file-read preview; constrained aid-station segment climbs to total ascent
-- `94d62b5` Enforced numeric input types/min/max across all steps
-- `ce18fd7` **Auto-generate climb segments** from a target FIT (extracted from the elevation track, editable)
-- `bcf6e0f` CP column widths (narrow cutoff, wider climb/descent); full CP info cards on the chart
-- `507794e` Added **descent-segment input**; elevation curve now peaks **at each climb's end** (monotonic climb)
-- `beb3214` **Merged climb/descent segments into one ordered list** (type/start/end/height) with a configurable **climb/descent threshold (default 50 m)** — only segments above the threshold count; FIT extraction filters by the same threshold
+- `0f47287` Step-3 polish: tooltip-only hints, aid-station top alignment, climb-height column, column widths, position validation
+- `94a097f` Fixed status bar invisible outside step 1 (moved to `stepWorkspace`, sticky + error styling)
+- `bd2b6ee` Constrained aid-station distance/climb positions to total distance/ascent with reminders
+- `02d5053` Removed step-3 file-read preview info; constrained aid-station segment climbs to total ascent
+- `94d62b5` Enforced numeric input types/min/max across steps
+- `ce18fd7` Auto-generate climb segments from a target FIT (editable manually)
+- `bcf6e0f` CP column widths (narrow cutoff, wide climb/descent); full CP info cards on chart
+- `507794e` Added descent-segment input; climb end is that segment's peak on the elevation curve
+- `beb3214` Merged climb/descent into one ordered list with a configurable threshold (default 50 m)
 
-### 📈 Step 4 · Elevation & aid-station overview
+### 📈 Step 4 · Elevation & fueling overview
 
-- `6864a92` Chart drawn from step-3 confirmed route parameters (climb segments) instead of the raw race-FIT track
-- `945bb2c` Restored FIT route display (FIT mode only); draws only step-3 data (removed engine-derived supplemental/climb-trigger markers); simulated baseline starts at 0
-- `2f94183` Dynamic step-4 note (FIT real track vs simulated)
-- `b4e7849` Show climb segments on the chart (translucent bands + height labels + legend)
+- `6864a92` Chart draws from step-3 confirmed route params (climb segments), not raw FIT track
+- `945bb2c` Restored real FIT track display (FIT mode only); draws only step-3 data; simulated baseline starts at 0
+- `2f94183` Dynamic step-4 notes (real FIT vs simulated)
+- `b4e7849` Show climb segments as translucent bands with height labels + legend item
 - `f3b966e` Aid-station name markers
-- `40a8715` Elevation curve drawn only from climb/descent segments (aid stations are markers only); CP info-card collision avoidance
-- `98ed5fe` Chart palette matched to the page theme (ember line + gradient area, mint axes, blue CP markers); **fixed 4-digit altitude labels being clipped on the left**
+- `40a8715` Elevation drawn only from climb/descent segments (CPs are markers only); CP-chip collision avoidance
+- `98ed5fe` Chart matches page theme (ember line/area, mint axes, blue CP); fixed 4-digit altitude label clipping
 
-### 📚 Docs & repo housekeeping
+### 📚 Docs & repo hygiene
 
-- `b53583e` **Docs & housekeeping**: added top-level README (zh/en) and detailed web-app docs; `.gitignore` now ignores personal experiment/content folders; removed the redundant nested `03_Code/.git`
-- `efd8f6e` **Repo root = the `03_Code` folder**: rooted the git repository at `03_Code/`, so `web/`, `python_legacy/` and `README*` sit at the repo root and the README shows when you open the GitHub repo; moved the personal `04_Data/` folder out of the repository
-- `41e314f` **Main app at repo root**: removed the `web/` folder; `index.html` / `app.js` / `styles.css` / `bg.js` now live at the repo root (= 03_Code), so opening `index.html` on GitHub runs the app; README structure/quick-start updated
-
----
-
-## 🧰 Tech stack
-
-- **Frontend**: vanilla JavaScript (ES2020+), HTML5, CSS3 — no framework, no build
-- **FIT parsing**: Garmin official JS SDK `@garmin/fitsdk` via esm.sh CDN (local, in-browser)
-- **AI explanation**: optional providers (e.g. DeepSeek / Gemini / mock), called from the browser (may hit CORS; use `mock` first)
-- **Architecture**: `app.js` business logic / `bg.js` animation, modular separation of concerns
+- `b53583e` Added top-level README (zh/en) with full changelog; gitignore personal experiment/content folders; removed redundant nested `03_Code/.git`
+- `efd8f6e` Rooted the git repo at the `03_Code` folder so the README shows on GitHub entry; moved personal `04_Data` out of the repo
+- `41e314f` Placed the main program at the repo root (dropped `web/`); updated README structure & quick start
 
 ---
 
-## ⚠️ Known limitations
+## 📜 License & Notices
 
-- Trail Running is the only supported sport mode
-- Browser-side AI calls may be blocked by CORS / provider security policies; validate the full flow with the `mock` provider first
-- `physiological_max_hr` is optional (a warning is shown if missing)
-- `.fit` files are personal activity data and are not committed (see `.gitignore`)
+This project is released under the **MIT License**. The full usage agreement, third-party license notices, data-privacy and disclaimer statements are available at:
+
+- **Full agreement**: [`PROTOCOL_EN.md`](PROTOCOL_EN.md) (English) · [`PROTOCOL_ZH.md`](PROTOCOL_ZH.md) (中文)
+- **Third-party licenses**: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
+- **MIT license text**: [`LICENSE`](LICENSE)
+
+**Copyright**: Copyright (c) 2026 Trail Lab (山野实验室) · marsdace
+
+**Key points**:
+
+- ✅ **MIT open source**: personal/commercial use, modification, distribution, and relicensing allowed; keep the copyright notice
+- ✅ **Local-first**: `.fit` files are parsed locally in the browser; raw activity data is not uploaded by default
+- ✅ **AI is optional**: only when you actively configure an AI provider are the required profile/route parameters sent to that provider
+- ⚠️ **Disclaimer**: output is a general-rule estimate, not medical advice; consult a professional and act according to your own condition
+- ℹ️ **Third-party**: Garmin FIT SDK (FIT Protocol License), Google Fonts (OFL), AI services (provider ToS), etc. — see `THIRD_PARTY_NOTICES.md`
 
 ---
 
-## 🔗 Related docs
+## 🤝 Contributing
 
-- Deprecated Python docs: [`python_legacy/README_DEPRECATED.md`](python_legacy/README_DEPRECATED.md)
+- Issues and PRs are welcome: [Issues](https://github.com/marsdace/AI-Fuel-Planner/issues) · [Pull requests](https://github.com/marsdace/AI-Fuel-Planner/pulls)
+- Contributors agree by default to release their contributions under the MIT License
+- Share your fueling data and heart-rate-drift samples in [GitHub Discussions](https://github.com/marsdace/AI-Fuel-Planner/discussions)
+
+---
+
+<p align="center">
+  <sub><b>Trail Lab · 山野实验室</b> — verifying with real experiments whether technology is worth taking outdoors.</sub><br/>
+  <sub>One failed experiment is worth more than ten paper plans.</sub>
+</p>

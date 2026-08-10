@@ -1,68 +1,100 @@
-# 🏔️ Trail Lab · AI Fuel Planner
-
-<p align="right">
-  <a href="README_EN.md"><img src="https://img.shields.io/badge/English-Version-2f6b49?style=for-the-badge" alt="Switch to English" /></a>
+<p align="center">
+  <img src="banner.png" alt="Trail Lab · AI Fuel Planner — 越野跑补给 AI 规划工具" width="100%" />
 </p>
 
-> Experiment #001 — 越野跑 AI 补给规划工具
-> 上传 Garmin 历史运动文件，设定目标路线，自动计算补给节奏与分段建议，并由 AI 生成可执行解释。
+<h1 align="center">🏔️ Trail Lab · AI Fuel Planner</h1>
 
-**当前正式版**：纯 JavaScript 静态 Web 应用（仓库根目录 `index.html`）—— 无框架、无构建步骤、可在浏览器直接打开运行。
+<p align="center">
+  <strong>越野跑补给 AI 规划工具</strong> ·
+  <em>Garmin .FIT 数据 + 规则引擎 + AI 补给时间轴</em>
+</p>
+
+<p align="center">
+  <a href="https://marsdace.github.io/AI-Fuel-Planner/"><img src="https://img.shields.io/badge/🚀-Live%20Demo%20%2F%20在线试用-FF7A00?style=for-the-badge" alt="Live Demo" /></a>
+  <a href="https://github.com/marsdace/AI-Fuel-Planner"><img src="https://img.shields.io/github/stars/marsdace/AI-Fuel-Planner?style=for-the-badge&color=FF7A00" alt="GitHub stars" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-1F3D2E?style=for-the-badge" alt="License MIT" /></a>
+  <a href="README_EN.md"><img src="https://img.shields.io/badge/🌐-English-2f6b49?style=for-the-badge" alt="English" /></a>
+</p>
+
+<p align="center">
+  <b>Trail Lab（山野实验室）Experiment #001</b> — 用真实实验验证科技是否值得带进户外。<br/>
+  <em>Explore the wilderness with technology — making the outdoors more fun, efficient, and safe.</em>
+</p>
 
 ---
 
-## ✨ 新版本（JS 版）介绍
+## 🚀 立即试用（GitHub Pages 在线版）
 
-上一版是基于 Python + Streamlit 的测试原型，现已**弃用并归档**（见 `python_legacy/`）。当前正式版为纯前端静态 Web 应用：
+> 无需安装、无需服务器，浏览器打开即可使用：上传你自己的 Garmin `.fit` 文件，本地解析，数据不上传。
 
-- **零依赖部署**：原生 ES2020+，无构建步骤；`file://` 双击或任意静态服务器均可运行
-- **浏览器端解析 Garmin FIT**：通过 `@garmin/fitsdk`（esm.sh CDN）在本地解码 FIT 文件，不上传原始数据
+### 👉 https://marsdace.github.io/AI-Fuel-Planner/
+
+**功能一览（5 步完成补给规划）**：上传历史 FIT → 校准能力画像 → 设定目标路线 → 确认海拔/补给点 → 规则引擎 + AI 补给时间轴。
+
+---
+
+## ✨ 这是什么？
+
+**AI Fuel Planner** 解决越野跑/徒步爱好者的一个具体问题：*如何把历史运动数据转换成下一次活动的补给决策？*
+
+上传 Garmin 手表的历史运动文件（`.fit`），设定目标路线（距离、爬升、补给点、天气），程序用**运动营养规则引擎**计算碳水 / 液体 / 钠的摄入量与补给时间轴，再由 **AI 生成可执行的自然语言解释**。
+
+**核心设计原则 —— 数据优先于 AI**：
+
+```
+上传 Garmin .FIT 文件
+      ↓  （浏览器本地解析，数据不上传）
+规则引擎计算补给量（碳水 / 液体 / 钠 / 补给点）
+      ↓  （确定性计算，程序负责）
+AI 生成自然语言解释（可选，只解释不算）
+```
+
+> 程序负责所有数学计算，AI 只负责把结果翻译成可执行的建议 —— 禁止 AI 编造数值。
+
+---
+
+## 🎯 目标用户
+
+- 🏃 越野跑 / 徒步 / 耐力运动爱好者
+- ⌚ Garmin、Coros、Apple Watch 用户（FIT 格式）
+- 📊 喜欢用数据优化训练、相信"验证"而非"宣传"的极客
+- 🧪 关注运动营养（碳水、电解质、补给节奏）的跑者
+
+---
+
+## ⚡ 核心特性
+
+- **浏览器本地解析 Garmin FIT**：通过官方 `@garmin/fitsdk` 解码，`file://` 双击或任意静态服务器即可运行，**原始运动数据不上传**
 - **五步引导流程**：历史运动 → 用户画像 → 路线参数 → 海拔/补给概况 → 规则引擎 + AI 解释
+- **爬升/下降路段建模**：按爬升率分段（阈值可配置，默认 50m），匹配不同补给密度
+- **补给点规划**：官方 CP 输入 + 自动等效拆分 + 爬升触发点 + 时间兜底
+- **规则契约 JSON**：所有数值由规则引擎输出固定契约，AI 只解释、不编造
 - **双语支持**：中文 / English 一键切换
-- **动效背景**：森林夜空动态背景（`bg.js`）
-- **AI 仅做解释**：程序负责计算（规则引擎），AI 只负责把结果翻译成人话（数据优先于 AI）
-
-### 五步流程
-
-| 步骤 | 内容 |
-|------|------|
-| 1️⃣ 历史运动文件 | 上传 Garmin `.fit`，或选择「手动填写用户信息」跳过解析 |
-| 2️⃣ 用户能力画像 | 校准 HR 区间、体重、静息心率、ITRA/UTMB 积分等 |
-| 3️⃣ 目标路线参数 | 手动填写或读取目标运动文件；设定距离、总爬升、天气、官方补给点、**爬升/下降路段（含阈值）** |
-| 4️⃣ 路线概况图 | 海拔轮廓 + 补给点分布 + 爬升/下降路段色带，直观确认 |
-| 5️⃣ 规则引擎 + AI 解释 | 生成规则契约 JSON、补给定量输出与 AI 可执行时间轴 |
-
-### 关键新特性
-
-- **爬升/下降路段整合输入**：按距离位置依次设定各路段（类型：爬升/下降），可配置**爬升/下降阈值**（默认 50 m）——只有高差超过阈值的路段才被算作路段，低于阈值的视为平坦
-- **海拔曲线单调化**：每个爬升段从起点直线爬升至终点，**终点即该段海拔最高点**；下降段单调下降
-- **读取目标运动文件自动生成路段**：从 FIT 真实海拔轨迹自动提取爬升/下降路段（按阈值过滤），可手动修改
-- **完整补给点信息卡**：图上显示名称 / 距离 / D+ 爬升 / D- 下降 / 关门时间，带碰撞避让
-- **图表配色与页面统一**：深林绿 × 探索橙主题，琥珀折线 + 渐变面积；4 位数海拔完整显示
+- **零依赖部署**：原生 ES2020+，无框架、无构建步骤
+- **AI 可切换**：DeepSeek / OpenAI / Gemini / mock
 
 ---
 
 ## 🚀 快速开始
 
 ```bash
-# 在仓库根目录（= 03_Code 文件夹）任选其一：
-open index.html                 # 直接打开（推荐现代浏览器）
-python3 -m http.server 8080     # 或本地静态服务器
-# 然后访问 http://localhost:8080
+# 方式一：直接打开（推荐现代浏览器）
+open index.html
+
+# 方式二：本地静态服务器
+python3 -m http.server 8080
+# 访问 http://localhost:8080
 ```
 
 > 提示：若直接双击 `file://` 打开时 FIT SDK（esm.sh）加载失败，请改用本地静态服务器。
 
 ### 一次完整的规划流程
 
-1. **步骤1** 上传自己的历史运动文件（Garmin `.fit`），点击「确认并解析」；或点「手动填写用户信息」直接进入手动模式
-2. **步骤2** 确认/调整用户能力画像（HR 区间、体重等），点击「确认活动信息」
-3. **步骤3** 选择「手动填写」或「读取目标运动文件」：
-   - 填写距离、总爬升、期望完赛时间、天气、线路备注
-   - 设定官方补给点（距离/名称/关门时间/区间爬升/区间下降）
-   - 设定**爬升/下降路段**（类型/起点/终点/高差）与**爬升/下降阈值**
-4. **步骤4** 确认路线海拔概况图（含路段色带与补给点信息卡）
-5. **步骤5** 选择 AI Provider（可先用 `mock` 验证全流程），点击「开始计算并生成解释」
+1. **步骤 1** — 上传自己的历史运动文件（Garmin `.fit`），或选择「手动填写用户信息」
+2. **步骤 2** — 校准用户能力画像（HR 区间、体重、静息心率、ITRA/UTMB 积分）
+3. **步骤 3** — 设定目标路线：距离、总爬升、天气、官方补给点、爬升/下降路段（含阈值）
+4. **步骤 4** — 确认路线海拔概况图（海拔轮廓 + 补给点分布 + 路段色带）
+5. **步骤 5** — 选择 AI Provider（可先用 `mock` 验证全流程），点击「开始计算并生成解释」
 
 ---
 
@@ -70,15 +102,36 @@ python3 -m http.server 8080     # 或本地静态服务器
 
 ```
 AI-Fuel-Planner/                 # 仓库根目录 = 03_Code 文件夹
-├── README.md / README_EN.md     # 说明文档（本文档，登录仓库即显示）
-├── .gitignore
-├── .devcontainer/               # VS Code Dev Container 配置
-├── index.html                   # ★ 当前正式版（纯 JS 静态 Web 应用）主程序
-├── app.js                       #   逻辑：FIT 解析 / 画像 / 规则引擎 / 图表 / AI 调用
+├── index.html                   # ★ 主程序（纯 JS 静态 Web 应用）
+├── app.js                       #   逻辑：FIT 解析 / 画像 / 规则引擎 / 图表 / AI
 ├── styles.css                   #   页面样式（深林绿 × 探索橙主题）
 ├── bg.js                        #   森林夜空动效背景
-└── python_legacy/               # ⚠️ 已弃用的 Python 测试版（历史存档，不再维护）
+├── logo.png                     #   Trail Lab 品牌头像
+├── banner.png                   #   README 横幅
+├── LICENSE                      #   MIT 许可
+├── PROTOCOL_ZH.md / _EN.md      #   使用协议与许可声明（中/英）
+├── THIRD_PARTY_NOTICES.md       #   第三方组件许可
+├── README.md / README_EN.md     #   说明文档（本文件）
+└── python_legacy/               # ⚠️ 已弃用的 Python 测试版（历史存档）
 ```
+
+---
+
+## 🧰 技术栈
+
+- **前端**：原生 JavaScript（ES2020+）、HTML5、CSS3 —— 无框架、无构建
+- **FIT 解析**：Garmin 官方 JS SDK `@garmin/fitsdk`（经 esm.sh CDN，浏览器端本地解码）
+- **AI 解释**：可选 Provider（DeepSeek / OpenAI / Gemini / mock），浏览器端直连调用
+- **架构**：`app.js` 业务逻辑 / `bg.js` 动画，模块化职责分离
+
+---
+
+## ⚠️ 已知限制
+
+- 仅支持越野跑（Trail Running）运动模式
+- 浏览器端调用第三方 AI 模型可能受 CORS / 安全策略限制；建议先用 `mock` Provider 验证全流程
+- `physiological_max_hr` 为可选项，未提供时给出提示
+- `.fit` 为个人运动数据，默认不入库（见 `.gitignore`）
 
 ---
 
@@ -126,24 +179,35 @@ AI-Fuel-Planner/                 # 仓库根目录 = 03_Code 文件夹
 
 ---
 
-## 🧰 技术栈
+## 📜 协议与许可（License & Notices）
 
-- **前端**：原生 JavaScript（ES2020+）、HTML5、CSS3 —— 无框架、无构建
-- **FIT 解析**：Garmin 官方 JS SDK `@garmin/fitsdk`（经 esm.sh CDN，浏览器端本地解码）
-- **AI 解释**：可选 Provider（如 DeepSeek / Gemini / mock），浏览器端调用（可能受 CORS 限制，可先用 mock 验证）
-- **架构**：`app.js` 业务逻辑 / `bg.js` 动画，模块化职责分离
+本项目以 **MIT License** 开源发布。完整的使用协议、第三方组件许可、数据隐私与免责声明见：
+
+- **协议全文**：[`PROTOCOL_ZH.md`](PROTOCOL_ZH.md)（中文）· [`PROTOCOL_EN.md`](PROTOCOL_EN.md)（English）
+- **第三方组件许可**：[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
+- **MIT 许可文本**：[`LICENSE`](LICENSE)
+
+**版权**：Copyright (c) 2026 Trail Lab (山野实验室) · marsdace
+
+**简要要点**：
+
+- ✅ **MIT 开源**：可个人/商用、修改、分发、再授权，需保留版权声明
+- ✅ **本地优先**：`.fit` 文件在浏览器本地解析，原始运动数据默认不上传
+- ✅ **AI 可选**：仅当你主动配置 AI Provider 时，所需画像/路线参数才发送至对应服务商
+- ⚠️ **免责声明**：本工具输出为通用规则估算，非医疗建议；请咨询专业人士并根据自身状况量力而行
+- ℹ️ **第三方**：Garmin FIT SDK（FIT Protocol License）、Google Fonts（OFL）、AI 服务（各服务商条款）等，详见 `THIRD_PARTY_NOTICES.md`
 
 ---
 
-## ⚠️ 已知限制
+## 🤝 贡献与反馈
 
-- 仅支持越野跑（Trail Running）运动模式
-- 浏览器端调用第三方 AI 模型可能受 CORS / 安全策略限制；建议先用 `mock` Provider 验证全流程
-- `physiological_max_hr` 为可选项，未提供时给出提示
-- `.fit` 为个人运动数据，默认不入库（见 `.gitignore`）
+- 欢迎提交 [Issue](https://github.com/marsdace/AI-Fuel-Planner/issues) 与 [PR](https://github.com/marsdace/AI-Fuel-Planner/pulls)
+- 贡献者默认同意以 MIT 许可发布其贡献内容
+- 你也可以在 [GitHub Discussions](https://github.com/marsdace/AI-Fuel-Planner/discussions) 分享你的补给数据与心率漂移样本
 
 ---
 
-## 🔗 相关文档
-
-- 弃用的 Python 版说明：[`python_legacy/README_DEPRECATED.md`](python_legacy/README_DEPRECATED.md)
+<p align="center">
+  <sub><b>Trail Lab · 山野实验室</b> — 用真实实验，验证科技是否真的值得带进户外。</sub><br/>
+  <sub>一次失败的实验，胜过十次纸上谈兵。</sub>
+</p>
