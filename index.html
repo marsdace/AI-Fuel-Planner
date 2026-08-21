@@ -159,19 +159,19 @@
           <button class="chip" data-mode="fit" type="button" id="raceModeFitBtn">读取目标路线 FIT</button>
         </div>
         <div id="raceFitBlock" class="subpanel is-hidden">
-          <h3 id="raceFitBlockTitle">读取目标路线 FIT</h3>
+          <h3 id="raceFitBlockTitle">读取目标路线 FIT/GPX</h3>
           <div class="grid single">
             <label>
-              <span id="raceFitLabel">选择目标路线 FIT 文件</span>
+              <span id="raceFitLabel">选择目标路线 FIT/GPX 文件</span>
               <div class="file-picker">
-                <input id="raceFitFile" class="sr-only-file" type="file" accept=".fit" />
+                <input id="raceFitFile" class="sr-only-file" type="file" accept=".fit,.gpx" />
                 <button id="raceFitFileTrigger" class="ghost-btn" type="button">选择文件</button>
                 <span id="raceFitFileName" class="file-name">未选择文件</span>
               </div>
             </label>
           </div>
           <div class="actions left">
-            <button id="parseRaceFitBtn" type="button">读取目标路线 FIT</button>
+            <button id="parseRaceFitBtn" type="button">读取目标路线 FIT/GPX</button>
           </div>
 
         </div>
@@ -225,7 +225,28 @@
             </label>
             <label>
               <span id="modelLabel">Model</span>
-              <input id="model" type="text" value="gpt-4o-mini" />
+              <select id="model">
+                <!-- 默认（mock） -->
+                <option value="mock" selected>mock</option>
+                <!-- openai -->
+                <optgroup label="openai">
+                  <option value="gpt-4o-mini" data-provider="openai">gpt-4o-mini</option>
+                  <option value="gpt-4o" data-provider="openai">gpt-4o</option>
+                  <option value="gpt-4.1-mini" data-provider="openai">gpt-4.1-mini</option>
+                  <option value="gpt-4.1" data-provider="openai">gpt-4.1</option>
+                </optgroup>
+                <!-- deepseek -->
+                <optgroup label="deepseek">
+                  <option value="deepseek-v4-flash" data-provider="deepseek">deepseek-v4-flash</option>
+                  <option value="deepseek-v4-pro" data-provider="deepseek">deepseek-v4-pro</option>
+                </optgroup>
+                <!-- gemini -->
+                <optgroup label="gemini">
+                  <option value="gemini-2.0-flash" data-provider="gemini">gemini-2.0-flash</option>
+                  <option value="gemini-1.5-flash" data-provider="gemini">gemini-1.5-flash</option>
+                  <option value="gemini-1.5-pro" data-provider="gemini">gemini-1.5-pro</option>
+                </optgroup>
+              </select>
             </label>
             <label>
               <span id="apiKeyLabel">API Key (浏览器端明文，仅本地实验)</span>
@@ -248,8 +269,10 @@
             <pre id="contractOutput" class="output"></pre>
           </section>
           <section class="subpanel">
-            <h3 id="engineOutputTitle">Rule Engine 输出</h3>
+            <h3 id="engineOutputTitle">Rule Engine 输出 <button id="exportCsvBtn" type="button" class="mini-btn">导出表格</button></h3>
             <pre id="engineOutput" class="output"></pre>
+            <h3 id="engineHintsTitle">智能提示</h3>
+            <div id="engineHints" class="hint-list"></div>
           </section>
           <section class="subpanel">
             <h3 id="aiOutputTitle">AI Planner 输出</h3>
@@ -262,6 +285,7 @@
     </main>
 
     <script src="./bg.js?v=20260806u"></script>
-    <script type="module" src="./app.js?v=20260807ac"></script>
+    <script src="./gpx.js?v=20260820"></script>
+    <script src="./app.js?v=20260820"></script>
   </body>
 </html>

@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>AI-powered trail running fueling planner</strong> ·
-  <em>Garmin .FIT data + rule engine + AI fueling timeline</em>
+  <em>.FIT activity data (Garmin / Coros etc.) + rule engine + AI fueling timeline</em>
 </p>
 
 <p align="center">
@@ -25,7 +25,7 @@
 
 ## 🚀 Try it live (GitHub Pages)
 
-> No install, no server needed — open it in your browser, upload your own Garmin `.fit` file. Parsed locally, data never uploaded.
+> No install, no server needed — open it in your browser, upload your own watch's `.fit` file (Garmin / Coros and other major brands). Parsed locally, data never uploaded.
 
 ### 👉 https://marsdace.github.io/AI-Fuel-Planner/
 
@@ -37,7 +37,7 @@
 
 **AI Fuel Planner** solves a concrete problem for trail runners and hikers: *how to turn historical activity data into a fueling decision for the next outing.*
 
-Upload your Garmin watch's historical activity file (`.fit`), set the target route (distance, ascent, aid stations, weather), and the program computes **carbohydrate / fluid / sodium intake and a fueling timeline** using a sports-nutrition rule engine, then an **AI generates an actionable natural-language explanation**.
+Upload a historical activity file (`.fit`) from your watch (Garmin / Coros etc.), set the target route (distance, ascent, aid stations, weather), and the program computes **carbohydrate / fluid / sodium intake and a fueling timeline** using a sports-nutrition rule engine, then an **AI generates an actionable natural-language explanation**.
 
 **Core design principle — data first, AI second**:
 
@@ -64,14 +64,20 @@ AI generates the natural-language explanation (optional — explain only)
 
 ## ⚡ Key features
 
-- **In-browser Garmin FIT parsing**: decodes via the official `@garmin/fitsdk`; runs from `file://` or any static server — **raw activity data never leaves your machine**
+- **In-browser FIT parsing**: decodes via Garmin's official `@garmin/fitsdk` (`.fit` from Garmin / Coros and other major watches); runs from `file://` or any static server — **raw activity data never leaves your machine**
 - **5-step guided flow**: activity history → user profile → route params → elevation/fuel overview → rule engine + AI
 - **Climb/descent segment modeling**: segmented by gradient with a configurable threshold (default 50 m) to tune fueling density
 - **Fuel-point planning**: official CP input + automatic equivalence splitting + climb triggers + time fallback
+- **Per-point plain-water / electrolyte split**: each point gives one actionable instruction — "electrolyte drink X ml + plain water Y ml + salt tab N"; at least 1/3 plain water per point, because concentrated electrolyte drinks can worsen thirst
+- **Whole-item carry-forward allocation**: gels and salt tabs are indivisible and are allocated across the whole plan by cumulative deficit (total = ⌈target / item size⌉), so per-point rounding cannot stack into hourly overshoot
+- **CSV plan export**: one-click export with gels / electrolyte / plain water / salt tabs per point, plus caffeine and protein
+- **FIT validation**: step 1 validates the sport type and only accepts running data, so non-running records cannot mislead the ability profile
+- **GPX route support**: step 3 can read a `.gpx` route file and auto-extract climb/descent segments and CP waypoints
+- **AI final answer only**: DeepSeek thinking mode is explicitly disabled; reasoning chains are never shown or mixed into the output
 - **Rule-contract JSON**: every number comes from the rule engine as a fixed contract; AI only explains, never fabricates
 - **Bilingual**: Chinese / English one-click switch
 - **Zero-dependency deploy**: native ES2020+, no framework, no build step
-- **Swappable AI**: DeepSeek / OpenAI / Gemini / mock
+- **Swappable AI**: DeepSeek (default, thinking mode off) / OpenAI / Gemini / mock
 
 ---
 
@@ -90,9 +96,9 @@ python3 -m http.server 8080
 
 ### A full planning flow
 
-1. **Step 1** — Upload your historical activity file (Garmin `.fit`), or choose "manual profile entry"
+1. **Step 1** — Upload your historical activity file (Garmin / Coros etc. `.fit`), or choose "manual profile entry"
 2. **Step 2** — Calibrate your ability profile (HR zones, weight, resting HR, ITRA/UTMB points)
-3. **Step 3** — Set the target route: distance, ascent, weather, official aid stations, climb/descent segments (with threshold)
+3. **Step 3** — Set the target route: distance, ascent, weather, official aid stations, climb/descent segments (with threshold); or read a `.gpx` route file directly
 4. **Step 4** — Confirm the route elevation overview (elevation profile + aid-station layout + segment bands)
 5. **Step 5** — Pick an AI provider (start with `mock` to validate), click "Run engine and generate explanation"
 
@@ -106,14 +112,32 @@ AI-Fuel-Planner/                 # Repo root = the 03_Code folder
 ├── app.js                       #   Logic: FIT parsing / profile / rule engine / chart / AI
 ├── styles.css                   #   Page styles (forest-green × ember theme)
 ├── bg.js                        #   Forest-night animated background
+├── gpx.js                       #   GPX route parser (step 3 reads .gpx route files)
 ├── logo.png                     #   Trail Lab brand avatar
 ├── banner.png                   #   README banner
 ├── LICENSE                      #   MIT license
 ├── PROTOCOL_ZH.md / _EN.md      #   Usage agreement & license notices (EN/中文)
 ├── THIRD_PARTY_NOTICES.md       #   Third-party licenses
 ├── README.md / README_EN.md     #   Documentation (this file)
+├── docs/                        # 📚 Technical docs (en/ English · zh/ 中文, 4-part series)
 └── python_legacy/               # ⚠️ Deprecated Python prototype (archived)
 ```
+
+---
+
+## 📚 Technical documentation (docs/)
+
+Want to study how this program works, or reuse it? Start with these four parts (adapted from the project's four published articles):
+
+| Doc | Question it answers |
+| --- | --- |
+| [01 · Why an Engine](docs/en/01-Why-an-Engine-Lessons-from-the-First-Experiment.md) | Why does this program exist? What did the first experiment expose? |
+| [02 · FIT File Parsing](docs/en/02-FIT-File-Parsing-The-Data-Layer.md) | How is a `.fit` file understood? What are the parsing pitfalls? |
+| [03 · Nutrition Science Baseline](docs/en/03-Nutrition-Science-Baseline.md) | Why does the engine compute this way? What is the nutritional basis? |
+| [04 · Fueling Engine Implementation](docs/en/04-Fueling-Engine-Implementation.md) | ⭐ How is the numeric core implemented? Module-by-module walkthrough |
+
+> Read in order 01 → 04; if you only care about the algorithm, jump straight to Part 04.
+> **中文版见 [`docs/zh/`](docs/zh/README.md)**; each document has a language-switch link at the end.
 
 ---
 
@@ -129,9 +153,33 @@ AI-Fuel-Planner/                 # Repo root = the 03_Code folder
 ## ⚠️ Known limitations
 
 - Trail Running sport mode only
+- Step 1 rejects non-running FIT files (cycling / skiing etc. do not enter the ability profile)
 - Browser-side calls to third-party AI models may be blocked by CORS; use `mock` first to validate the full flow
 - `physiological_max_hr` is optional; a hint is shown when omitted
 - `.fit` files are personal activity data and are not committed by default (see `.gitignore`)
+
+---
+
+## 📦 Latest updates (2026-08-21)
+
+### 🥤 Fueling points: plain-water / electrolyte split + whole-item carry-forward
+
+- **Single actionable instruction**: every point now states "electrolyte drink X ml + plain water Y ml + salt tab N" instead of two alternative scenarios ("electrolyte drink or plain water")
+- **Plain-water floor**: electrolyte drink (≈ 500 mg/L, check your label) first covers the point's sodium target, but is capped at 2/3 of the fluid — **at least 1/3 plain water per point**, since concentrated electrolyte drinks can make you thirstier
+- **Whole-item carry-forward allocation**: indivisible gels / salt tabs are allocated by cumulative deficit across the whole plan: total items = ⌈total target / item size⌉, and the running deficit never exceeds one item, so per-point rounding cannot stack into hourly overshoot
+- **Clearer wording**: no more "top up 25 mg (≈ 1 tab)" style phrasing — everything is whole items
+- **Carry list in sync**: self-carried fluid is split into "electrolyte + plain water", and gel / salt-tab counts come from the timeline allocation, matching the execution plan exactly
+
+### 🤖 AI output: final answer only
+
+- DeepSeek thinking mode is explicitly disabled (`thinking: disabled`); reasoning chains are never shown or mixed into the output
+- An empty final answer is surfaced as a failure prompt instead of falling back to the reasoning chain
+
+### 📄 Export & validation
+
+- **CSV export**: new columns for gels (tabs), electrolyte water (ml), plain water (ml), and salt tabs — ready to use race-day
+- **FIT validation**: step 1 validates the sport type and accepts running data only
+- **GPX support**: step 3 reads `.gpx` route files and auto-extracts climb/descent segments and CP waypoints
 
 ---
 

@@ -1131,6 +1131,49 @@ label {
   transform: translateX(-50%) translateY(0);
 }
 
+.hint-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.hint-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: rgba(255, 138, 31, 0.08);
+  border-left: 3px solid rgba(255, 138, 31, 0.6);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #e6eee8;
+}
+
+.hint-row.mismatch {
+  background: rgba(255, 138, 31, 0.16);
+  border-left: 4px solid #ff8a1f;
+  font-weight: 600;
+  color: #ffe1bd;
+}
+
+.hint-row .field-info {
+  margin-top: 2px;
+}
+
+.mini-btn {
+  margin-left: 10px;
+  padding: 3px 10px;
+  border: 1px solid rgba(255, 138, 31, 0.55);
+  border-radius: 6px;
+  background: rgba(255, 138, 31, 0.1);
+  color: #ff9a3c;
+  font-size: 12px;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
 input,
 select,
 button,
@@ -1235,6 +1278,7 @@ button:disabled {
   top: 0;
   z-index: 30;
   display: block;
+  white-space: pre-line;
   margin: 0 0 14px;
   padding: 10px 14px;
   font-size: 13.5px;
@@ -1386,6 +1430,29 @@ button:disabled {
   font-family: var(--font-mono);
   font-size: 11.5px;
   font-weight: 600;
+}
+
+/* 步骤四：路线概况图下载按钮 */
+.download-chart-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 122, 0, 0.55);
+  background: rgba(31, 61, 46, 0.6);
+  color: #ffb066;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.download-chart-btn:hover {
+  background: rgba(255, 122, 0, 0.2);
+  transform: scale(1.08);
 }
 
 .legend {
@@ -1554,24 +1621,31 @@ button:disabled {
   letter-spacing: 0.03em;
 }
 
-/* 步骤三：官方补给点列表（cplist） */
+/* 步骤三：官方补给点列表（cplist）——flex 双列独立高度
+   左列（普通字段）与右列（官方补给点/爬升路段）互不共享行高，
+   避免路段很多时把「预计湿度」与「线路备注」之间挤出大空档 */
+#raceProfileEditor {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+#raceProfileEditor .editor-col-left,
+#raceProfileEditor .editor-col-right {
+  flex: 1 1 0;
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
 #raceProfileEditor .field-row {
-  grid-column: 1;
   align-self: start;
 }
 
-/* 右列：官方补给点从顶部开始（与左列第一行对齐），爬坡路段紧随其后，
-   避免官方补给点上方的空白区 */
-#raceProfileEditor .field-row[data-row-key="officialCp"] {
-  grid-column: 2;
-  grid-row: 1 / 6;
-  align-self: start;
-}
-
-#raceProfileEditor .field-row[data-row-key="routeSegments"] {
-  grid-column: 2;
-  grid-row: 7;
-  align-self: start;
+/* 右列两字段纵向排列：官方补给点在上，爬升/下降路段紧随其后 */
+#raceProfileEditor .editor-col-right {
+  grid-template-rows: auto auto;
 }
 
 /* 步骤三：输入框统一高度，避免被右侧高字段拉伸 */
@@ -1751,11 +1825,14 @@ svg text {
     grid-template-columns: 1fr;
   }
 
-  #raceProfileEditor .field-row,
-  #raceProfileEditor .field-row[data-row-key="officialCp"],
-  #raceProfileEditor .field-row[data-row-key="routeSegments"] {
-    grid-column: auto;
-    grid-row: auto;
+  #raceProfileEditor {
+    flex-direction: column;
+  }
+
+  #raceProfileEditor .editor-col-left,
+  #raceProfileEditor .editor-col-right {
+    flex: none;
+    grid-template-rows: none;
   }
 
   .summary-panel .kv-list {
