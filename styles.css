@@ -770,6 +770,7 @@ html:lang(en) .app-shell {
 .step-workspace {
   order: 1;
   position: relative;
+  min-width: 0;
   min-height: clamp(420px, 62vh, 760px);
 }
 
@@ -1136,6 +1137,7 @@ label {
   flex-direction: column;
   gap: 8px;
   margin-top: 4px;
+  min-width: 0;
 }
 
 .hint-row {
@@ -1149,6 +1151,12 @@ label {
   font-size: 12.5px;
   line-height: 1.55;
   color: #e6eee8;
+  min-width: 0;
+}
+
+.hint-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .hint-row.mismatch {
@@ -1502,6 +1510,10 @@ button:disabled {
 
 .outputs {
   margin-top: 4px;
+}
+
+.outputs > .subpanel {
+  min-width: 0;
 }
 
 .output {
@@ -1863,5 +1875,1563 @@ svg text {
   .site-footer {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* ============================================================
+   能力评分面板（Step2 · 六维）
+   ============================================================ */
+.profile-score-panel {
+  margin-top: 18px;
+}
+.score-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 340px) 1fr;
+  gap: 18px;
+  align-items: center;
+  margin-top: 8px;
+}
+.score-radar {
+  width: 100%;
+  max-width: 420px;
+}
+.score-radar svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.score-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.score-total {
+  font-family: var(--font-display);
+  font-size: 58px;
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(120deg, #ffb066, var(--ember));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.score-level {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffd9ae;
+  letter-spacing: 0.04em;
+}
+.score-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.score-card {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 13px;
+  border-radius: 11px;
+  border: 1px solid rgba(126, 168, 142, 0.28);
+  background: rgba(9, 18, 13, 0.6);
+}
+.score-card b {
+  font-size: 16px;
+  color: var(--ink);
+}
+.score-card i {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--muted);
+}
+.score-card.muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+.score-desc {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+}
+.score-desc-line {
+  padding: 8px 11px;
+  border-left: 3px solid rgba(255, 122, 0, 0.45);
+  background: rgba(31, 61, 46, 0.4);
+  border-radius: 0 9px 9px 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #e3efe7;
+}
+
+/* ============================================================
+   补给时间轴编辑器（Step5）
+   ============================================================ */
+.plan-editor {
+  margin-top: 20px;
+}
+.plan-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 4px;
+}
+.plan-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  min-width: 0;
+  overflow-x: auto;
+}
+.pe-head,
+.pe-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 0.9fr) minmax(0, 0.9fr) minmax(0, 1.1fr) minmax(0, 1.3fr) minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 1.4fr) minmax(0, 1.1fr) minmax(0, 0.7fr);
+  gap: 6px;
+  align-items: center;
+  min-width: 1040px;
+}
+.pe-head {
+  padding: 0 6px 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+.pe-row {
+  position: relative;
+  padding: 8px 6px;
+  border-radius: 11px;
+  border: 1px solid rgba(126, 168, 142, 0.2);
+  background: rgba(9, 18, 13, 0.55);
+}
+.pe-row.is-cp {
+  background: rgba(255, 122, 0, 0.09);
+  border-color: rgba(255, 122, 0, 0.35);
+}
+.pe-row.has-error {
+  border-color: rgba(255, 107, 94, 0.7);
+}
+.pe-input {
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: 12.5px;
+  text-align: center;
+}
+.pe-input.pe-km {
+  font-weight: 700;
+  color: #ffd9ae;
+}
+.pe-select {
+  min-width: 0;
+  padding: 6px 6px;
+  font-size: 12.5px;
+}
+.pe-stepper {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.pe-step {
+  flex-shrink: 0;
+  padding: 4px 7px;
+  font-size: 13px;
+  border-radius: 6px;
+  background: rgba(31, 61, 46, 0.7);
+  border: 1px solid rgba(126, 168, 142, 0.3);
+  color: #d8ebdf;
+  box-shadow: none;
+  cursor: pointer;
+}
+.pe-step:hover {
+  background: rgba(255, 122, 0, 0.25);
+  border-color: rgba(255, 122, 0, 0.5);
+}
+.pe-num {
+  min-width: 0;
+  padding: 5px 4px;
+  font-size: 12.5px;
+}
+.pe-takeout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: center;
+}
+.pe-chip {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #fff;
+  background: color-mix(in srgb, var(--c, #9BA8B4) 82%, #000);
+  white-space: nowrap;
+}
+.pe-seg {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  white-space: nowrap;
+}
+.pe-ops {
+  display: flex;
+  gap: 4px;
+}
+.pe-insert,
+.pe-del {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  font-size: 14px;
+  border-radius: 7px;
+  box-shadow: none;
+  cursor: pointer;
+}
+.pe-insert {
+  background: rgba(79, 156, 240, 0.18);
+  border: 1px solid rgba(79, 156, 240, 0.5);
+  color: #9cc9ff;
+}
+.pe-del {
+  background: rgba(255, 107, 94, 0.14);
+  border: 1px solid rgba(255, 107, 94, 0.5);
+  color: #ffb3ac;
+}
+.pe-err {
+  position: absolute;
+  right: 8px;
+  bottom: -4px;
+  font-size: 10.5px;
+  color: #ffb3ac;
+}
+.pe-libmini {
+  padding: 3px 8px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 122, 0, 0.45);
+  background: rgba(255, 122, 0, 0.1);
+  color: #ffb066;
+  font-size: 12px;
+  box-shadow: none;
+  cursor: pointer;
+}
+.plan-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 11px;
+  background: rgba(31, 61, 46, 0.5);
+  border: 1px solid rgba(126, 168, 142, 0.22);
+}
+.pe-total {
+  font-size: 13px;
+  color: var(--muted);
+}
+.pe-total b {
+  color: #ffd9ae;
+  font-size: 15px;
+  margin-left: 4px;
+}
+.plan-carry-warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+.pe-cw-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffd9ae;
+}
+.pe-cw-row {
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: rgba(255, 107, 94, 0.12);
+  border-left: 3px solid rgba(255, 107, 94, 0.7);
+  font-size: 12.5px;
+  color: #ffd6d1;
+}
+.pe-cw-ok {
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: rgba(107, 203, 119, 0.1);
+  border-left: 3px solid rgba(107, 203, 119, 0.7);
+  font-size: 12.5px;
+  color: #bff0c6;
+}
+.plan-checklist {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 11px;
+  background: rgba(9, 18, 13, 0.5);
+  border: 1px solid rgba(126, 168, 142, 0.2);
+}
+.pe-chk-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffd9ae;
+  margin-bottom: 8px;
+}
+.pe-chk-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pe-chk-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.pe-chk-group-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-right: 4px;
+}
+.plan-editor-export {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.plan-editor-export .note {
+  margin: 0;
+}
+
+/* 安全提示横幅 + 补给点类型图例（对齐小程序 result 页） */
+.safety-banner {
+  margin-top: 12px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 196, 196, 0.9);
+  background: rgba(255, 107, 94, 0.08);
+  border: 1px solid rgba(255, 107, 94, 0.28);
+}
+.type-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.type-swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.swatch-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  display: inline-block;
+}
+.swatch-dot.self {
+  background: rgba(45, 212, 191, 0.55);
+  border: 1px solid rgba(45, 212, 191, 0.8);
+}
+.swatch-dot.cp {
+  background: rgba(255, 122, 0, 0.55);
+  border: 1px solid rgba(255, 122, 0, 0.8);
+}
+
+/* ---------------- 补给库弹层 ---------------- */
+.pe-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 12, 8, 0.72);
+  backdrop-filter: blur(3px);
+  padding: 20px;
+}
+.pe-modal {
+  width: min(720px, 94vw);
+  max-height: 86vh;
+  overflow: auto;
+  border-radius: 16px;
+  border: 1px solid rgba(126, 168, 142, 0.35);
+  background: linear-gradient(180deg, #14301f, #0e2117);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+}
+.pe-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(126, 168, 142, 0.22);
+}
+.pe-modal-head h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #e9f3ec;
+}
+.pe-modal-close {
+  background: rgba(255, 107, 94, 0.14);
+  border: 1px solid rgba(255, 107, 94, 0.45);
+  color: #ffb3ac;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 8px;
+  box-shadow: none;
+  font-size: 16px;
+}
+.pe-modal-body {
+  padding: 16px 20px 22px;
+}
+.pe-lib-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffd9ae;
+  margin: 14px 0 8px;
+}
+.pe-lib-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+.pe-lib-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--c, #9BA8B4) 55%, transparent);
+  background: color-mix(in srgb, var(--c, #9BA8B4) 14%, #0e2117);
+  box-shadow: none;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+.pe-lib-item:hover {
+  transform: translateY(-1px);
+  border-color: var(--c, #9BA8B4);
+}
+.pe-lib-del {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 13px;
+  color: #ffb3ac;
+  background: rgba(255, 107, 94, 0.18);
+  border: 1px solid rgba(255, 107, 94, 0.55);
+  cursor: pointer;
+}
+.pe-lib-del:hover {
+  background: rgba(255, 107, 94, 0.4);
+  color: #fff;
+}
+.pe-lib-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #eef6f0;
+}
+.pe-lib-nutri {
+  font-size: 11px;
+  color: var(--muted);
+}
+.pe-custom-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 12px 0;
+}
+.pe-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.pe-colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pe-lib-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 12px;
+}
+.pe-lib-tab {
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--muted);
+  background: rgba(31, 61, 46, 0.55);
+  border: 1px solid rgba(126, 168, 142, 0.28);
+  box-shadow: none;
+  cursor: pointer;
+}
+.pe-lib-tab.active {
+  color: #ffe2bb;
+  background: rgba(255, 122, 0, 0.18);
+  border-color: rgba(255, 122, 0, 0.55);
+}
+.pe-color {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  box-shadow: none;
+  cursor: pointer;
+}
+.pe-color.is-picked {
+  border-color: #fff;
+}
+
+@media (max-width: 760px) {
+  .score-layout {
+    grid-template-columns: 1fr;
+  }
+  .pe-head,
+  .pe-row {
+    grid-template-columns: minmax(0, 0.7fr) minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 1.1fr) minmax(0, 1fr);
+    min-width: 720px;
+  }
+  .pe-head span:nth-child(5),
+  .pe-head span:nth-child(9),
+  .pe-head span:nth-child(10),
+  .pe-row .pe-takeout,
+  .pe-row .pe-seg {
+    display: none;
+  }
+  .pe-custom-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================================
+   补给时间轴编辑器增强（方案摘要 / extra / checklist 动作）
+   ============================================================ */
+.plan-editor-summary {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(120deg, rgba(31, 61, 46, 0.75), rgba(15, 27, 21, 0.85));
+  border: 1px solid rgba(255, 122, 0, 0.28);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pe-summary-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pe-summary-finish {
+  font-size: 15px;
+  color: var(--muted);
+}
+.pe-summary-finish b {
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffb066;
+  margin: 0 8px;
+}
+.pe-summary-finish i {
+  font-style: normal;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.pe-summary-race {
+  font-size: 13px;
+  color: #cfe3d5;
+  font-family: var(--font-mono);
+}
+.pe-summary-hourly {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.pe-hourly-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: rgba(9, 18, 13, 0.6);
+  border: 1px solid rgba(126, 168, 142, 0.22);
+}
+.pe-hourly-card b {
+  font-size: 17px;
+  color: #ffd9ae;
+}
+.pe-hourly-card i {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--muted);
+}
+.pe-hourly-card em {
+  font-style: normal;
+  font-size: 11px;
+  color: #9fb8a8;
+}
+.pe-summary-prepost {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12.5px;
+  color: #cfe3d5;
+  line-height: 1.5;
+}
+.pe-summary-prepost span {
+  padding-left: 10px;
+  border-left: 2px solid rgba(255, 122, 0, 0.4);
+}
+.pe-chip-extra {
+  background: color-mix(in srgb, var(--c, #9BA8B4) 62%, #000);
+  outline: 1px dashed rgba(255, 255, 255, 0.25);
+}
+.pe-chips-sep {
+  display: inline-block;
+  width: 1px;
+  height: 14px;
+  background: rgba(126, 168, 142, 0.3);
+  margin: 0 3px;
+}
+.pe-chk-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* 出发携带超建议上限提示（不再截断，仅提示） */
+.pe-chk-warn {
+  margin-top: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: rgba(255, 182, 92, 0.08);
+  border: 1px solid rgba(255, 182, 92, 0.35);
+}
+.pe-chk-warn-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffd9ae;
+  margin-bottom: 4px;
+}
+.pe-chk-warn-item {
+  font-size: 12px;
+  color: #ffcf8e;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .pe-summary-hourly {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================================
+   细节功能：清单步进 / 带出步进 / CP 关门时间 / 类型单元
+   ============================================================ */
+.pe-chip-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.pe-step-sm {
+  padding: 1px 5px;
+  font-size: 12px;
+  border-radius: 5px;
+}
+.pe-type-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.pe-cutoff {
+  font-size: 10.5px;
+  color: #ffd9ae;
+  background: rgba(255, 122, 0, 0.12);
+  border: 1px solid rgba(255, 122, 0, 0.3);
+  border-radius: 5px;
+  padding: 1px 5px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* Step5 顶部路线概况小图预览 */
+.plan-editor-route {
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(9, 18, 13, 0.55);
+  border: 1px solid rgba(126, 168, 142, 0.2);
+}
+.plan-editor-route svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Step5 底部 AI 功能区（补给策略在上、AI 可选在下） */
+.ai-planner-panel {
+  margin-top: 28px;
+  border-top: 2px solid rgba(126, 168, 142, 0.28);
+}
+
+/* ============================================================
+   Step5 小程序布局同步（2026-09-01）
+   面板顺序：路线概况 → 补给方案 → 出发自查清单 → 补给时间轴 → 执行提醒 → 导出
+   ============================================================ */
+.plan-summary-panel,
+.plan-checklist-panel {
+  margin-top: 20px;
+}
+.plan-summary-panel .plan-editor-summary {
+  margin-top: 10px;
+}
+.plan-checklist-panel .plan-checklist {
+  margin-top: 0;
+}
+.plan-summary-panel h3,
+.plan-checklist-panel h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 调试折叠面板（契约 JSON / 引擎明细，默认收起） */
+.debug-details {
+  margin-top: 20px;
+}
+.debug-details summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 4px 0;
+}
+.debug-details[open] .output {
+  margin-top: 8px;
+}
+
+/* 导出行：单按钮 + 抽屉 */
+.plan-export-row {
+  margin-top: 24px;
+}
+.plan-export-row .btn-primary {
+  min-width: 180px;
+}
+.export-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 8, 5, 0.6);
+  z-index: 500;
+}
+.export-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 501;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 20px calc(18px + env(safe-area-inset-bottom));
+  background: #101c15;
+  border-top: 1px solid rgba(255, 122, 0, 0.35);
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.45);
+  max-width: 720px;
+  margin: 0 auto;
+}
+.export-sheet-title {
+  font-weight: 700;
+  color: #ffd9ae;
+  text-align: center;
+  margin-bottom: 4px;
+}
+.export-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(31, 61, 46, 0.55);
+  border: 1px solid rgba(126, 168, 142, 0.25);
+  color: #e9f3ec;
+  text-align: left;
+  cursor: pointer;
+}
+.export-option:hover {
+  border-color: rgba(255, 122, 0, 0.55);
+  background: rgba(255, 122, 0, 0.1);
+}
+.export-option-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+.export-option-desc {
+  font-size: 12px;
+  color: var(--muted);
+}
+.export-cancel {
+  padding: 10px;
+  border-radius: 12px;
+  background: transparent;
+  border: 1px solid rgba(126, 168, 142, 0.25);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+/* AI 紧凑面板（默认折叠，展开后一行控件） */
+.ai-planner-panel > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #ffd9ae;
+  padding: 4px 0;
+}
+.ai-compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+  margin-top: 10px;
+}
+.ai-compact label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.ai-compact select,
+.ai-compact input {
+  min-width: 150px;
+}
+.ai-run {
+  align-self: flex-end;
+}
+.ai-output {
+  margin-top: 10px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+/* 卡片式补给时间轴（覆盖旧表格样式，对齐小程序 result 页） */
+.plan-table {
+  min-width: 0;
+  overflow-x: visible;
+}
+.pe-head {
+  display: none;
+}
+.pe-row {
+  display: block;
+  position: relative;
+  min-width: 0;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  background: rgba(11, 30, 20, 0.72);
+}
+.pe-row.is-cp {
+  background: rgba(255, 122, 0, 0.1);
+  border-color: rgba(255, 122, 0, 0.45);
+}
+.pe-row.has-error {
+  border-color: rgba(255, 107, 94, 0.75);
+}
+.pe-row-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.pe-stat {
+  flex: 1;
+  min-width: 0;
+}
+.pe-stat-label {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.pe-stat-value {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffd9ae;
+}
+.pe-km-input,
+.pe-time {
+  width: 88px;
+  text-align: center;
+  font-size: 15px;
+  color: #ffd9ae;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(9, 18, 13, 0.7);
+  border: 1px solid rgba(126, 168, 142, 0.3);
+}
+.pe-time {
+  color: #e9f3ec;
+}
+.pe-km-readonly {
+  font-size: 16px;
+  color: #ffd9ae;
+}
+.pe-unit {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.pe-row .pe-del {
+  margin-left: auto;
+  padding: 4px 10px;
+}
+.pe-row-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.pe-stat-mini b {
+  color: #cdeadd;
+  font-weight: 600;
+}
+.pe-row .pe-err {
+  position: static;
+  display: block;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: #ffb3ac;
+}
+.pe-cp-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(255, 122, 0, 0.08);
+}
+.pe-cp-label {
+  font-size: 12px;
+  color: #ffd9ae;
+  font-weight: 600;
+}
+.pe-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+}
+.pe-takeout {
+  display: block;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(77, 150, 255, 0.08);
+  border: 1px solid rgba(77, 150, 255, 0.25);
+}
+.pe-takeout-label {
+  display: block;
+  font-size: 11px;
+  color: #9cc6ff;
+  margin-bottom: 6px;
+}
+.pe-takeout-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pe-insert-row {
+  display: block;
+  width: 100%;
+  margin: 6px 0;
+  padding: 7px;
+  border-radius: 10px;
+  border: 1px dashed rgba(126, 168, 142, 0.35);
+  background: rgba(31, 61, 46, 0.35);
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.pe-insert-row:hover {
+  border-color: rgba(255, 122, 0, 0.5);
+  color: #ffd9ae;
+}
+.pe-empty-add {
+  border-style: solid;
+  color: #ffd9ae;
+}
+.plan-carry-warnings {
+  align-items: flex-start;
+}
+.pe-cw-fix {
+  margin-top: 8px;
+  padding: 7px 14px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 122, 0, 0.5);
+  background: rgba(255, 122, 0, 0.14);
+  color: #ffcf8e;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .export-sheet {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .ai-compact select,
+  .ai-compact input {
+    min-width: 120px;
+  }
+}
+
+/* ============================================================
+   导出抽屉显隐修复：hidden 属性必须真正隐藏（UA [hidden] 被
+   作者 display:flex 覆盖导致抽屉常显）
+   ============================================================ */
+.export-mask[hidden],
+.export-sheet[hidden],
+.large-chart-sheet[hidden],
+.large-chart-sheet.is-hidden {
+  display: none;
+}
+
+/* ============================================================
+   补给点行布局优化（对齐小程序 result 页：stat 卡片 + 大号 chips）
+   ============================================================ */
+.pe-row {
+  padding: 14px;
+}
+.pe-row-head {
+  gap: 12px;
+}
+.pe-row-head .pe-stat {
+  background: rgba(31, 61, 46, 0.45);
+  border: 1px solid rgba(126, 168, 142, 0.22);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.pe-row-head .pe-stat-label {
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+.pe-row-head .pe-stat-value {
+  font-size: 18px;
+}
+.pe-row-head .pe-input {
+  font-size: 15px;
+}
+.pe-row-stats {
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.pe-row-stats .pe-stat-mini {
+  background: rgba(31, 61, 46, 0.3);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12.5px;
+}
+.pe-items {
+  gap: 8px;
+  margin-top: 10px;
+}
+.pe-takeout-items {
+  gap: 8px;
+}
+.pe-chip-item {
+  gap: 4px;
+}
+.pe-chip {
+  font-size: 12.5px;
+  padding: 4px 10px;
+}
+.pe-step {
+  min-width: 28px;
+  padding: 5px 9px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+.pe-libmini {
+  font-size: 12.5px;
+  padding: 5px 10px;
+}
+.pe-cp-row {
+  margin-top: 10px;
+}
+.pe-takeout {
+  margin-top: 10px;
+}
+
+/* ===== 与小程序功能对齐补齐（2026-09-01）：分组折叠 / 底部提示 / 大图 / 确认弹层 / 库备注 ===== */
+details.field-group {
+  grid-column: 1 / -1;
+  border: 1px solid rgba(126, 168, 142, 0.25);
+  border-radius: 12px;
+  background: rgba(31, 61, 46, 0.22);
+  padding: 10px 14px;
+  margin-top: 4px;
+}
+details.field-group summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #ffd9ae;
+  font-size: 14px;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+details.field-group summary::before {
+  content: "▸";
+  color: #ff7a00;
+  transition: transform 0.15s ease;
+  display: inline-block;
+}
+details.field-group[open] summary::before {
+  transform: rotate(90deg);
+}
+.field-group-body {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.step-footnote {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: rgba(233, 243, 236, 0.6);
+  line-height: 1.6;
+}
+/* 第 4 步横版大图弹层 */
+.large-chart-sheet {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 502;
+  width: min(1180px, 94vw);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: #0c1711;
+  border: 1px solid rgba(255, 122, 0, 0.35);
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+.large-chart-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.large-chart-title {
+  font-weight: 700;
+  color: #ffd9ae;
+  margin-right: auto;
+}
+.large-chart-canvas-wrap {
+  overflow: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(126, 168, 142, 0.25);
+  background: #08110c;
+  max-height: 72vh;
+}
+.large-chart-canvas-wrap canvas {
+  display: block;
+  cursor: grab;
+}
+.large-chart-canvas-wrap canvas:active {
+  cursor: grabbing;
+}
+/* 自定义确认弹层（替代 window.confirm，对齐小程序底部抽屉确认） */
+.pe-confirm-overlay .pe-confirm-modal {
+  width: min(440px, 92vw);
+}
+.pe-confirm-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #cdeadd;
+}
+.pe-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+.pe-confirm-cancel,
+.pe-confirm-ok {
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid rgba(126, 168, 142, 0.4);
+  background: transparent;
+  color: #cdeadd;
+}
+.pe-confirm-ok {
+  background: #ff7a00;
+  border-color: #ff7a00;
+  color: #101c15;
+  font-weight: 700;
+}
+.pe-confirm-ok.danger {
+  background: #d84a3a;
+  border-color: #d84a3a;
+  color: #fff;
+}
+/* 补给/装备库备注行 */
+.pe-lib-note {
+  margin: 2px 0 8px;
+  font-size: 12px;
+  color: rgba(233, 243, 236, 0.55);
+  line-height: 1.5;
+}
+/* 第 5 步"补给方案"帮助按钮 */
+#planHelpBtn {
+  margin-left: 6px;
+  vertical-align: middle;
+}
+@media (max-width: 760px) {
+  .large-chart-sheet {
+    width: 96vw;
+    padding: 10px;
+  }
+  .large-chart-canvas-wrap {
+    max-height: 62vh;
+  }
+}
+
+/* ===== 第五轮 UI 修复（2026-09-01）：行网格对齐 / 清单组内按钮 / 工具栏精简 ===== */
+.plan-editor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.plan-editor-toolbar-tip {
+  margin-right: auto;
+  font-size: 12px;
+  color: rgba(233, 243, 236, 0.55);
+}
+.pe-row {
+  position: relative;
+}
+.pe-row .pe-del {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 2;
+}
+.pe-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding-right: 36px;
+}
+.pe-row-grid .pe-stat,
+.pe-row-grid .pe-stat-mini {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-height: 64px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(31, 61, 46, 0.45);
+}
+.pe-row-grid .pe-stat-label {
+  font-size: 11px;
+  color: rgba(233, 243, 236, 0.55);
+}
+.pe-row-grid .pe-stat-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  font-size: 18px;
+}
+.pe-row-grid .pe-stat-value input {
+  width: 100%;
+  height: 30px;
+  font-size: 16px;
+}
+.pe-km-readonly {
+  font-size: 18px;
+  font-weight: 700;
+}
+.pe-row-grid .pe-stat-mini {
+  font-size: 12.5px;
+  color: #cdeadd;
+  min-height: 40px;
+}
+.pe-chk-add {
+  display: inline-flex;
+  align-items: center;
+  margin: 4px 6px 0 0;
+  padding: 4px 10px;
+  border: 1px dashed rgba(255, 138, 31, 0.5);
+  border-radius: 999px;
+  background: transparent;
+  color: #ff9a3c;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.pe-chk-add:hover {
+  background: rgba(255, 138, 31, 0.1);
+}
+/* 海报预览弹层 */
+.pe-poster-modal {
+  width: min(620px, 94vw);
+}
+.pe-poster-modal .pe-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+.pe-poster-img {
+  display: block;
+  max-width: 100%;
+  max-height: 68vh;
+  border-radius: 10px;
+  border: 1px solid rgba(126, 168, 142, 0.3);
+}
+.pe-poster-tip {
+  margin: 0;
+  font-size: 12.5px;
+  color: rgba(233, 243, 236, 0.6);
+  text-align: center;
+  line-height: 1.6;
+}
+@media (max-width: 760px) {
+  .pe-row-grid {
+    padding-right: 26px;
+  }
+  .pe-poster-img {
+    max-height: 58vh;
+  }
+}
+
+/* ===== 第六轮 UI 优化（2026-09-01）：补给点行卡片优雅版 / 补给方案帮助气泡 ===== */
+/* 帮助按钮气泡：显示在按钮下方、左对齐、更宽，避免向上溢出与遮挡标题 */
+#planHelpBtn::after {
+  left: 0;
+  bottom: auto;
+  top: calc(100% + 8px);
+  transform: translateY(4px);
+  max-width: min(440px, 76vw);
+  text-align: left;
+}
+#planHelpBtn:hover::after,
+#planHelpBtn:focus::after {
+  transform: translateY(0);
+}
+/* 补给点行卡片 */
+#planTable .pe-row {
+  display: flex;
+  gap: 12px;
+  padding: 14px 14px 12px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(126, 168, 142, 0.26);
+  background: rgba(21, 44, 32, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+#planTable .pe-row.is-cp {
+  border-color: rgba(255, 182, 92, 0.38);
+  background: rgba(44, 40, 26, 0.42);
+}
+.pe-row-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #2dd4bf;
+  opacity: 0.85;
+}
+.pe-row.is-cp .pe-row-bar {
+  background: #ffb65c;
+}
+.pe-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pe-row-top {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+.pe-row-top .pe-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.pe-row-top .pe-stat:first-child {
+  flex: 1.2;
+}
+.pe-row-top .pe-stat:nth-child(2) {
+  flex: 1;
+}
+.pe-row-top .pe-stat-label {
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  color: rgba(233, 243, 236, 0.5);
+}
+.pe-row-top .pe-stat-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 21px;
+  font-weight: 700;
+  color: #e9f3ec;
+  line-height: 1.25;
+}
+.pe-row-top .pe-stat-value input {
+  width: 100%;
+  height: 30px;
+  font-size: 18px;
+  font-weight: 700;
+}
+.pe-row-top .pe-unit {
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(233, 243, 236, 0.55);
+}
+#planTable .pe-row .pe-del {
+  position: static;
+  flex: 0 0 auto;
+  align-self: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(126, 168, 142, 0.3);
+  background: rgba(126, 168, 142, 0.1);
+  color: rgba(233, 243, 236, 0.7);
+  font-size: 15px;
+  cursor: pointer;
+}
+#planTable .pe-row .pe-del:hover {
+  background: rgba(216, 74, 58, 0.25);
+  border-color: rgba(216, 74, 58, 0.55);
+  color: #ffb3a8;
+}
+.pe-row-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pe-meta-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(126, 168, 142, 0.13);
+  border: 1px solid rgba(126, 168, 142, 0.2);
+  font-size: 12px;
+  color: rgba(233, 243, 236, 0.65);
+}
+.pe-meta-chip b {
+  color: #cdeadd;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+#planTable .pe-cp-row {
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+#planTable .pe-takeout {
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+@media (max-width: 760px) {
+  .pe-row-top {
+    gap: 10px;
+  }
+  .pe-row-top .pe-stat-value {
+    font-size: 18px;
+  }
+}
+
+/* ===== 第七轮 UI 优化（2026-09-01）：行四信息单行 / 帮助弹层 JS 版 ===== */
+/* 四个信息一行排列：主信息（累计距离/预计时间）与区间信息用竖分隔线分组 */
+#planTable .pe-row-top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+}
+#planTable .pe-row-top .pe-stat {
+  padding: 2px 18px;
+}
+#planTable .pe-row-top .pe-stat:first-child {
+  padding-left: 0;
+}
+#planTable .pe-row-top .pe-stat + .pe-stat {
+  border-left: 1px solid rgba(126, 168, 142, 0.22);
+}
+#planTable .pe-row-top .pe-stat-primary {
+  min-width: 118px;
+}
+#planTable .pe-row-top .pe-stat-value {
+  gap: 5px;
+}
+#planTable .pe-row-top .pe-stat-seg .pe-stat-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #cdeadd;
+}
+#planTable .pe-row .pe-del {
+  margin-left: auto;
+}
+/* "补给方案"帮助 JS 弹层 */
+.plan-help-pop {
+  display: none;
+  position: fixed;
+  z-index: 560;
+  width: min(440px, 76vw);
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(9, 20, 14, 0.97);
+  border: 1px solid rgba(255, 138, 31, 0.45);
+  color: #e9f3ec;
+  font-size: 12.5px;
+  line-height: 1.7;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+}
+@media (max-width: 900px) {
+  #planTable .pe-row-top .pe-stat {
+    padding: 2px 12px;
+  }
+  #planTable .pe-row-top .pe-stat-primary {
+    min-width: 96px;
   }
 }

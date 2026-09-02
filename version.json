@@ -1,0 +1,11 @@
+{
+  "app": "trail-lab-web",
+  "repo": "03_Code（GitHub Pages）",
+  "version": "1.1.0",
+  "engine_version": "2.0.0",
+  "status": "与小程序同步后待发布（含路线导出、海报、第五步布局、清单超量提示等）",
+  "previous_released_version": "1.0.0",
+  "previous_released_at": "2026-08-21",
+  "backup_dir": "releases/web/v1.1.0-20260902",
+  "changelog": "CHANGELOG.md"
+}

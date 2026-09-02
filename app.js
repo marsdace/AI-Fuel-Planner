@@ -15,11 +15,11 @@ const state = {
 
 const TEXT = {
   zh: {
-    pageTitle: "Trail Lab · AI Fuel Planner",
+    pageTitle: "Trail Lab · Fuel Planner",
     languageSwitcherLabel: "语言 / Language",
-    heroTitle: "越野跑AI补给规划工具",
+    heroTitle: "越野跑补给规划工具",
     heroTagline: "上传历史运动文件，设定目标运动路线，自动计算补给节奏与分段建议",
-    heroSubtitle: "五步完成补给规划-解析历史运动记录、校准用户能力画像、设定线路信息、确认线路信息、生成规则与 AI 解释。",
+    heroSubtitle: "五步完成补给规划-解析历史运动记录、校准用户能力画像、设定线路信息、确认线路信息、生成补给方案与分段建议。",
     labIntro: "Trail Lab · 山野实验室 — 用科技探索山野，让户外更有趣、更高效、更安全。",
     stepBadge1: "步骤 1",
     stepBadge2: "步骤 2",
@@ -37,6 +37,7 @@ const TEXT = {
     step2Title: "确认历史运动概括与用户能力画像",
     stepHint2: "本步将生成：可编辑用户能力画像，用于规则引擎能力评估与风险判断。",
     step2Note: "提醒：以下显示内容均为运动设备自带信息，如信息不适用，请手动去掉信息或更改。",
+    step2Footnote: "若以上画像与你的实际感受有较大出入，请返回第 1 步更换更能代表当前水平的运动文件，或修正输入参数（体重 / 最大心率 / ITRA / VO2max / HRV 等）。",
     activitySummaryTitle: "历史运动概括",
     userProfileTitle: "用户能力画像",
     backStep: "返回上一步",
@@ -54,24 +55,65 @@ const TEXT = {
     stepHint4: "本步将生成：路线海拔轮廓与补给点分布，帮助你直观确认线路结构。",
     step4NoteFit: "基于目标运动文件的真实海拔轨迹绘制；补给点来自步骤 3 确认的官方补给点。",
     step4NoteSim: "基于步骤 3 确认的路线参数模拟生成（爬坡起点默认海拔 0）；补给点来自步骤 3 确认的官方补给点。",
+    step4ZoomTip: "点击概况图可查看横版大图（缩放 / 拖拽 / 下载保存）",
+    largeChartTitle: "横版大图",
+    largeChartZoomIn: "＋",
+    largeChartZoomOut: "－",
+    largeChartReset: "复位",
+    largeChartDownload: "下载 PNG",
+    largeChartClose: "关闭",
+    largeChartTip: "滚轮缩放 · 拖拽平移 · 下载保存",
+    largeChartGenFail: "大图生成失败：请先确认路线参数后再打开",
     legendLine: "路线海拔轮廓",
     legendCp: "CP / 补给站",
     legendClimbSeg: "爬坡路段",
     legendDescentSeg: "下降路段",
     confirmStep4: "确认路线概况",
-    step5Title: "规则引擎与 AI 解释",
-    stepHint5: "本步将生成：规则契约 JSON、补给定量输出与 AI 可执行解释。",
-    aiPlannerTitle: "AI Planner (可选)",
+    step5Title: "规则引擎输出",
+    stepHint5: "本步将生成：规则契约 JSON、补给定量输出与可执行补给方案。",
+    aiPlannerTitle: "AI 解释（可选）",
     providerLabel: "Provider",
     modelLabel: "Model",
     apiKeyLabel: "API Key（浏览器端明文，仅本地实验）",
     apiKeyPlaceholder: "可留空使用 mock",
     temperatureLabel: "Temperature",
     aiPlannerNote: "提示：浏览器端调用第三方模型可能受 CORS 限制。若失败请先使用 mock 验证全流程。",
-    runBtn: "开始计算并生成解释",
+    runBtn: "生成 AI 解释",
     contractOutputTitle: "Rule Contract JSON",
     engineOutputTitle: "Rule Engine 输出",
-    aiOutputTitle: "AI Planner 输出",
+    aiOutputTitle: "AI 解释输出",
+    profileScoreTitle: "能力画像评分（六维）",
+    planEditorTitle: "补给时间轴（可删减、更改）",
+    planEditorHint: "补给点可自由增删插行、编辑距离后自动重排并重算区间距离/爬升与合计；官方补给点可编辑带出物品，出发携带与各段带出会做校验，可用一键补齐。",
+    planAddBtn: "＋ 添加自补给点",
+    planAddFirstBtn: "＋ 最前插入",
+    planClearBtn: "清空自补点",
+    planToolbarTip: "点 − / ＋ 调整数量；每行下方可插入补给点；清空自补点会保留官方补给点",
+    planFixBtn: "一键补齐携带",
+    planLibBtn: "补给库",
+    planRoutePreviewTitle: "路线概况",
+    planSummaryTitle: "补给方案",
+    planHelpTooltip: "补给时间轴可删减、更改：每行显示累计距离/预计时间（HH:MM）/区间距离/区间爬升，官方补给点为橙色背景（显示关门时间与带出物品）、自补给点为绿色背景；补给内容用自绘图标表示——碳水25g、电解质水500ml、白水500ml、盐丸200mg、咖啡因100mg；累计距离为可编辑框（0.1–300km，列表始终按距离从小到大排列），修改后区间距离/区间爬升自动更新（区间爬升只计爬升、不计下降）；点 − / ＋ 直接调整数量，＋可打开补给/装备图标库，点 × 删除整行，'＋在此后插入补给点'可插行；顶部'清空自补点'会保留官方补给点。合计、复制、导出均按调整后的时间轴计算。",
+    planChecklistTitle: "出发自查清单",
+    planWarningsTitle: "执行提醒",
+    debugTitle: "调试信息（契约 JSON / 引擎明细）",
+    planExportBtn: "导出",
+    exportSheetTitle: "选择导出方式",
+    exportOptXlsx: "导出 xlsx 文件",
+    exportOptXlsxDesc: "内容可编辑 + 线路海拔图 + 出门清单",
+    exportOptImage: "导出图片",
+    exportOptImageDesc: "补给总览海报 · 便于查询 · 设置屏保",
+    exportOptFit: "导出 FIT 路线",
+    exportOptFitDesc: "路线轨迹 + 补给点航点（自补给点）",
+    exportOptGpx: "导出 GPX 路线",
+    exportOptGpxDesc: "路线轨迹 + 补给点航点（自补给点）",
+    exportCancel: "取消",
+    planCopyBtn: "复制方案文本",
+    planSafetyBanner: "安全提示：本方案为通用规则估算，非医疗建议；请结合自身体能、天气与肠胃耐受，在专业人士指导下调整，量力而行；使用者自行承担风险。",
+    step5Title: "规则引擎输出",
+    stepHint5: "程序计算数值，输出可执行补给方案。",
+    aiPlannerTitle: "AI 解释（可选）",
+    aiRunBtn: "生成 AI 解释",
     routeDistance: "距离",
     routeAscent: "爬升",
     routeCp: "CP",
@@ -102,6 +144,7 @@ const TEXT = {
     statusSelectRaceFit: "请先选择目标路线 FIT/GPX 文件。",
     statusParsingRace: "读取目标路线文件中...",
     statusRaceReady: "目标路线文件已读取（FIT/GPX），可继续补充 CP、坡段和天气参数。",
+    statusRaceReadyDerived: "目标路线文件已读取（course 类型：距离/爬升/下降为估算值，请核对），可继续补充 CP、坡段和天气参数。",
     statusGpxReadyWithCp: "GPX 路线已读取，识别到 {n} 个官方补给点，可继续补充坡段和天气参数。",
     statusGpxReadyNoCp: "GPX 路线已读取（未检测到航点，可手动补充官方补给点），可继续补充坡段和天气参数。",
     statusRouteReady: "路线、海拔与补给点概况已生成，请确认。",
@@ -112,12 +155,31 @@ const TEXT = {
     raceSegExceedsDistance: "路段的“终点”不能超过路线总距离。",
     raceClimbExceedsAscent: "爬升路段的“高差”合计不能超过路线总爬升。",
     raceCpExceedsAscent: "官方补给点的“区间爬升”合计不能超过路线总爬升。",
-    statusReadyEngine: "可以开始运行 Trail Lab Rule Engine 与 AI Planner。",
+    raceDistanceRange: "路线距离应在 1–300 公里之间。",
+    raceAscentRange: "总爬升应在 0–30000 米之间。",
+    raceDescentRange: "总下降应在 0–30000 米之间。",
+    raceFinishRange: "期望完赛时间应在 0.5–72 小时之间。",
+    raceTempRange: "预计温度应在 -40–55 摄氏度之间。",
+    raceHumidityRange: "预计湿度应在 0–100% 之间。",
+    raceThresholdRange: "爬升/下降阈值应在 1–5000 米之间。",
+    raceCpClimbRange: "官方补给点的“区间爬升”应在 0–30000 米之间。",
+    raceCpDescentRange: "官方补给点的“区间下降”应在 0–30000 米之间。",
+    raceSegHeightRange: "路段“高差”应在 0–30000 米之间。",
+    raceDescentExceeds: "下降路段的“高差”合计不能超过路线总下降。",
+    profileRangeWeight: "体重应在 20–250 kg 之间。",
+    profileRangeMaxHr: "生物最大心率应在 100–250 bpm 之间。",
+    profileRangeVo2: "最大摄氧量应在 20–120 ml/kg/min 之间。",
+    profileRangeItra: "ITRA 积分应在 0–1000 之间。",
+    profileRangeCho: "已验证碳水上限应在 0–150 g/h 之间。",
+    profileRangeSweatRate: "出汗率应在 0.2–4.0 L/h 之间。",
+    profileRangeSweatSodium: "汗液钠浓度应在 200–2000 mg/L 之间。",
+    profileRangeCaffeine: "咖啡因习惯应在 0–1000 mg/天 之间。",
+    statusReadyEngine: "可以开始运行 Trail Lab Rule Engine。",
     statusNeedActivity: "请先上传历史运动文件，或选择手动填写用户信息。",
     statusManualProfile: "未上传历史运动文件，已切换为手动填写用户能力画像。",
     kvHistoricalFile: "历史运动文件",
     manualSummaryNoFile: "未上传（手动填写）",
-    statusEngineDone: "规则引擎完成，正在生成 AI 解释...",
+    statusEngineDone: "补给策略已生成，可向下查看/编辑。",
     statusAllDone: "全部完成。",
     statusFailed: "失败",
     errorPrefix: "错误",
@@ -142,14 +204,13 @@ const TEXT = {
     chartAriaLabel: "路线海拔和补给点概况图",
     raceCpPlaceholder: "例如 8,16,24",
     raceSegmentPlaceholder: "例如 6:200,8:800,10:300",
-    raceNotesPlaceholder: "例如高海拔、暴晒、补给站间隔长",
   },
   en: {
-    pageTitle: "Trail Lab · AI Fuel Planner",
+    pageTitle: "Trail Lab · Fuel Planner",
     languageSwitcherLabel: "Language / 语言",
     heroTitle: "Smart Nutrition Planning for Trail Running",
     heroTagline: "Upload your historical activity file, set your target route, and automatically get fueling rhythm plus segment suggestions.",
-    heroSubtitle: "Finish fueling planning in five steps: parse activity history, calibrate your ability profile, set route info, confirm route info, then generate rules and an AI explanation.",
+    heroSubtitle: "Finish fueling planning in five steps: parse activity history, calibrate your ability profile, set route info, confirm route info, then generate the fueling plan and segment suggestions.",
     labIntro: "Trail Lab · 山野实验室 — Explore the wilderness with technology—making the outdoors more fun, efficient, and safe.",
     stepBadge1: "Step 1",
     stepBadge2: "Step 2",
@@ -167,6 +228,7 @@ const TEXT = {
     step2Title: "Review Historical Activity Summary and User Profile",
     stepHint2: "This step generates: editable user profile for rule-engine ability and risk scoring.",
     step2Note: "Reminder: the following values come from device data. If any item does not apply, remove it or edit it manually.",
+    step2Footnote: "If the profile above differs noticeably from how you feel, go back to step 1 and upload a file that better represents your current level, or correct the inputs (weight / max HR / ITRA / VO2max / HRV etc.).",
     activitySummaryTitle: "Historical Activity Summary",
     userProfileTitle: "User Profile",
     backStep: "Back",
@@ -184,24 +246,65 @@ const TEXT = {
     stepHint4: "This step generates: route elevation profile and fuel-point layout for visual confirmation.",
     step4NoteFit: "Drawn from the real elevation track of the target activity file; aid stations come from the official CPs confirmed in step 3.",
     step4NoteSim: "Simulated from the route parameters confirmed in step 3 (climb starts default to 0 m); aid stations come from the official CPs confirmed in step 3.",
+    step4ZoomTip: "Click the overview chart to open the large landscape chart (zoom / pan / download)",
+    largeChartTitle: "Large chart",
+    largeChartZoomIn: "＋",
+    largeChartZoomOut: "－",
+    largeChartReset: "Reset",
+    largeChartDownload: "Download PNG",
+    largeChartClose: "Close",
+    largeChartTip: "Scroll to zoom · drag to pan · download to save",
+    largeChartGenFail: "Large chart failed: confirm the route parameters first",
     legendLine: "Route elevation profile",
     legendCp: "CP / aid station",
     legendClimbSeg: "Climb segments",
     legendDescentSeg: "Descent segments",
     confirmStep4: "Confirm route overview",
-    step5Title: "Rule Engine and AI Explanation",
-    stepHint5: "This step generates: rule-contract JSON, quantified fueling output, and AI execution guidance.",
-    aiPlannerTitle: "AI Planner (Optional)",
+    step5Title: "Rule Engine Output",
+    stepHint5: "This step generates: rule-contract JSON, quantified fueling output, and an executable fueling plan.",
+    aiPlannerTitle: "AI explanation (optional)",
     providerLabel: "Provider",
     modelLabel: "Model",
     apiKeyLabel: "API key (plain in browser, local experiment only)",
     apiKeyPlaceholder: "Leave blank to use mock",
     temperatureLabel: "Temperature",
     aiPlannerNote: "Browser-side calls to third-party models may be blocked by CORS. Use mock first to validate the full flow.",
-    runBtn: "Run engine and generate explanation",
+    runBtn: "Generate AI explanation",
     contractOutputTitle: "Rule Contract JSON",
     engineOutputTitle: "Rule Engine Output",
-    aiOutputTitle: "AI Planner Output",
+    aiOutputTitle: "AI explanation output",
+    profileScoreTitle: "Ability score (6 dimensions)",
+    planEditorTitle: "Fueling timeline (editable)",
+    planEditorHint: "Add / delete / insert fueling points freely; editing distance re-sorts rows and recomputes segment distance / climb and totals. Official points support editable takeout items; carry at start and per-segment takeout are validated, with one-click auto-fix.",
+    planAddBtn: "＋ Add self point",
+    planAddFirstBtn: "＋ Insert first",
+    planClearBtn: "Clear self points",
+    planToolbarTip: "Use − / ＋ to adjust amounts; insert points below each row; clearing self points keeps official aid stations",
+    planFixBtn: "Auto-fix carry",
+    planLibBtn: "Library",
+    planRoutePreviewTitle: "Route overview",
+    planSummaryTitle: "Fuel plan",
+    planHelpTooltip: "The fueling timeline can be edited: each row shows cumulative distance / estimated time (HH:MM) / segment distance / segment climb. Official aid stations have an orange background (cutoff time and take-out items); self-supply points are green. Fuel icons mean: carbs 25g, electrolyte drink 500ml, plain water 500ml, salt tabs 200mg, caffeine 100mg. Cumulative distance is editable (0.1–300 km; the list is always sorted by distance) and segment distance/climb update automatically (only climbs are counted). Use − / ＋ to adjust amounts, ＋ to open the supply/gear library, × to delete a row, and '＋ insert after' to add rows; 'Clear self points' keeps official stations. Totals, copy and export all use the adjusted timeline.",
+    planChecklistTitle: "Departure checklist",
+    planWarningsTitle: "Execution reminders",
+    debugTitle: "Debug info (contract JSON / engine details)",
+    planExportBtn: "Export",
+    exportSheetTitle: "Choose export",
+    exportOptXlsx: "Export xlsx",
+    exportOptXlsxDesc: "Editable plan + route chart + checklist",
+    exportOptImage: "Export image",
+    exportOptImageDesc: "Fueling poster · for quick reference · wallpaper",
+    exportOptFit: "Export FIT route",
+    exportOptFitDesc: "Route track + point waypoints (self points)",
+    exportOptGpx: "Export GPX route",
+    exportOptGpxDesc: "Route track + point waypoints (self points)",
+    exportCancel: "Cancel",
+    planCopyBtn: "Copy plan text",
+    planSafetyBanner: "Safety: general rule estimate, not medical advice; adjust by your fitness, weather and GI tolerance under professional guidance; use at your own risk.",
+    step5Title: "Rule Engine output",
+    stepHint5: "Deterministic local computation for an executable fueling plan.",
+    aiPlannerTitle: "AI explanation (optional)",
+    aiRunBtn: "Generate AI explanation",
     routeDistance: "Distance",
     routeAscent: "Ascent",
     routeCp: "CP",
@@ -232,6 +335,7 @@ const TEXT = {
     statusSelectRaceFit: "Please choose a target route FIT/GPX file first.",
     statusParsingRace: "Reading target route file...",
     statusRaceReady: "Target route file loaded (FIT/GPX). You can continue editing CP, segments, and weather.",
+    statusRaceReadyDerived: "Course-type route file loaded: distance/ascent/descent are estimates, please verify. You can continue editing CP, segments, and weather.",
     statusGpxReadyWithCp: "GPX route loaded with {n} official aid stations detected. You can continue editing segments and weather.",
     statusGpxReadyNoCp: "GPX route loaded (no waypoints detected; add official aid stations manually). You can continue editing segments and weather.",
     statusRouteReady: "Route, elevation, and fuel point overview generated. Please review it.",
@@ -242,12 +346,31 @@ const TEXT = {
     raceSegExceedsDistance: "Segment end must not exceed the route's total distance.",
     raceClimbExceedsAscent: "Climb segment heights must not exceed the route's total ascent.",
     raceCpExceedsAscent: "Aid-station segment climbs must not exceed the route's total ascent.",
-    statusReadyEngine: "You can now run the Trail Lab Rule Engine and AI Planner.",
+    raceDistanceRange: "Route distance must be 1–300 km.",
+    raceAscentRange: "Total ascent must be 0–30000 m.",
+    raceDescentRange: "Total descent must be 0–30000 m.",
+    raceFinishRange: "Expected finish time must be 0.5–72 h.",
+    raceTempRange: "Expected temperature must be -40–55 °C.",
+    raceHumidityRange: "Expected humidity must be 0–100%.",
+    raceThresholdRange: "Climb/descent threshold must be 1–5000 m.",
+    raceCpClimbRange: "Aid-station segment climb must be 0–30000 m.",
+    raceCpDescentRange: "Aid-station segment descent must be 0–30000 m.",
+    raceSegHeightRange: "Segment height must be 0–30000 m.",
+    raceDescentExceeds: "Descent segment heights must not exceed the route's total descent.",
+    profileRangeWeight: "Weight must be 20–250 kg.",
+    profileRangeMaxHr: "Physiological max HR must be 100–250 bpm.",
+    profileRangeVo2: "VO2max must be 20–120 ml/kg/min.",
+    profileRangeItra: "ITRA points must be 0–1000.",
+    profileRangeCho: "Verified CHO ceiling must be 0–150 g/h.",
+    profileRangeSweatRate: "Sweat rate must be 0.2–4.0 L/h.",
+    profileRangeSweatSodium: "Sweat sodium must be 200–2000 mg/L.",
+    profileRangeCaffeine: "Caffeine habit must be 0–1000 mg/day.",
+    statusReadyEngine: "You can now run the Trail Lab Rule Engine.",
     statusNeedActivity: "Please upload a historical activity file, or choose to fill in your profile manually.",
     statusManualProfile: "No historical activity file uploaded. Switched to manual profile entry.",
     kvHistoricalFile: "Historical activity file",
     manualSummaryNoFile: "Not uploaded (manual entry)",
-    statusEngineDone: "Rule engine done. Generating AI explanation...",
+    statusEngineDone: "Supply strategy generated. Scroll down to view/edit.",
     statusAllDone: "All done.",
     statusFailed: "Failed",
     errorPrefix: "Error",
@@ -272,7 +395,6 @@ const TEXT = {
     chartAriaLabel: "Route elevation and fueling point overview",
     raceCpPlaceholder: "e.g. 8,16,24",
     raceSegmentPlaceholder: "e.g. 6:200,8:800,10:300",
-    raceNotesPlaceholder: "e.g. high altitude, exposed sun, long station gaps",
   },
 };
 
@@ -1237,6 +1359,7 @@ class RaceProfileBuilder {
       weather_temp_c: safeFloat(input.weatherTemp),
       humidity_pct: safeFloat(input.humidity),
       location_history_notes: input.locationNotes || null,
+      course_difficulty: ["fast", "technical", "alpine"].includes(input.courseDifficulty) ? input.courseDifficulty : "standard",
     };
   }
 }
@@ -1310,16 +1433,38 @@ function estimateFinishTime(raceProfile, terrain, speedAbilityScore) {
   };
 }
 
+// ITRA/UTMB Index 完赛时间模型（2026-08-28 EP08 v2 全库校准，与 mini 引擎同源）
+// v2 用 trail_lab.db runner_palmares 33,587 条真实成绩训练（排除 UTMB 同名历史赛道防泄漏，
+// 覆盖 440+ 赛道 / 20–270 km-eff，含 TDS 241 km-eff），去掉交互项（系数≈0 无增益）：
+//   ln(time_h) = 2.952840 − 0.979447·ln(Index) + 1.216624·ln(effKm)
+// 5 折 CV MAPE 9.7%；2026 UTMB 四组样本外 ETC -9.5% / MCC +1.6% / OCC -3.1% / TDS -15.3%
+// （剩余偏差=赛道个性：技术/高爬升赛道跑得慢，无法用爬升比预测 → 用户可选难度因子）
+// 推荐值 = 中位预测 ×1.05；区间 ×[0.82,1.22]；赛道难度 fast×0.95/standard×1/technical×1.1/alpine×1.18。
+const ITRA_MODEL_B0 = 2.952840;
+const ITRA_MODEL_B1 = -0.979447;
+const ITRA_MODEL_B2 = 1.216624;
+const COURSE_DIFFICULTY_FACTOR = { fast: 0.95, standard: 1.0, technical: 1.1, alpine: 1.18 };
+
+function itraSpeedKmh(pi, effectiveKm) {
+  const d = Math.max(effectiveKm, 1);
+  const lnIdx = Math.log(clamp(pi || 0, 250, 1000));
+  const lnEff = Math.log(d);
+  const lnSpeed = -ITRA_MODEL_B0 - ITRA_MODEL_B1 * lnIdx + (1 - ITRA_MODEL_B2) * lnEff;
+  return clamp(Math.exp(lnSpeed), 3.5, 25);
+}
+
 function itraFallbackEstimate(raceProfile, itraPoints) {
   const effectiveKm = raceProfile.distance_km + (raceProfile.ascent_m || 0) / 100;
   const pi = clamp(itraPoints || 0, 0, 1000);
-  const speedKmh = 7.0 + (pi - 300) * 0.005;
+  const speedKmh = itraSpeedKmh(pi, effectiveKm);
   const est = effectiveKm / Math.max(speedKmh, 3);
+  const difficulty = COURSE_DIFFICULTY_FACTOR[raceProfile.course_difficulty] || 1.0;
+  const rec = est * 1.05 * difficulty;
+  const inCalib = pi >= 300 && pi <= 950 && effectiveKm >= 20 && effectiveKm <= 270;
   return {
-    // 保守化系数 1.08→1.15（2026-08-21 数据集回归）
-    hours: Number((est * 1.15).toFixed(2)),
-    range: [Number((est * 1.05).toFixed(2)), Number((est * 1.25).toFixed(2))],
-    confidence: "medium",
+    hours: Number(rec.toFixed(2)),
+    range: [Number((est * 0.82 * difficulty).toFixed(2)), Number((est * 1.22 * difficulty).toFixed(2))],
+    confidence: inCalib ? "medium" : "low",
   };
 }
 
@@ -1379,7 +1524,7 @@ function layeredFinishEstimate(raceProfile, terrain, userProfile) {
 
 const FINISH_BRANCH_LABEL = {
   terrain: "分段分解",
-  itra_fallback: "ITRA 保守",
+  itra_fallback: "ITRA/UTMB 模型",
   vo2max_fallback: "VO2max 粗略",
   conservative: "极端保守",
 };
@@ -1435,7 +1580,58 @@ function allocateWholeItems(targets, itemSize) {
   return counts;
 }
 
+// 起点 → CP → 终点分段携带清单（供官方补给点"带出"预填与携带校验）
+function buildCarrySegments(raceProfile, fuelingPoints, caffeineSchedule) {
+  const distanceKm = Math.max(raceProfile.distance_km || 0, 0.1);
+  const cps = (raceProfile.aid_stations_km || [])
+    .filter((km) => km > 0 && km < distanceKm)
+    .sort((a, b) => a - b);
+  const bounds = [0].concat(cps, [distanceKm]);
+  const segments = [];
+  for (let i = 0; i < bounds.length - 1; i += 1) {
+    const from = bounds[i];
+    const to = bounds[i + 1];
+    const points = (fuelingPoints || []).filter((p) => p.km > from && p.km < to);
+    const sum = (key) => points.reduce((s, p) => s + (p[key] || 0), 0);
+    const caffMg = (caffeineSchedule || [])
+      .filter((c) => c.km > from && c.km < to)
+      .reduce((s, c) => s + (c.mg || 0), 0);
+    const electrolyteMl = sum("electrolyte_ml");
+    const plainMl = sum("plain_ml");
+    const saltTabs = sum("salt_tab_count");
+    const gels = sum("gels_count");
+    segments.push({
+      from_km: Number(from.toFixed(2)),
+      to_km: Number(to.toFixed(2)),
+      from_label: i === 0 ? "起点" : `官方补给点${i}`,
+      points: points.length,
+      carbs_g: Math.round(sum("carbs_g") * 10) / 10,
+      fluid_ml: Math.round(electrolyteMl + plainMl),
+      sodium_mg: Math.round(sum("sodium_mg")),
+      electrolyte_ml: Math.round(electrolyteMl),
+      plain_ml: Math.round(plainMl),
+      salt_tab_count: Math.round(saltTabs * 10) / 10,
+      gels_count: Math.round(gels * 10) / 10,
+      caffeine_mg: Math.round(caffMg),
+      // 换算为携带单位（向上取整，宁多勿少）
+      gels: Math.ceil(gels),
+      electrolyte_bottles: Math.ceil(electrolyteMl / 500),
+      water_bottles: Math.ceil(plainMl / 500),
+      salt_tabs: Math.ceil(saltTabs),
+      caffeine_cups: Math.ceil(caffMg / 100),
+    });
+  }
+  return segments;
+}
+
 class TrailLabRuleEngine {
+  // 时间兜底间隔自适应（2026-08-31 长距离密度优化）：<6h=30min / 6–12h=40min / >12h=45min
+  adaptiveMaxIntervalMin(finishTimeH) {
+    if (finishTimeH > 12) return 45;
+    if (finishTimeH > 6) return 40;
+    return 30;
+  }
+
   buildClimbTriggerPoints(raceProfile, triggerM) {
     if (triggerM <= 0) {
       return [];
@@ -1543,8 +1739,10 @@ class TrailLabRuleEngine {
       if (!est.completeness.ok) {
         const missingText = est.completeness.missing.join("/");
         if (est.branch === "itra_fallback") {
+          const diff = raceProfile.course_difficulty;
+          const diffNote = diff && diff !== "standard" ? `（赛道难度 ${diff}，已按 ×${COURSE_DIFFICULTY_FACTOR[diff]} 调整）` : "";
           warnings.push(
-            `画像文件缺少${missingText}样本，完赛时间基于 ITRA 积分的保守估算（medium 置信度）；建议上传含该地形的代表性文件`
+            `画像文件缺少${missingText}样本，完赛时间基于 ITRA/UTMB 指数模型估算（${est.confidence} 置信度，区间 ±20%）${diffNote}；建议上传含该地形的代表性文件`
           );
         } else if (est.branch === "vo2max_fallback") {
           warnings.push(
@@ -1641,17 +1839,33 @@ class TrailLabRuleEngine {
       );
     }
 
-    const climbPoints = this.buildClimbTriggerPoints(raceProfile, raceProfile.climb_trigger_m);
-    const timePoints = this.buildTimeFallbackPoints(raceProfile, finishTimeH, raceProfile.max_interval_min);
+    // 补给点密度优化（2026-08-31）：
+    //  - 时间兜底间隔按预计完赛时间自适应（用户显式设置 >30min 时尊重用户值）
+    //  - 合并窗保持 15min；爬升触发点距最近时间点/CP <15min 时丢弃
+    //  - >12h 赛事停用爬升触发（避免 170km 级出现 50+ 点）
+    const userInterval = raceProfile.max_interval_min;
+    const maxIntervalMin = userInterval > 30 ? userInterval : this.adaptiveMaxIntervalMin(finishTimeH);
+    const useClimbTrigger = finishTimeH <= 12;
+    const climbPoints = useClimbTrigger ? this.buildClimbTriggerPoints(raceProfile, raceProfile.climb_trigger_m) : [];
+    const timePoints = this.buildTimeFallbackPoints(raceProfile, finishTimeH, maxIntervalMin);
+    const MERGE_TIME_H = 0.25;
+    const climbRefs = [...timePoints, ...raceProfile.aid_stations_km, ...raceProfile.supplemental_points_km];
+    const keepClimb = climbPoints.filter((km) => {
+      let nearest = Infinity;
+      for (const k of climbRefs) {
+        const dt = Math.abs((finishTimeH * (km - k)) / raceProfile.distance_km);
+        if (dt < nearest) nearest = dt;
+      }
+      return nearest >= MERGE_TIME_H;
+    });
     const rawFuelingKm = [...new Set([
       ...raceProfile.aid_stations_km,
       ...raceProfile.supplemental_points_km,
-      ...climbPoints,
+      ...keepClimb,
       ...timePoints,
     ])]
       .filter((point) => point >= 0.5 && point < raceProfile.distance_km)
       .sort((a, b) => a - b);
-    const MERGE_TIME_H = 0.25;
     const cpSet = new Set(raceProfile.aid_stations_km);
     const fuelingPointsKm = [];
     for (const km of rawFuelingKm) {
@@ -1792,6 +2006,21 @@ class TrailLabRuleEngine {
       warnings.push(`未填期望完赛时间，完赛时间为引擎估算（${estimateModeLabel}），建议填写目标时间提高精度`);
     }
 
+    // 区间携带量过大预警（与小程序一致）：某段自补点消耗过大时提示确认携带能力或在官方点带出
+    const carrySegments = buildCarrySegments(raceProfile, fuelingPoints, caffeineSchedule);
+    carrySegments.forEach((seg) => {
+      if (seg.points <= 0) return;
+      const heavy = [];
+      if (seg.carbs_g > 150) heavy.push(`碳水 ${seg.carbs_g}g`);
+      if (seg.fluid_ml > 2500) heavy.push(`液体 ${seg.fluid_ml}ml`);
+      if (heavy.length) {
+        warnings.push(
+          `携带校验：${seg.from_km === 0 ? "起点" : "官方补给点"}到 ${seg.to_km}km 区间自补给消耗较大（${heavy.join(" / ")}），` +
+          "请确认携带能力或在官方补给点带出补给"
+        );
+      }
+    });
+
     const confidence = {
       carbs: userProfile.verified_cho_max != null ? "high" : "medium",
       fluid: fluidEstimated ? "low" : "high",
@@ -1841,9 +2070,10 @@ class TrailLabRuleEngine {
       protein_schedule: proteinSchedule,
       protein_enabled: proteinEnabled,
       carry_plan: carryPlan,
+      carry_segments: carrySegments,
       trigger_config: {
-        climb_trigger_m: raceProfile.climb_trigger_m,
-        max_interval_min: raceProfile.max_interval_min,
+        climb_trigger_m: useClimbTrigger ? raceProfile.climb_trigger_m : 0,
+        max_interval_min: maxIntervalMin,
       },
       evidence: {
         carbs: ["B5", "A7"],
@@ -1898,6 +2128,7 @@ function ruleEngineOutputToContract(userProfile, raceProfile, ruleOutput) {
       steep_segments: raceProfile.steep_segments,
       weather_temp_c: raceProfile.weather_temp_c,
       humidity_pct: raceProfile.humidity_pct,
+      course_difficulty: raceProfile.course_difficulty || "standard",
     },
     trigger_config: ruleOutput.trigger_config,
     engine_outputs: {
@@ -1924,6 +2155,7 @@ function ruleEngineOutputToContract(userProfile, raceProfile, ruleOutput) {
       protein_schedule: ruleOutput.protein_schedule,
       protein_enabled: ruleOutput.protein_enabled,
       carry_plan: ruleOutput.carry_plan,
+      carry_segments: ruleOutput.carry_segments,
       evidence: ruleOutput.evidence,
       confidence: ruleOutput.confidence,
       warnings: ruleOutput.warnings,
@@ -2388,12 +2620,13 @@ const userProfileFields = [
     ],
     help: { zh: "手表显示的 HRV 恢复状态（普通 FIT 文件不含该数据，需手动选择）。只影响当日发挥修正，不污染能力评估。", en: "HRV recovery status shown on your watch (ordinary FIT files don't contain it; select manually). Only adjusts the day's performance, never the ability estimate." },
   },
-  { key: "verifiedChoMax", label: { zh: "已验证碳水上限 (g/h)", en: "Verified CHO ceiling (g/h)" }, type: "number", step: "1", min: 0, placeholder: "optionalPlaceholder", help: { zh: "长距离拉练（≥2h）中实际执行且无胃肠症状的最高每小时碳水摄入（如从 45 g/h 起逐步上调）。", en: "Highest hourly carbohydrate intake sustained without GI symptoms in long runs (≥2h); e.g. build up from 45 g/h." } },
-  { key: "sweatRate", label: { zh: "出汗率 (L/h)", en: "Sweat rate (L/h)" }, type: "number", step: "0.01", min: 0, placeholder: "optionalPlaceholder", help: { zh: "体重法：跑前裸重 − 跑后裸重 + 摄入液体 − 尿量，除以运动时长。建议 1 小时稳定强度实测。", en: "Body-weight method: (pre weight − post weight + fluid − urine) / duration. Best measured over a 1 h steady-effort session." } },
-  { key: "sweatSodium", label: { zh: "汗液钠浓度 (mg/L)", en: "Sweat sodium (mg/L)" }, type: "number", step: "1", min: 0, placeholder: "optionalPlaceholder", help: { zh: "需专业汗液测试（汗贴/实验室）得出 mg/L；没有则留空，引擎用保守钠区间。", en: "From a professional sweat test (patch/lab) in mg/L; leave empty for conservative sodium defaults." } },
-  { key: "caffeineHabit", label: { zh: "咖啡因习惯 (mg/天)", en: "Caffeine habit (mg/day)" }, type: "number", step: "1", min: 0, placeholder: "optionalPlaceholder", help: { zh: "日常平均每天摄入的咖啡因总量：咖啡约 80–150mg/杯、茶约 30–50mg/杯、含咖啡因能量胶 50–100mg/支。", en: "Average daily caffeine intake: coffee ~80–150mg/cup, tea ~30–50mg/cup, caffeinated gel 50–100mg each." } },
+  { key: "verifiedChoMax", group: "supplyTest", label: { zh: "已验证碳水上限 (g/h)", en: "Verified CHO ceiling (g/h)" }, type: "number", step: "1", min: 0, placeholder: "optionalPlaceholder", help: { zh: "长距离拉练（≥2h）中实际执行且无胃肠症状的最高每小时碳水摄入（如从 45 g/h 起逐步上调）。", en: "Highest hourly carbohydrate intake sustained without GI symptoms in long runs (≥2h); e.g. build up from 45 g/h." } },
+  { key: "sweatRate", group: "supplyTest", label: { zh: "出汗率 (L/h)", en: "Sweat rate (L/h)" }, type: "number", step: "0.01", min: 0, placeholder: "optionalPlaceholder", help: { zh: "体重法：跑前裸重 − 跑后裸重 + 摄入液体 − 尿量，除以运动时长。建议 1 小时稳定强度实测。", en: "Body-weight method: (pre weight − post weight + fluid − urine) / duration. Best measured over a 1 h steady-effort session." } },
+  { key: "sweatSodium", group: "supplyTest", label: { zh: "汗液钠浓度 (mg/L)", en: "Sweat sodium (mg/L)" }, type: "number", step: "1", min: 0, placeholder: "optionalPlaceholder", help: { zh: "需专业汗液测试（汗贴/实验室）得出 mg/L；没有则留空，引擎用保守钠区间。", en: "From a professional sweat test (patch/lab) in mg/L; leave empty for conservative sodium defaults." } },
+  { key: "caffeineHabit", group: "supplyTest", label: { zh: "咖啡因习惯 (mg/天)", en: "Caffeine habit (mg/day)" }, type: "number", step: "1", min: 0, placeholder: "optionalPlaceholder", help: { zh: "日常平均每天摄入的咖啡因总量：咖啡约 80–150mg/杯、茶约 30–50mg/杯、含咖啡因能量胶 50–100mg/支。", en: "Average daily caffeine intake: coffee ~80–150mg/cup, tea ~30–50mg/cup, caffeinated gel 50–100mg each." } },
   {
     key: "giSensitivity",
+    group: "supplyTest",
     label: { zh: "肠胃敏感度", en: "GI sensitivity" },
     type: "select",
     options: [
@@ -2406,6 +2639,7 @@ const userProfileFields = [
   },
   {
     key: "heatAcclimated",
+    group: "supplyTest",
     label: { zh: "是否热适应", en: "Heat acclimated" },
     type: "select",
     options: [
@@ -2443,7 +2677,18 @@ const raceProfileFields = [
   { key: "expectedFinishH", label: { zh: "期望完赛时间 (h)", en: "Expected finish time (h)" }, type: "number", step: "0.1", min: 0, placeholder: "optionalPlaceholder" },
   { key: "weatherTemp", label: { zh: "预计温度 (°C)", en: "Expected temperature (°C)" }, type: "number", step: "0.1", placeholder: "optionalPlaceholder" },
   { key: "humidity", label: { zh: "预计湿度 (%)", en: "Expected humidity (%)" }, type: "number", step: "1", min: 0, max: 100, placeholder: "optionalPlaceholder" },
-  { key: "locationNotes", label: { zh: "线路备注", en: "Route notes" }, type: "textarea", placeholder: "raceNotesPlaceholder" },
+  {
+    key: "courseDifficulty",
+    label: { zh: "赛道难度", en: "Course difficulty" },
+    type: "select",
+    options: [
+      { value: "standard", label: { zh: "普通（默认）", en: "Standard (default)" } },
+      { value: "fast", label: { zh: "高速（平路/滚石少）", en: "Fast (flat / less technical)" } },
+      { value: "technical", label: { zh: "技术型（乱石/陡坡多）", en: "Technical (rocky / steep)" } },
+      { value: "alpine", label: { zh: "高山（高海拔/大爬升）", en: "Alpine (high altitude / big climb)" } },
+    ],
+    help: { zh: "同一 ITRA 积分+等效距离下，技术/高爬升赛道实际完赛更慢。EP08 实测：UTMB 四组赛道个性 ETC -9.5% / MCC +1.6% / OCC -3.1% / TDS -15.3%（相对中位预测）。选择难度可吸收这部分赛道个性（fast×0.95 / 普通×1.00 / 技术×1.10 / 高山×1.18）。", en: "At the same ITRA points + effective distance, technical / high-climb courses finish slower. EP08 measured course personality on 2026 UTMB: ETC -9.5% / MCC +1.6% / OCC -3.1% / TDS -15.3% (vs median prediction). Selecting difficulty absorbs this (fast×0.95 / standard×1.00 / technical×1.10 / alpine×1.18)." },
+  },
   // 右列：官方补给点 + 爬升/下降路段（位置均为距起点相对距离，提示统一在“!”悬浮中）
   { key: "officialCp", label: { zh: "官方补给点", en: "Official aid stations" }, type: "cplist", columns: CP_OFFICIAL_COLUMNS, addLabel: { zh: "新增补给点", en: "Add aid station" }, help: { zh: "FIT 有 CP 点会自动导入；也可手动新增。位置为距起点相对距离 (km)，每站可填名称、所在距离、关门时间、区间爬升与下降。列表从上到下需按距离递增排列。注意：补给点信息仅用于图中标记，不作为绘制海拔曲线的依据（不依据累计爬升/下降绘制图形）。", en: "CP points are auto-imported from FIT; add more manually. Position = relative distance (km) from the start. Each station: name, distance, cutoff, segment climb and descent. Rows must be ordered by increasing distance from top to bottom. Note: aid-station info is only used as chart markers and does not affect the elevation curve (the curve is not drawn from cumulative ascent/descent)." } },
   { key: "routeSegments", label: { zh: "爬升/下降路段", en: "Climb/descent segments" }, type: "cplist", columns: CP_ROUTE_COLUMNS, addLabel: { zh: "新增路段", en: "Add segment" }, help: { zh: "按距离位置从上到下依次设定各爬升/下降路段。每行填写类型（爬升/下降）、起点、终点（距起点相对距离 km）与高差 (m)。爬升段从起点爬升至终点，终点即该段海拔最高处；下降段从起点下降至终点。列表需依次排列且互不重叠。只有高差超过“爬升/下降阈值”的路段才会被算作路段。读取目标运动文件后会自动生成，可手动修改。", en: "Set each climb/descent segment in order by distance, top to bottom. Each row: type (climb/descent), start, end (relative distance in km) and height (m). A climb rises from start to end (its highest point); a descent falls from start to end. Rows must be ordered and must not overlap. Only segments above the climb/descent threshold count. Auto-generated after reading a target activity file; edit manually as needed." } },
@@ -2582,14 +2827,52 @@ function renderEditor(container, fields, values) {
         <input data-field="${fieldKeyAttr}" type="${fieldTypeAttr}" value="${valueAttr}" step="${stepAttr}" ${minAttr ? `min="${minAttr}"` : ""} ${maxAttr ? `max="${maxAttr}"` : ""} placeholder="${placeholder}" />
       </label>`;
   };
+  // 字段分组（如「补给实测（选填）」折叠组）：同 group 的字段包进 details 折叠区
+  const GROUP_META = {
+    supplyTest: {
+      zh: "补给实测（选填）",
+      en: "Fueling field tests (optional)",
+      help: {
+        zh: "以下为真实训练/比赛中实测回填的数据，用于提高引擎置信度；未填时使用保守默认并标注低置信度。",
+        en: "Real measured data from training/races to raise engine confidence; leave empty for conservative defaults with low confidence.",
+      },
+    },
+  };
+  const renderGrouped = (list) => {
+    let html = "";
+    let openGroup = null;
+    const closeGroup = () => {
+      if (openGroup) {
+        html += "</div></details>";
+        openGroup = null;
+      }
+    };
+    for (const f of list) {
+      if (f.group) {
+        if (!openGroup || openGroup.key !== f.group) {
+          closeGroup();
+          const meta = GROUP_META[f.group] || {};
+          const groupLabel = meta[state.language] || f.group;
+          const groupHelp = meta.help ? meta.help[state.language] : "";
+          html += `<details class="field-group" data-group="${escapeAttr(f.group)}"><summary>${escapeHtml(groupLabel)}${groupHelp ? `<span class="field-info" tabindex="0" role="note" aria-label="${escapeAttr(groupHelp)}" data-tooltip="${escapeAttr(groupHelp)}">!</span>` : ""}</summary><div class="field-group-body">`;
+          openGroup = { key: f.group };
+        }
+      } else {
+        closeGroup();
+      }
+      html += renderOne(f);
+    }
+    closeGroup();
+    return html;
+  };
   // 步骤三：普通字段与 cplist（官方补给点/爬升路段）分左右两列独立布局，
   // 两列高度互不影响，避免路段很多时把「预计湿度」与「线路备注」之间挤出大空档
   const leftFields = fields.filter((f) => f.type !== "cplist");
   const rightFields = fields.filter((f) => f.type === "cplist");
   if (rightFields.length) {
-    container.innerHTML = `<div class="editor-col-left">${leftFields.map(renderOne).join("")}</div><div class="editor-col-right">${rightFields.map(renderOne).join("")}</div>`;
+    container.innerHTML = `<div class="editor-col-left">${renderGrouped(leftFields)}</div><div class="editor-col-right">${rightFields.map(renderOne).join("")}</div>`;
   } else {
-    container.innerHTML = fields.map(renderOne).join("");
+    container.innerHTML = renderGrouped(fields);
   }
 }
 
@@ -2744,19 +3027,71 @@ function buildProfileFromActivityForm() {
   return { ...readEditorValues(ui.userProfileEditor, userProfileFields) };
 }
 
+// 用户画像字段合理区间校验（与小程序 activity.js FIELD_RANGES 一致）
+function validateUserProfile(form) {
+  const ranges = [
+    { key: "weight", lo: 20, hi: 250, msg: () => t("profileRangeWeight") },
+    { key: "physiologicalMaxHr", lo: 100, hi: 250, msg: () => t("profileRangeMaxHr") },
+    { key: "vo2max", lo: 20, hi: 120, msg: () => t("profileRangeVo2") },
+    { key: "itraPoints", lo: 0, hi: 1000, msg: () => t("profileRangeItra") },
+    { key: "verifiedChoMax", lo: 0, hi: 150, msg: () => t("profileRangeCho") },
+    { key: "sweatRate", lo: 0.2, hi: 4.0, msg: () => t("profileRangeSweatRate") },
+    { key: "sweatSodium", lo: 200, hi: 2000, msg: () => t("profileRangeSweatSodium") },
+    { key: "caffeineHabit", lo: 0, hi: 1000, msg: () => t("profileRangeCaffeine") },
+  ];
+  for (const range of ranges) {
+    const value = safeFloat(form?.[range.key]);
+    if (value !== null && (value < range.lo || value > range.hi)) {
+      return { ok: false, message: range.msg() };
+    }
+  }
+  return { ok: true };
+}
+
 function buildRaceProfileFromEditor() {
   return { ...readEditorValues(ui.raceProfileEditor, raceProfileFields) };
 }
 
 // 校验官方补给点与爬坡路段：位置递增且不重叠、位置不超过总距离、爬升高度合计不超过总爬升
 function validateRaceProfile(form) {
-  const distanceKm = Math.max(safeFloat(form.distanceKm) || 30, 1);
-  const ascentM = Math.max(safeFloat(form.ascentM) || 0, 0);
-  const descentM = Math.max(safeFloat(form.descentM) || 0, 0);
-
-  if (safeFloat(form.descentM) !== null && (safeFloat(form.descentM) < 0 || safeFloat(form.descentM) > 30000)) {
-    return { ok: false, message: "总下降应在 0–30000 米之间" };
+  const rawDistance = safeFloat(form.distanceKm);
+  const distanceKm = Math.max(rawDistance || 30, 1);
+  if (rawDistance !== null && (rawDistance < 1 || rawDistance > 300)) {
+    return { ok: false, message: t("raceDistanceRange") };
   }
+
+  const rawAscent = safeFloat(form.ascentM);
+  const ascentM = Math.max(rawAscent || 0, 0);
+  if (rawAscent !== null && (rawAscent < 0 || rawAscent > 30000)) {
+    return { ok: false, message: t("raceAscentRange") };
+  }
+
+  const rawDescent = safeFloat(form.descentM);
+  const descentM = Math.max(rawDescent || 0, 0);
+  if (rawDescent !== null && (rawDescent < 0 || rawDescent > 30000)) {
+    return { ok: false, message: t("raceDescentRange") };
+  }
+
+  const finishH = safeFloat(form.expectedFinishH);
+  if (finishH !== null && (finishH < 0.5 || finishH > 72)) {
+    return { ok: false, message: t("raceFinishRange") };
+  }
+
+  const temp = safeFloat(form.weatherTemp);
+  if (temp !== null && (temp < -40 || temp > 55)) {
+    return { ok: false, message: t("raceTempRange") };
+  }
+
+  const humidity = safeFloat(form.humidity);
+  if (humidity !== null && (humidity < 0 || humidity > 100)) {
+    return { ok: false, message: t("raceHumidityRange") };
+  }
+
+  const rawThreshold = safeFloat(form.segmentThresholdM);
+  if (rawThreshold !== null && (rawThreshold < 1 || rawThreshold > 5000)) {
+    return { ok: false, message: t("raceThresholdRange") };
+  }
+  const segmentThreshold = Math.max(rawThreshold || 50, 0);
 
   let cpList = [];
   try {
@@ -2776,7 +3111,15 @@ function validateRaceProfile(form) {
     if (dist > distanceKm) {
       return { ok: false, message: t("raceCpExceedsDistance") };
     }
-    totalCpClimb += Math.max(safeFloat(cpList[i].climb) || 0, 0);
+    const cpClimb = safeFloat(cpList[i].climb);
+    const cpDescent = safeFloat(cpList[i].descent);
+    if (cpClimb !== null && (cpClimb < 0 || cpClimb > 30000)) {
+      return { ok: false, message: t("raceCpClimbRange") };
+    }
+    if (cpDescent !== null && (cpDescent < 0 || cpDescent > 30000)) {
+      return { ok: false, message: t("raceCpDescentRange") };
+    }
+    totalCpClimb += Math.max(cpClimb || 0, 0);
     prevDist = dist;
   }
   if (ascentM > 0 && totalCpClimb > ascentM) {
@@ -2791,7 +3134,6 @@ function validateRaceProfile(form) {
   } catch (error) {
     segList = [];
   }
-  const segmentThreshold = Math.max(safeFloat(form.segmentThresholdM) || 50, 0);
   const effectiveSegs = [];
   for (let i = 0; i < segList.length; i++) {
     const start = safeFloat(segList[i].start);
@@ -2802,12 +3144,16 @@ function validateRaceProfile(form) {
     if (start === null || end === null || start >= end) {
       return { ok: false, message: t("raceSegRangeInvalid") };
     }
+    if (height < 0 || height > 30000) {
+      return { ok: false, message: t("raceSegHeightRange") };
+    }
     if (height >= segmentThreshold) {
       effectiveSegs.push({ start, end, height, isDescent });
     }
   }
   let prevEnd = -1;
   let totalClimb = 0;
+  let totalDescent = 0;
   for (const seg of effectiveSegs) {
     if (seg.start < prevEnd) {
       return { ok: false, message: t("raceSegOrderInvalid") };
@@ -2817,11 +3163,16 @@ function validateRaceProfile(form) {
     }
     if (!seg.isDescent) {
       totalClimb += seg.height;
+    } else {
+      totalDescent += seg.height;
     }
     prevEnd = seg.end;
   }
   if (ascentM > 0 && totalClimb > ascentM) {
     return { ok: false, message: t("raceClimbExceedsAscent") };
+  }
+  if (rawDescent !== null && rawDescent > 0 && totalDescent > rawDescent) {
+    return { ok: false, message: t("raceDescentExceeds") };
   }
 
   return { ok: true };
@@ -2845,21 +3196,115 @@ function buildSimulatedElevation(raceProfile) {
   return points;
 }
 
-// 从目标路线 FIT 的海拔记录自动提取爬坡路段（起点/终点/爬升高度），可再手动修改；阈值由“爬升/下降阈值”决定
-function extractClimbSegmentsFromFit(decoded, minClimb = 50) {
-  const records = decoded?.record_mesgs || [];
-  const raw = [];
-  for (const record of records) {
-    const km = safeFloat(record.distance);
-    const alt = firstField(record, "enhanced_altitude", "altitude");
-    if (km === null || alt === null || km < 0) continue;
-    raw.push({ km: km / 1000, alt });
+// 路段高差合计钳制到总爬升/总下降（GPX/FIT 提取后应用，避免超总爬升被后续校验拦截）
+function capSegments(segs, maxTotal) {
+  if (!Array.isArray(segs) || !segs.length || maxTotal == null || maxTotal <= 0) return segs;
+  let sum = segs.reduce((s, x) => s + (x.height || 0), 0);
+  if (sum <= maxTotal) return segs;
+  let over = sum - maxTotal;
+  const out = segs.map((s) => ({ ...s }));
+  while (over > 0) {
+    let maxIdx = -1;
+    let maxH = 0;
+    for (let i = 0; i < out.length; i += 1) {
+      if (out[i].height > maxH) {
+        maxH = out[i].height;
+        maxIdx = i;
+      }
+    }
+    if (maxIdx < 0 || maxH <= 0) break;
+    const dec = Math.min(over, maxH);
+    out[maxIdx].height = Math.max(0, out[maxIdx].height - dec);
+    over -= dec;
   }
-  if (raw.length < 4) return [];
-  raw.sort((a, b) => a.km - b.km);
+  return out;
+}
 
-  // 平滑采样：每 ~50m 取平均海拔，降低噪声
-  const step = 0.05;
+// 合并爬升/下降段后按起点排序，消除相互重叠（山顶/谷底附近窗口可能重叠；后段起点钳制到前段终点，退化段丢弃）
+function mergeSegments(climbs, descents) {
+  const sorted = []
+    .concat(
+      (climbs || []).map((seg) => ({ type: "climb", ...seg })),
+      (descents || []).map((seg) => ({ type: "descent", ...seg }))
+    )
+    .sort((a, b) => a.start - b.start || a.end - b.end);
+  const out = [];
+  let prevEnd = -Infinity;
+  for (const seg of sorted) {
+    const start = Math.max(seg.start, prevEnd);
+    const end = seg.end;
+    if (end <= start + 0.01) continue;
+    out.push({ ...seg, start: Number(start.toFixed(2)), end: Number(end.toFixed(2)) });
+    prevEnd = end;
+  }
+  return out;
+}
+
+// ---- course 类型文件读取兼容（2026-09-01 与小程序版同步）----
+const DEG_TO_SEMICIRCLES = 11930464.7111; // 2^31 / 180
+
+function haversineMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+// 坐标转角度：优先 SDK 展开的 latitude/longitude（度），否则按 semicircles 换算
+function recordLatLonDeg(record) {
+  let lat = safeFloat(record?.latitude);
+  let lon = safeFloat(record?.longitude);
+  if (lat === null && safeFloat(record?.position_lat) !== null) {
+    lat = safeFloat(record.position_lat) / DEG_TO_SEMICIRCLES;
+  }
+  if (lon === null && safeFloat(record?.position_long) !== null) {
+    lon = safeFloat(record.position_long) / DEG_TO_SEMICIRCLES;
+  }
+  return { lat, lon };
+}
+
+// 路线点归一化：km 优先取 record.distance，缺失时按经纬度累加兜底（兼容 course 类型文件）
+function normalizeRouteRecords(decoded) {
+  const records = decoded?.record_mesgs || [];
+  const out = [];
+  let prevLat = null;
+  let prevLon = null;
+  let cumKm = null;
+  for (const record of records) {
+    let km = safeFloat(record.distance);
+    if (km !== null) km = km / 1000;
+    const { lat, lon } = recordLatLonDeg(record);
+    if (km === null) {
+      if (lat === null || lon === null) continue;
+      if (prevLat === null || prevLon === null) {
+        // 首点无 distance：先锚定坐标，从下一点起按经纬度累加
+        prevLat = lat;
+        prevLon = lon;
+        continue;
+      }
+      if (cumKm === null) cumKm = 0;
+      cumKm += haversineMeters(prevLat, prevLon, lat, lon) / 1000;
+      km = cumKm;
+    } else {
+      cumKm = km;
+    }
+    const altitude = firstField(record, "enhanced_altitude", "altitude");
+    if (altitude === null) continue;
+    out.push({ km, altitude, lat, lon });
+    if (lat !== null && lon !== null) {
+      prevLat = lat;
+      prevLon = lon;
+    }
+  }
+  return out;
+}
+
+// 按固定距离分桶（50m）取桶内平均海拔，用于平滑 GPS 噪声（与坡段提取同口径）
+function sampleAltitudeBuckets(points, step) {
   const sampled = [];
   let bucket = null;
   let sumAlt = 0;
@@ -2870,7 +3315,7 @@ function extractClimbSegmentsFromFit(decoded, minClimb = 50) {
     sumAlt = 0;
     count = 0;
   };
-  for (const point of raw) {
+  for (const point of points) {
     const b = Math.floor(point.km / step) * step;
     if (bucket === null) bucket = b;
     if (b > bucket) flush();
@@ -2879,6 +3324,266 @@ function extractClimbSegmentsFromFit(decoded, minClimb = 50) {
     count += 1;
   }
   flush();
+  return sampled;
+}
+
+// 路线总量兜底：session → lap → 归一化记录；derived=true 表示存在估算值（无 session）
+function deriveRouteTotals(decoded) {
+  const session = decoded?.session_mesgs?.[0] || {};
+  let distanceM = safeFloat(session.total_distance);
+  let ascentM = safeFloat(session.total_ascent);
+  let descentM = safeFloat(session.total_descent);
+  let derived = distanceM === null || ascentM === null || descentM === null;
+  if (distanceM === null) {
+    for (const lap of decoded?.lap_mesgs || []) {
+      const d = safeFloat(lap.total_distance);
+      if (d !== null) distanceM = d;
+    }
+  }
+  const points = normalizeRouteRecords(decoded);
+  if (distanceM === null && points.length) {
+    distanceM = points[points.length - 1].km * 1000;
+  }
+  if (ascentM === null || descentM === null) {
+    // 与坡段提取同口径：50m 分桶平滑后累加，避免 GPS 海拔噪声虚高
+    const sampled = sampleAltitudeBuckets(
+      points.map((p) => ({ km: p.km, alt: p.altitude })),
+      0.05
+    );
+    let up = 0;
+    let down = 0;
+    for (let i = 1; i < sampled.length; i += 1) {
+      const d = sampled[i].alt - sampled[i - 1].alt;
+      if (d > 0) up += d;
+      else down += -d;
+    }
+    if (ascentM === null) ascentM = up;
+    if (descentM === null) descentM = down;
+  }
+  return { distanceM, ascentM, descentM, derived };
+}
+
+// ---- 路线轨迹构建（供 FIT/GPX 路线导出；与小程序 routeTrack 口径一致） ----
+function buildRouteTrack() {
+  if (state.gpxRoutePoints && state.gpxRoutePoints.length >= 2) {
+    return state.gpxRoutePoints.map((p) => ({ lat: p.lat, lon: p.lon, km: p.km, altitude: p.altitude }));
+  }
+  const recs = (state.decodedRace && state.decodedRace.record_mesgs) || [];
+  const out = [];
+  let prevLat = null;
+  let prevLon = null;
+  let cumKm = null;
+  for (const r of recs) {
+    const { lat, lon } = recordLatLonDeg(r);
+    let km = safeFloat(r.distance);
+    if (km !== null) km = km / 1000; // SDK 已应用 scale，单位为米
+    if (km === null) {
+      if (lat === null || lon === null) continue;
+      if (prevLat === null || prevLon === null) {
+        prevLat = lat;
+        prevLon = lon;
+        continue;
+      }
+      if (cumKm === null) cumKm = 0;
+      cumKm += haversineMeters(prevLat, prevLon, lat, lon) / 1000;
+      km = cumKm;
+    } else {
+      cumKm = km;
+    }
+    const altitude = firstField(r, "enhanced_altitude", "altitude");
+    if (lat !== null && lon !== null) {
+      prevLat = lat;
+      prevLon = lon;
+    }
+    out.push({ lat, lon, km, altitude });
+  }
+  return out.length >= 2 ? out : [];
+}
+
+// ---- 最小编码器：导出含补给点的 FIT course 路线文件（activity 版，两步路/小程序可读） ----
+// 移植自 09_wxxcx/utils/fit.js buildCourseFit（2026-09-01 同步）
+const FIT_CRC_TABLE = [
+  0x0000, 0xCC01, 0xD801, 0x1400, 0xF001, 0x3C00, 0x2800, 0xE401,
+  0xA001, 0x6C00, 0x7800, 0xB401, 0x5000, 0x9C01, 0x8801, 0x4400,
+];
+function fitCrc16(bytes, start, end, crc) {
+  let c = crc || 0;
+  for (let i = start; i < end; i += 1) {
+    const value = bytes[i];
+    let temp = FIT_CRC_TABLE[c & 0xf];
+    c = (c >> 4) & 0x0fff;
+    c = c ^ temp ^ FIT_CRC_TABLE[value & 0xf];
+    temp = FIT_CRC_TABLE[c & 0xf];
+    c = (c >> 4) & 0x0fff;
+    c = c ^ temp ^ FIT_CRC_TABLE[(value >> 4) & 0xf];
+  }
+  return c;
+}
+function fitUtf8Bytes(s) {
+  const out = [];
+  const str = String(s == null ? "" : s);
+  for (let i = 0; i < str.length; i += 1) {
+    let cp = str.codePointAt(i);
+    if (cp > 0xffff) i += 1;
+    if (cp < 0x80) out.push(cp);
+    else if (cp < 0x800) out.push(0xc0 | (cp >> 6), 0x80 | (cp & 0x3f));
+    else if (cp < 0x10000) out.push(0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));
+    else out.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3f), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));
+  }
+  return out;
+}
+// track: [{lat, lon, altitude?, km?}]；waypoints: [{name, lat, lon, km?, type?}]
+function buildCourseFit(track, waypoints) {
+  const now = Math.floor(Date.now() / 1000) + 631065600;
+  const semi = (deg) => Math.round((Number(deg) || 0) * 11930464.7111);
+  const u8 = (v) => [v & 0xff];
+  const u16 = (v) => [v & 0xff, (v >> 8) & 0xff];
+  const u32 = (v) => [v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >> 24) & 0xff];
+  const s32 = (v) => u32(v >>> 0);
+  const strField = (s, size) => {
+    const b = fitUtf8Bytes(s).slice(0, size);
+    while (b.length < size) b.push(0);
+    return b;
+  };
+
+  const DEF_FILE_ID = [
+    [0, 1, 0x00], [1, 2, 0x84], [2, 2, 0x84], [3, 4, 0x8c], [4, 4, 0x86],
+  ];
+  const DEF_SESSION = [
+    [253, 4, 0x86], [2, 4, 0x86], [254, 2, 0x84], [5, 1, 0x00], [6, 1, 0x00],
+    [7, 4, 0x86], [8, 4, 0x86], [9, 4, 0x86], [22, 2, 0x84], [23, 2, 0x84],
+  ];
+  const DEF_COURSE = [[4, 1, 0x00], [5, 32, 0x87]];
+  const DEF_LAP = [
+    [253, 4, 0x86], [2, 4, 0x86], [254, 2, 0x84], [7, 4, 0x86], [3, 4, 0x86],
+    [9, 4, 0x86], [21, 2, 0x84], [22, 2, 0x84], [5, 1, 0x00],
+  ];
+  const DEF_COURSE_POINT = [
+    [1, 4, 0x86], [2, 4, 0x85], [3, 4, 0x85], [4, 4, 0x86], [5, 1, 0x00], [6, 32, 0x87],
+  ];
+  const DEF_RECORD = [
+    [253, 4, 0x86], [0, 4, 0x85], [1, 4, 0x85], [5, 4, 0x86], [6, 2, 0x84], [78, 4, 0x85],
+  ];
+  const DEF_FILE_CREATOR = [[0, 2, 0x84], [1, 1, 0x02]];
+  const DEF_EVENT = [
+    [253, 4, 0x86], [0, 1, 0x00], [1, 1, 0x00], [2, 1, 0x02],
+  ];
+
+  const globalToLocal = { 0: 0, 49: 5, 18: 7, 31: 1, 19: 2, 32: 3, 20: 4, 21: 6 };
+  const buildDef = (globalNum, fields) => {
+    const lt = globalToLocal[globalNum] !== undefined ? globalToLocal[globalNum] : 0;
+    const head = [0x40 | lt, 0x00, 0x00, globalNum & 0xff, (globalNum >> 8) & 0xff, fields.length];
+    for (const [fn, size, base] of fields) head.push(fn, size, base);
+    return head;
+  };
+  const dataMsg = (lt, payload) => [lt].concat(payload);
+
+  const bytes = [];
+  bytes.push(...buildDef(49, DEF_FILE_CREATOR));
+  bytes.push(...dataMsg(globalToLocal[49], [...u16(0), ...u8(0)]));
+  // file_id（type=4 activity：两步路/小程序解析器按活动读取，可提取距离/爬升/下降）
+  bytes.push(...buildDef(0, DEF_FILE_ID));
+  bytes.push(...dataMsg(globalToLocal[0], [
+    ...u8(4),
+    ...u16(1), ...u16(0), ...u32(0xffffffff), ...u32(now),
+  ]));
+  bytes.push(...buildDef(31, DEF_COURSE));
+  bytes.push(...dataMsg(globalToLocal[31], [...u8(0), ...strField("山野实验室补给路线", 32)]));
+  const totalDistM = track.length ? Math.max(0, Number(track[track.length - 1].km || 0)) * 1000 : 0;
+  let totalAscent = 0;
+  let totalDescent = 0;
+  for (let i = 1; i < track.length; i += 1) {
+    const a = track[i - 1].altitude;
+    const b = track[i].altitude;
+    if (a == null || b == null) continue;
+    const d = Number(b) - Number(a);
+    if (d > 0) totalAscent += d;
+    else totalDescent += -d;
+  }
+  bytes.push(...buildDef(18, DEF_SESSION));
+  bytes.push(...dataMsg(globalToLocal[18], [
+    ...u32(now), ...u32(now), ...u16(0), ...u8(0), ...u8(0),
+    ...u32(0), ...u32(0), ...u32(Math.round(totalDistM * 100)),
+    ...u16(Math.min(65535, Math.round(totalAscent))),
+    ...u16(Math.min(65535, Math.round(totalDescent))),
+  ]));
+  bytes.push(...buildDef(19, DEF_LAP));
+  bytes.push(...dataMsg(globalToLocal[19], [
+    ...u32(now), ...u32(now), ...u16(0), ...u32(0), ...u32(0),
+    ...u32(Math.round(totalDistM * 100)),
+    ...u16(Math.min(65535, Math.round(totalAscent))),
+    ...u16(Math.min(65535, Math.round(totalDescent))),
+    ...u8(0),
+  ]));
+  bytes.push(...buildDef(21, DEF_EVENT));
+  bytes.push(...dataMsg(globalToLocal[21], [...u32(now), ...u8(0), ...u8(0), ...u8(0)]));
+  bytes.push(...dataMsg(globalToLocal[21], [...u32(now + 1), ...u8(0), ...u8(4), ...u8(0)]));
+  if (waypoints.length) {
+    bytes.push(...buildDef(32, DEF_COURSE_POINT));
+    waypoints.forEach((w, i) => {
+      bytes.push(...dataMsg(globalToLocal[32], [
+        ...u32(now + i),
+        ...s32(semi(w.lat)),
+        ...s32(semi(w.lon)),
+        ...u32(Math.max(0, Math.round(Number(w.km || 0) * 100000))),
+        ...u8(w.type != null ? w.type : 0),
+        ...strField(w.name || "", 32),
+      ]));
+    });
+  }
+  if (track.length) {
+    bytes.push(...buildDef(20, DEF_RECORD));
+    track.forEach((p, i) => {
+      const alt = p.altitude != null ? Math.round((Number(p.altitude) + 500) * 5) : 0xffff;
+      bytes.push(...dataMsg(globalToLocal[20], [
+        ...u32(now + i),
+        ...s32(semi(p.lat)),
+        ...s32(semi(p.lon)),
+        ...u32(Math.max(0, Math.round(Number(p.km || 0) * 100000))),
+        ...u16(alt),
+        ...s32(alt),
+      ]));
+    });
+  }
+
+  const dataSize = bytes.length;
+  const header = new Uint8Array(14);
+  header[0] = 14;
+  header[1] = 0x10;
+  header[2] = 0x04;
+  header[3] = 0x00;
+  header[4] = dataSize & 0xff;
+  header[5] = (dataSize >> 8) & 0xff;
+  header[6] = (dataSize >> 16) & 0xff;
+  header[7] = (dataSize >> 24) & 0xff;
+  header[8] = 0x2e;
+  header[9] = 0x46;
+  header[10] = 0x49;
+  header[11] = 0x54;
+  const headerCrc = fitCrc16(header, 0, 12, 0);
+  header[12] = headerCrc & 0xff;
+  header[13] = (headerCrc >> 8) & 0xff;
+
+  const out = new Uint8Array(14 + dataSize + 2);
+  out.set(header, 0);
+  out.set(bytes, 14);
+  const fileCrc = fitCrc16(out, 0, 14 + dataSize, 0);
+  out[14 + dataSize] = fileCrc & 0xff;
+  out[14 + dataSize + 1] = (fileCrc >> 8) & 0xff;
+  return out.buffer;
+}
+
+// 从目标路线 FIT 的海拔记录自动提取爬坡路段（起点/终点/爬升高度），可再手动修改；阈值由“爬升/下降阈值”决定
+function extractClimbSegmentsFromFit(decoded, minClimb = 50) {
+  const raw = normalizeRouteRecords(decoded)
+    .filter((p) => p.km >= 0)
+    .map((p) => ({ km: p.km, alt: p.altitude }));
+  if (raw.length < 4) return [];
+  raw.sort((a, b) => a.km - b.km);
+
+  // 平滑采样：每 ~50m 取平均海拔，降低噪声
+  const step = 0.05;
+  const sampled = sampleAltitudeBuckets(raw, step);
   if (sampled.length < 3) return [];
 
   // 谷→峰检测：上升 ≥ minClimb，且峰后回落 ≥ hysteresis 记为一段爬升
@@ -2917,38 +3622,15 @@ function extractClimbSegmentsFromFit(decoded, minClimb = 50) {
 
 // 从目标路线 FIT 的海拔记录自动提取下降路段（起点/终点/下降高度），可再手动修改；阈值由“爬升/下降阈值”决定
 function extractDescentSegmentsFromFit(decoded, minDescent = 50) {
-  const records = decoded?.record_mesgs || [];
-  const raw = [];
-  for (const record of records) {
-    const km = safeFloat(record.distance);
-    const alt = firstField(record, "enhanced_altitude", "altitude");
-    if (km === null || alt === null || km < 0) continue;
-    raw.push({ km: km / 1000, alt });
-  }
+  const raw = normalizeRouteRecords(decoded)
+    .filter((p) => p.km >= 0)
+    .map((p) => ({ km: p.km, alt: p.altitude }));
   if (raw.length < 4) return [];
   raw.sort((a, b) => a.km - b.km);
 
   // 平滑采样：每 ~50m 取平均海拔，降低噪声
   const step = 0.05;
-  const sampled = [];
-  let bucket = null;
-  let sumAlt = 0;
-  let count = 0;
-  const flush = () => {
-    if (bucket !== null && count) sampled.push({ km: bucket, alt: sumAlt / count });
-    bucket = null;
-    sumAlt = 0;
-    count = 0;
-  };
-  for (const point of raw) {
-    const b = Math.floor(point.km / step) * step;
-    if (bucket === null) bucket = b;
-    if (b > bucket) flush();
-    if (bucket === null) bucket = b;
-    sumAlt += point.alt;
-    count += 1;
-  }
-  flush();
+  const sampled = sampleAltitudeBuckets(raw, step);
   if (sampled.length < 3) return [];
 
   // 峰→谷检测：下降 ≥ minDescent，且谷后回升 ≥ hysteresis 记为一段下降
@@ -2990,12 +3672,7 @@ function buildRoutePointsFromDecoded(decoded, fallbackDistanceKm) {
     return null;
   }
 
-  const rawPoints = decoded.record_mesgs
-    .map((record) => ({
-      km: safeFloat(record.distance) !== null ? safeFloat(record.distance) / 1000 : null,
-      altitude: firstField(record, "enhanced_altitude", "altitude"),
-    }))
-    .filter((point) => point.km !== null && point.altitude !== null);
+  const rawPoints = normalizeRouteRecords(decoded);
 
   if (rawPoints.length < 2) {
     return null;
@@ -3065,6 +3742,452 @@ function getClimbSegmentsToDraw(raceProfile) {
 
 function getDescentSegmentsToDraw(raceProfile) {
   return getRouteSegmentsToDraw(raceProfile, "descent");
+}
+
+// ============ 第 4 步横版大图（3200×1300，与小程序 chart_large 同构：品牌/摘要/图例/剖面/官方点车道标注/页脚）============
+const largeChartState = { zoom: 1, minZoom: 0.12, maxZoom: 3 };
+
+function largeChartPathPoints(raceProfile) {
+  const useFitRoute = state.raceMode === "fit" && Boolean(state.decodedRace);
+  const fitRoutePoints = useFitRoute ? buildRoutePointsFromDecoded(state.decodedRace, raceProfile.distance_km) : null;
+  const useGpxRoute = state.raceMode === "fit" && Boolean(state.gpxRoutePoints) && !fitRoutePoints;
+  const gpxRoutePoints = useGpxRoute
+    ? buildRoutePointsFromDecoded(
+        {
+          record_mesgs: state.gpxRoutePoints.map((point) => ({
+            distance: point.km * 1000,
+            enhanced_altitude: point.altitude,
+          })),
+        },
+        raceProfile.distance_km
+      )
+    : null;
+  return (fitRoutePoints || gpxRoutePoints) || buildSimulatedElevation(raceProfile);
+}
+
+function renderLargeChartCanvas() {
+  const raceProfile = state.routeRaceProfile;
+  if (!raceProfile) return false;
+  const canvas = document.getElementById("largeChartCanvas");
+  if (!canvas) return false;
+  const W = 3200;
+  const H = 1300;
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  const en = state.language === "en";
+  const pathPoints = largeChartPathPoints(raceProfile);
+  const climbSegs = getClimbSegmentsToDraw(raceProfile);
+  const descentSegs = getDescentSegmentsToDraw(raceProfile);
+  let cpInfo = [];
+  try {
+    const parsed = JSON.parse(String(state.raceProfileForm?.officialCp || "[]"));
+    if (Array.isArray(parsed)) cpInfo = parsed;
+  } catch (error) {
+    cpInfo = [];
+  }
+  const minAlt = Math.min(...pathPoints.map((p) => p.altitude));
+  const maxAlt = Math.max(...pathPoints.map((p) => p.altitude));
+  const altRange = Math.max(maxAlt - minAlt, 1);
+  const padL = 170;
+  const padR = 90;
+  const padT = 260;
+  const padB = 150;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+  const xForKm = (km) => padL + (km / Math.max(raceProfile.distance_km, 1)) * plotW;
+  const yForAlt = (alt) => padT + (1 - (alt - minAlt) / altRange) * plotH;
+  const roundRect = (x, y, w, h, r) => {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  };
+
+  // 背景（深林绿渐变）+ 装饰性山脊剪影
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0, "#14271d");
+  bgGrad.addColorStop(1, "#0b1410");
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = "rgba(255,138,31,0.05)";
+  ctx.lineWidth = 2;
+  for (let layer = 0; layer < 3; layer += 1) {
+    const baseY = 340 + layer * 300;
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 40) {
+      const y = baseY - Math.sin((x / W) * Math.PI * (2 + layer) + layer * 2.2) * 80 - layer * 26;
+      if (x === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  // 四角装饰
+  ctx.strokeStyle = "rgba(255,122,0,0.5)";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(24, 92);
+  ctx.lineTo(24, 24);
+  ctx.lineTo(92, 24);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(W - 92, H - 24);
+  ctx.lineTo(W - 24, H - 24);
+  ctx.lineTo(W - 24, H - 92);
+  ctx.stroke();
+
+  // 品牌头部
+  ctx.fillStyle = "#ff7a00";
+  ctx.fillRect(64, 62, 24, 24);
+  ctx.fillStyle = "#e9f3ec";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.font = "bold 56px sans-serif";
+  ctx.fillText("TRAIL LAB", 106, 88);
+  ctx.font = "30px sans-serif";
+  ctx.fillStyle = "rgba(233,243,236,0.72)";
+  ctx.fillText(en ? "Trail Lab · Route elevation profile" : "山野实验室 · 路线海拔剖面", 106, 138);
+
+  // 右上：路线摘要
+  ctx.textAlign = "right";
+  ctx.font = "bold 42px sans-serif";
+  ctx.fillStyle = "#f7b054";
+  ctx.fillText(`${raceProfile.distance_km} km`, W - 80, 86);
+  ctx.font = "30px sans-serif";
+  ctx.fillStyle = "rgba(233,243,236,0.85)";
+  ctx.fillText(`${en ? "ascent" : "爬升"} ${raceProfile.ascent_m} m · ${en ? "descent" : "下降"} ${raceProfile.descent_m} m`, W - 80, 132);
+
+  // 分隔线
+  ctx.strokeStyle = "rgba(255,138,31,0.55)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(64, 182);
+  ctx.lineTo(W - 64, 182);
+  ctx.stroke();
+
+  // 图例（左上横排）+ 金句（右上横排）
+  const legendItems = [
+    ["#f7b054", en ? "elevation" : "路线海拔轮廓"],
+    ["#ffb65c", en ? "aid station" : "官方补给点"],
+    ["#ff8fa8", en ? "climb" : "爬坡路段"],
+    ["#9cc6f5", en ? "descent" : "下降路段"],
+  ];
+  ctx.font = "26px sans-serif";
+  let lx = 64;
+  for (const [color, label] of legendItems) {
+    ctx.fillStyle = color;
+    ctx.fillRect(lx, 202, 18, 18);
+    ctx.fillStyle = "rgba(233,243,236,0.82)";
+    ctx.textAlign = "left";
+    ctx.fillText(label, lx + 28, 217);
+    lx += ctx.measureText(label).width + 72;
+  }
+  const quotes = [
+    "每一步都是实验，每一公里都是数据",
+    "山野不会骗你，数据也不会",
+    "跑下去，数据会告诉你答案",
+    "把每一次出发，都变成一次实验",
+    "汗水是输入，数据是输出",
+    "先到山里，再谈算法",
+  ];
+  ctx.textAlign = "right";
+  ctx.fillStyle = "rgba(233,243,236,0.55)";
+  ctx.fillText(quotes[Math.floor(Math.random() * quotes.length)], W - 80, 217);
+
+  // 网格与坐标
+  ctx.strokeStyle = "rgba(171,219,189,0.22)";
+  ctx.fillStyle = "rgba(171,219,189,0.8)";
+  ctx.lineWidth = 1;
+  ctx.font = "26px sans-serif";
+  const xStep = raceProfile.distance_km <= 20 ? 2 : 5;
+  const nX = Math.max(1, Math.round(raceProfile.distance_km / xStep));
+  for (let i = 0; i <= nX; i += 1) {
+    const km = (raceProfile.distance_km / nX) * i;
+    const x = xForKm(km);
+    ctx.beginPath();
+    ctx.moveTo(x, padT);
+    ctx.lineTo(x, padT + plotH);
+    ctx.stroke();
+    ctx.fillText(`${km.toFixed(1)}`, x, padT + plotH + 40);
+  }
+  const nY = 5;
+  for (let i = 0; i <= nY; i += 1) {
+    const alt = minAlt + (altRange / nY) * i;
+    const y = yForAlt(alt);
+    ctx.beginPath();
+    ctx.moveTo(padL, y);
+    ctx.lineTo(padL + plotW, y);
+    ctx.stroke();
+    ctx.textAlign = "right";
+    ctx.fillText(`${Math.round(alt)}m`, padL - 16, y + 9);
+  }
+  ctx.textAlign = "center";
+  ctx.fillText(en ? "distance (km)" : "距离 (km)", padL + plotW / 2, H - 74);
+  ctx.save();
+  ctx.translate(30, padT + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText(en ? "elevation (m)" : "海拔 (m)", 0, 0);
+  ctx.restore();
+
+  // 爬升/下降色带 + 标签（交替两行，防相邻重叠；太窄的段不画标签）
+  const drawBands = (segs, color, textColor, prefix, laneYs) => {
+    let lane = 0;
+    ctx.font = "28px sans-serif";
+    for (const seg of segs) {
+      const x1 = xForKm(seg.start);
+      const x2 = xForKm(seg.end);
+      ctx.fillStyle = color;
+      ctx.fillRect(x1, padT, Math.max(x2 - x1, 2), plotH);
+      const label = `${prefix}${seg.height}m`;
+      const tw = ctx.measureText(label).width + 24;
+      if (x2 - x1 < tw) continue;
+      ctx.fillStyle = textColor;
+      ctx.textAlign = "center";
+      ctx.fillText(label, (x1 + x2) / 2, laneYs[lane % 2]);
+      lane += 1;
+    }
+  };
+  drawBands(climbSegs, "rgba(255,79,126,0.13)", "#ff8fa8", "↑", [padT + 34, padT + 76]);
+  drawBands(descentSegs, "rgba(79,156,240,0.13)", "#9cc6f5", "↓", [padT + plotH - 30, padT + plotH - 72]);
+
+  // 海拔面积 + 折线
+  ctx.beginPath();
+  pathPoints.forEach((p, i) => {
+    const x = xForKm(p.km);
+    const y = yForAlt(p.altitude);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  const grad = ctx.createLinearGradient(0, padT, 0, padT + plotH);
+  grad.addColorStop(0, "rgba(240,136,40,0.34)");
+  grad.addColorStop(1, "rgba(240,136,40,0.04)");
+  ctx.lineTo(xForKm(raceProfile.distance_km), padT + plotH);
+  ctx.lineTo(padL, padT + plotH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.beginPath();
+  pathPoints.forEach((p, i) => {
+    const x = xForKm(p.km);
+    const y = yForAlt(p.altitude);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = "#f7b054";
+  ctx.lineWidth = 5;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.stroke();
+
+  // 官方补给点：车道式防重叠（上方/下方两条车道 + 引导线 + 底色标签）
+  const lanes = { above: -1e9, below: -1e9 };
+  ctx.font = "bold 30px sans-serif";
+  raceProfile.aid_stations_km.forEach((km, idx) => {
+    const alt = interpolateAltitude(pathPoints, km);
+    const x = xForKm(km);
+    const y = yForAlt(alt);
+    ctx.beginPath();
+    ctx.arc(x, y, 8, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffb65c";
+    ctx.fill();
+
+    const cp = cpInfo.find((item) => Math.abs(Number(item.distance) - km) < 0.001);
+    const name = (cp && cp.name) || `CP${idx + 1}`;
+    const label = `${name} · ${Math.round(km)}km`;
+    const tw = ctx.measureText(label).width + 30;
+    const labelX = Math.max(padL + tw / 2 + 12, Math.min(x, padL + plotW - tw / 2 - 12));
+    let lane = "above";
+    if (labelX - tw / 2 < lanes.above) lane = "below";
+    if (lane === "below" && labelX - tw / 2 < lanes.below) lane = "above";
+    lanes[lane] = labelX + tw / 2;
+
+    const chipH = 54;
+    let bgY = lane === "above" ? y - chipH - 16 : y + 16;
+    bgY = Math.max(padT, Math.min(bgY, padT + plotH - chipH));
+    const leaderY = bgY + (lane === "above" ? chipH : 0);
+    ctx.strokeStyle = "rgba(255,182,92,0.75)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(labelX, leaderY);
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(6,16,11,0.92)";
+    roundRect(labelX - tw / 2, bgY, tw, chipH, 16);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,182,92,0.55)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "#ffb65c";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, labelX, bgY + chipH / 2 + 1);
+    ctx.textBaseline = "alphabetic";
+  });
+
+  // 页脚：slogan（左）+ 版本水印（右）
+  ctx.font = "24px sans-serif";
+  ctx.fillStyle = "rgba(233,243,236,0.42)";
+  ctx.textAlign = "left";
+  ctx.fillText(en ? "Explore the mountains with technology — make outdoor fun, efficient and safe" : "用科技探索山野，让户外更有趣、更高效、更安全", 64, H - 44);
+  ctx.textAlign = "right";
+  ctx.fillText("Trail Lab Engine v2.0 · " + (en ? "local data · for reference only" : "数据本地解析 · 仅供参考"), W - 64, H - 44);
+  return true;
+}
+
+function largeChartApplyZoom() {
+  const canvas = document.getElementById("largeChartCanvas");
+  if (!canvas) return;
+  canvas.style.width = `${Math.round(3200 * largeChartState.zoom)}px`;
+  canvas.style.height = `${Math.round(1300 * largeChartState.zoom)}px`;
+}
+
+function largeChartFitZoom() {
+  const wrap = document.getElementById("largeChartWrap");
+  if (!wrap) return;
+  largeChartState.zoom = Math.max(largeChartState.minZoom, Math.min(wrap.clientWidth / 3200, 1));
+  largeChartApplyZoom();
+}
+
+function openLargeChart() {
+  if (!renderLargeChartCanvas()) {
+    setStatus(t("largeChartGenFail"));
+    return;
+  }
+  const mask = document.getElementById("largeChartMask");
+  const sheet = document.getElementById("largeChartSheet");
+  const wrap = document.getElementById("largeChartWrap");
+  if (mask) mask.hidden = false;
+  if (sheet) sheet.hidden = false;
+  largeChartFitZoom();
+  if (wrap) {
+    wrap.scrollTop = 0;
+    wrap.scrollLeft = 0;
+  }
+}
+
+function closeLargeChart() {
+  const mask = document.getElementById("largeChartMask");
+  const sheet = document.getElementById("largeChartSheet");
+  if (mask) mask.hidden = true;
+  if (sheet) sheet.hidden = true;
+}
+
+function initLargeChart() {
+  const overview = document.getElementById("routeOverview");
+  const mask = document.getElementById("largeChartMask");
+  const sheet = document.getElementById("largeChartSheet");
+  const wrap = document.getElementById("largeChartWrap");
+  const canvas = document.getElementById("largeChartCanvas");
+  if (overview) overview.addEventListener("click", openLargeChart);
+  if (mask) mask.addEventListener("click", closeLargeChart);
+  const zoomInBtn = document.getElementById("largeChartZoomIn");
+  const zoomOutBtn = document.getElementById("largeChartZoomOut");
+  const resetBtn = document.getElementById("largeChartReset");
+  const downloadBtn = document.getElementById("largeChartDownload");
+  const closeBtn = document.getElementById("largeChartClose");
+  const zoomBy = (factor) => {
+    largeChartState.zoom = Math.min(largeChartState.maxZoom, Math.max(largeChartState.minZoom, largeChartState.zoom * factor));
+    largeChartApplyZoom();
+  };
+  if (zoomInBtn) zoomInBtn.addEventListener("click", () => zoomBy(1.25));
+  if (zoomOutBtn) zoomOutBtn.addEventListener("click", () => zoomBy(1 / 1.25));
+  if (resetBtn) resetBtn.addEventListener("click", largeChartFitZoom);
+  if (closeBtn) closeBtn.addEventListener("click", closeLargeChart);
+  if (downloadBtn && canvas) {
+    downloadBtn.addEventListener("click", () => {
+      if (!canvas.width) return;
+      const finish = (blob) => {
+        if (!blob) {
+          setStatus(t("largeChartGenFail"));
+          return;
+        }
+        try {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "trail_lab_route_large_chart.png";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+        } catch (e) {
+          setStatus(state.language === "en" ? "Download failed; right-click the chart → Save image as…" : "自动下载失败：请在图上右键 → 另存为");
+        }
+      };
+      if (typeof canvas.toBlob === "function") {
+        canvas.toBlob(finish, "image/png");
+      } else {
+        const dataUrl = canvas.toDataURL("image/png");
+        const bin = atob(dataUrl.split(",")[1]);
+        const buf = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i += 1) buf[i] = bin.charCodeAt(i);
+        finish(new Blob([buf], { type: "image/png" }));
+      }
+    });
+  }
+  if (wrap) {
+    wrap.addEventListener("wheel", (e) => {
+      if (sheet && sheet.hidden) return;
+      e.preventDefault();
+      const rect = wrap.getBoundingClientRect();
+      const mx = e.clientX - rect.left + wrap.scrollLeft;
+      const my = e.clientY - rect.top + wrap.scrollTop;
+      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+      const next = Math.min(largeChartState.maxZoom, Math.max(largeChartState.minZoom, largeChartState.zoom * factor));
+      const k = next / largeChartState.zoom;
+      largeChartState.zoom = next;
+      largeChartApplyZoom();
+      wrap.scrollLeft = mx * k - (e.clientX - rect.left);
+      wrap.scrollTop = my * k - (e.clientY - rect.top);
+    }, { passive: false });
+  }
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && sheet && !sheet.hidden) closeLargeChart();
+  });
+}
+
+// "补给方案"帮助：JS 弹层（hover / focus / click 均可触发，替代 CSS 伪元素气泡）
+function initPlanHelpTip() {
+  const btn = document.getElementById("planHelpBtn");
+  if (!btn) return;
+  const tip = document.createElement("div");
+  tip.className = "plan-help-pop";
+  tip.id = "planHelpPop";
+  document.body.appendChild(tip);
+  let hideTimer = null;
+  const show = () => {
+    clearTimeout(hideTimer);
+    tip.textContent = t("planHelpTooltip");
+    tip.style.display = "block";
+    const r = btn.getBoundingClientRect();
+    const tw = tip.offsetWidth;
+    let left = r.left;
+    if (left + tw > window.innerWidth - 12) left = Math.max(12, window.innerWidth - tw - 12);
+    tip.style.left = `${left}px`;
+    tip.style.top = `${r.bottom + 8}px`;
+  };
+  const hide = () => {
+    hideTimer = setTimeout(() => {
+      tip.style.display = "none";
+    }, 160);
+  };
+  btn.addEventListener("mouseenter", show);
+  btn.addEventListener("mouseleave", hide);
+  btn.addEventListener("focus", show);
+  btn.addEventListener("blur", hide);
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (tip.style.display === "block") hide();
+    else show();
+  });
+  tip.addEventListener("mouseenter", () => clearTimeout(hideTimer));
+  tip.addEventListener("mouseleave", hide);
 }
 
 function renderRouteOverview(raceProfile) {
@@ -3343,6 +4466,67 @@ function downloadRouteChart() {
   img.src = url;
 }
 
+// 捕获路线概况图为 PNG ArrayBuffer（供 xlsx 内嵌），无图时返回 null
+function captureRouteChartPng() {
+  return new Promise((resolve) => {
+    const svg = document.getElementById("routeSvg");
+    if (!svg) {
+      resolve(null);
+      return;
+    }
+    const viewW = 920;
+    const viewH = 280;
+    const exportScale = 1.5;
+    const clone = svg.cloneNode(true);
+    clone.setAttribute("width", String(viewW));
+    clone.setAttribute("height", String(viewH));
+    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    clone.setAttribute("font-family", "'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif");
+    clone.querySelectorAll("text").forEach((text) => {
+      const fill = text.getAttribute("fill") || "";
+      if (fill && fill.includes("rgba(171,219,189")) {
+        text.setAttribute("fill", "#cfe6d6");
+      }
+    });
+    const race = state.raceProfileForm || {};
+    const distance = safeFloat(race.distanceKm);
+    const ascent = safeFloat(race.ascentM);
+    const srcText = state.raceMode === "fit" && (Boolean(state.decodedRace) || Boolean(state.gpxRoutePoints)) ? t("routeSourceFit") : t("routeSourceSimulated");
+    const metaText = `${t("routeDistance")} ${(distance || 0).toFixed(1)} km   ${t("routeAscent")} ${ascent || 0} m   ${t("routeSource")} ${srcText}`;
+    const meta = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    meta.setAttribute("x", "44");
+    meta.setAttribute("y", "18");
+    meta.setAttribute("font-size", "15");
+    meta.setAttribute("font-weight", "600");
+    meta.setAttribute("fill", "#f5b968");
+    meta.textContent = metaText;
+    clone.insertBefore(meta, clone.firstChild);
+    const svgXml = new XMLSerializer().serializeToString(clone);
+    const svgBlob = new Blob([svgXml], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(viewW * exportScale);
+      canvas.height = Math.round(viewH * exportScale);
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#0E1511";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          resolve(null);
+          return;
+        }
+        blob.arrayBuffer().then(resolve).catch(() => resolve(null));
+      }, "image/png");
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
 const ui = {
   fitFile: document.getElementById("fitFile"),
   fitFileTrigger: document.getElementById("fitFileTrigger"),
@@ -3386,9 +4570,141 @@ const ui = {
   contractOutput: document.getElementById("contractOutput"),
   engineOutput: document.getElementById("engineOutput"),
   engineHints: document.getElementById("engineHints"),
-  exportCsvBtn: document.getElementById("exportCsvBtn"),
   aiOutput: document.getElementById("aiOutput"),
+  // 能力评分面板（Step2）
+  profileScorePanel: document.getElementById("profileScorePanel"),
+  profileRadar: document.getElementById("profileRadar"),
+  profileSpeedCards: document.getElementById("profileSpeedCards"),
+  profileScoreDesc: document.getElementById("profileScoreDesc"),
+  // 补给时间轴编辑器（Step5）
+  planEditorPanel: document.getElementById("planEditorPanel"),
+  planAddBtn: document.getElementById("planAddBtn"),
+  planAddFirstBtn: document.getElementById("planAddFirstBtn"),
+  planClearBtn: document.getElementById("planClearBtn"),
+  planFixBtn: document.getElementById("planFixBtn"),
+  planLibBtn: document.getElementById("planLibBtn"),
+  planTable: document.getElementById("planTable"),
+  planTotals: document.getElementById("planTotals"),
+  planCarryWarnings: document.getElementById("planCarryWarnings"),
+  planChecklist: document.getElementById("planChecklist"),
+  planExportBtn: document.getElementById("planExportBtn"),
+  planExportMask: document.getElementById("planExportMask"),
+  planExportSheet: document.getElementById("planExportSheet"),
+  planCopyBtn: document.getElementById("planCopyBtn"),
+  planSummary: document.getElementById("planSummary"),
 };
+
+// 渲染 Step2 六维能力评分面板（雷达图 + 数据卡 + 解读；不做综合评价）
+function renderProfileScorePanel(decoded, profileInput) {
+  if (!ui.profileScorePanel || !ui.profileRadar) return;
+  const profile = new UserProfileBuilder().build(decoded, profileInput || {});
+  const result = window.TrailLabProfileScore
+    ? window.TrailLabProfileScore.compute(decoded, profile)
+    : tlComputeProfileScore(decoded, profile);
+  const en = state.language === "en";
+  ui.profileScorePanel.classList.remove("is-hidden");
+  // 速度数据卡（有地形数据时）
+  const cards = [];
+  if (result.flatPace != null) cards.push([en ? "Flat pace" : "平路配速", `${result.flatPace} min/km`]);
+  if (result.climbVam != null) cards.push([en ? "Climb VAM" : "上坡 VAM", `${result.climbVam} m/h`]);
+  if (result.descentVam != null) cards.push([en ? "Descent VAM" : "下坡 VAM", `${result.descentVam} m/h`]);
+  ui.profileSpeedCards.innerHTML = cards.length
+    ? cards.map(([k, v]) => `<span class="score-card"><b>${escapeHtml(v)}</b><i>${escapeHtml(k)}</i></span>`).join("")
+    : `<span class="score-card muted">${en ? "No terrain data" : "无地形数据"}</span>`;
+  // 解读文本：六维 descLines 为中文生成，英文模式做基础替换；保留数字保证可读
+  const enDesc = result.descLines.map((line) => line
+    .replace(/无法从上传文件解读出爬升\/下坡\/平路速度（缺海拔、心率或样本不足），该项评分偏低；建议更换代表性运动文件。/, "No climb/descent/flat speed derivable (missing elevation/HR or insufficient samples); score low. Use a more representative file.")
+    .replace(/有氧基础：最大摄氧量/, "Aerobic: VO2max ")
+    .replace(/ ml\/kg\/min。/, " ml/kg/min.")
+    .replace(/比赛验证：ITRA 积分/, "Race verified: ITRA ")
+    .replace(/耐力能力：基于 ITRA 积分（/, "Endurance: from ITRA (")
+    .replace(/）评估，耐力等级：/, ") level: ")
+    .replace(/优秀/, "Elite").replace(/良好/, "Good").replace(/中等/, "Medium").replace(/一般/, "Fair").replace(/偏弱/, "Weak")
+    .replace(/回退 ITRA 积分（/, "fallback to ITRA (")
+    .replace(/评估，耐力等级：/, " level: ")
+    .replace(/，给保守分。/, ", conservative score.")
+    .replace(/耐力分 /, "endurance ")
+    .replace(/碳水耐受：已验证上限 /, "CHO tolerance: verified ceiling ")
+    .replace(/ g\/h。/, " g/h.")
+    .replace(/相对强弱：/, "Strength: ")
+    .replace(/相对突出，/, " strongest, ")
+    .replace(/相对偏弱。/, " weakest.")
+    .replace(/数据较少，画像置信度低；建议补充 ITRA \/ VO2max \/ HRV 或上传代表性运动文件。/, "Few data, low confidence; add ITRA / VO2max / HRV or a representative file.")
+    .replace(/。/, "."));
+  ui.profileScoreDesc.innerHTML = (en ? enDesc : result.descLines)
+    .map((line) => `<div class="score-desc-line">${escapeHtml(line)}</div>`)
+    .join("");
+  // 雷达图
+  if (window.TrailLabProfileScore && window.TrailLabProfileScore.renderRadar) {
+    window.TrailLabProfileScore.renderRadar(ui.profileRadar, result, en ? "en" : "zh");
+  } else {
+    tlRenderRadarSvg(ui.profileRadar, result, en ? "en" : "zh");
+  }
+}
+
+// 初始化补给时间轴编辑器
+function initPlanEditor() {
+  if (!ui.planTable) return;
+  window.TrailLabPlanEditor.init(ui.planEditorPanel, {
+    addBtn: ui.planAddBtn,
+    addFirstBtn: ui.planAddFirstBtn,
+    clearBtn: ui.planClearBtn,
+    fixBtn: ui.planFixBtn,
+    libBtn: ui.planLibBtn,
+    table: ui.planTable,
+    totals: ui.planTotals,
+    carryWarnings: ui.planCarryWarnings,
+    checklist: ui.planChecklist,
+    summary: ui.planSummary,
+  });
+}
+
+// 把当前结果载入补给时间轴编辑器（含 head/tail 文本）
+function loadPlanEditor(ruleOutput, raceProfile) {
+  if (!window.TrailLabPlanEditor) return;
+  const text = renderRuleEngineOutput(ruleOutput, state.language);
+  const cpIdx = text.indexOf(state.language === "en" ? "Five" : "五、自补给携带清单");
+  const headIdx = state.language === "en" ? text.indexOf("V. ") : text.indexOf("五、");
+  const useIdx = cpIdx > 0 ? cpIdx : (headIdx > 0 ? headIdx : text.length);
+  const cpMap = {};
+  try {
+    const cps = JSON.parse(state.raceProfileForm.officialCp || "[]");
+    for (const cp of cps) {
+      if (cp && cp.distance != null) cpMap[String(Number(Number(cp.distance).toFixed(2)))] = { name: cp.name || "", cutoff: cp.cutoff || "" };
+    }
+  } catch (e) { /* ignore */ }
+  window.TrailLabPlanEditor.load({
+    ruleOutput,
+    raceProfile,
+    cpMap,
+    raceProfileForm: state.raceProfileForm,
+    routeFitPoints: state.gpxRoutePoints || buildRoutePointsFromDecoded(state.decodedRace || null),
+    routeTrack: state.routeTrack || [],
+    language: state.language,
+    planHeadText: useIdx > 0 ? text.slice(0, useIdx).replace(/\n+$/, "") : text,
+    planTailText: useIdx > 0 ? text.slice(useIdx) : "",
+  });
+  state.planRowsInitialized = true;
+  ui.planEditorPanel.classList.remove("is-hidden");
+  // Step5 顶部路线概况小图（复用 Step4 的 SVG，只读预览）
+  const routePreview = document.getElementById("planRoutePreview");
+  const routeSvg = document.getElementById("routeSvg");
+  if (routePreview && routeSvg) {
+    const clone = routeSvg.cloneNode(true);
+    clone.removeAttribute("id");
+    clone.setAttribute("width", "100%");
+    // SVG height 不支持 "auto"，按 viewBox 宽高比计算固定比例高度
+    const vb = (clone.getAttribute("viewBox") || "").split(/\s+/).map(Number);
+    if (vb.length === 4 && vb[2] > 0 && vb[3] > 0) {
+      clone.setAttribute("height", String((vb[3] / vb[2]) * 100) + "%");
+    }
+    routePreview.innerHTML = "";
+    routePreview.appendChild(clone);
+  }
+}
+
+// toast 提示（供 plan_editor 使用）
+window.__peToast = (text) => setStatus(text);
 
 function setStatus(text, kind) {
   ui.status.textContent = text;
@@ -3403,8 +4719,8 @@ function seedRaceEditor(values = null) {
     expectedFinishH: "",
     weatherTemp: "",
     humidity: "",
-    locationNotes: "",
     segmentThresholdM: "50",
+    courseDifficulty: "standard",
     officialCp: "",
     routeSegments: "",
   };
@@ -3467,9 +4783,57 @@ function applyLanguage() {
   setLegendItem("legendDescentSeg", "descent", t("legendDescentSeg"));
   document.getElementById("confirmStep4Btn").textContent = t("confirmStep4");
   document.getElementById("backStep4Btn").textContent = t("backStep");
+  const step2Footnote = document.getElementById("step2Footnote");
+  if (step2Footnote) step2Footnote.textContent = t("step2Footnote");
+  const step4ZoomTip = document.getElementById("step4ZoomTip");
+  if (step4ZoomTip) step4ZoomTip.textContent = t("step4ZoomTip");
+  const lcTitle = document.getElementById("largeChartTitle");
+  if (lcTitle) lcTitle.textContent = t("largeChartTitle");
+  const lcReset = document.getElementById("largeChartReset");
+  if (lcReset) lcReset.textContent = t("largeChartReset");
+  const lcDownload = document.getElementById("largeChartDownload");
+  if (lcDownload) lcDownload.textContent = t("largeChartDownload");
+  const lcClose = document.getElementById("largeChartClose");
+  if (lcClose) lcClose.textContent = t("largeChartClose");
+  const lcTip = document.getElementById("largeChartTip");
+  if (lcTip) lcTip.textContent = t("largeChartTip");
   document.getElementById("step5Title").textContent = t("step5Title");
   document.getElementById("stepHint5").textContent = t("stepHint5");
   document.getElementById("aiPlannerTitle").textContent = t("aiPlannerTitle");
+  const dbgTitle = document.getElementById("debugTitle");
+  if (dbgTitle) dbgTitle.textContent = t("debugTitle");
+  const routePrevTitle = document.getElementById("planRoutePreviewTitle");
+  if (routePrevTitle) routePrevTitle.textContent = t("planRoutePreviewTitle");
+  const sumTitleText = document.getElementById("planSummaryTitleText");
+  if (sumTitleText) sumTitleText.textContent = t("planSummaryTitle");
+  const planHelpBtn = document.getElementById("planHelpBtn");
+  if (planHelpBtn) {
+    planHelpBtn.setAttribute("aria-label", t("planHelpTooltip"));
+  }
+  const chkTitle = document.getElementById("planChecklistTitle");
+  if (chkTitle) chkTitle.textContent = t("planChecklistTitle");
+  const warnTitle = document.getElementById("planWarningsTitle");
+  if (warnTitle) warnTitle.textContent = t("planWarningsTitle");
+  const exportBtn = document.getElementById("planExportBtn");
+  if (exportBtn) exportBtn.textContent = t("planExportBtn");
+  const exportSheetTitle = document.getElementById("exportSheetTitle");
+  if (exportSheetTitle) exportSheetTitle.textContent = t("exportSheetTitle");
+  const exportCancel = document.getElementById("exportCancel");
+  if (exportCancel) exportCancel.textContent = t("exportCancel");
+  const safetyBanner = document.getElementById("planSafetyBanner");
+  if (safetyBanner) safetyBanner.textContent = t("planSafetyBanner");
+  const optMap = {
+    exportOptXlsx: ["exportOptXlsx", "exportOptXlsxDesc"],
+    exportOptImage: ["exportOptImage", "exportOptImageDesc"],
+    exportOptFit: ["exportOptFit", "exportOptFitDesc"],
+    exportOptGpx: ["exportOptGpx", "exportOptGpxDesc"],
+  };
+  for (const k of Object.keys(optMap)) {
+    const nameEl = document.getElementById(optMap[k][0]);
+    if (nameEl) nameEl.textContent = t(optMap[k][0]);
+    const descEl = document.getElementById(optMap[k][1]);
+    if (descEl) descEl.textContent = t(optMap[k][1]);
+  }
   document.getElementById("providerLabel").textContent = t("providerLabel");
   document.getElementById("modelLabel").textContent = t("modelLabel");
   document.getElementById("apiKeyLabel").textContent = t("apiKeyLabel");
@@ -3479,8 +4843,34 @@ function applyLanguage() {
   document.getElementById("runBtn").textContent = t("runBtn");
   document.getElementById("backStep5Btn").textContent = t("backStep");
   document.getElementById("contractOutputTitle").textContent = t("contractOutputTitle");
-  document.getElementById("engineOutputTitle").textContent = t("engineOutputTitle");
-  document.getElementById("aiOutputTitle").textContent = t("aiOutputTitle");
+  const engineTitle = document.getElementById("engineOutputTitle");
+  if (engineTitle) {
+    engineTitle.textContent = t("engineOutputTitle");
+  }
+  const aiOutTitle = document.getElementById("aiOutputTitle");
+  if (aiOutTitle) aiOutTitle.textContent = t("aiOutputTitle");
+  // 能力评分面板（Step2）
+  const psTitle = document.getElementById("profileScoreTitle");
+  if (psTitle) psTitle.textContent = t("profileScoreTitle");
+  // 补给时间轴编辑器（Step5）
+  const peTitle = document.getElementById("planEditorTitle");
+  if (peTitle) peTitle.textContent = t("planEditorTitle");
+  const peHint = document.getElementById("planEditorHint");
+  if (peHint) peHint.textContent = t("planEditorHint");
+  const peAdd = document.getElementById("planAddBtn");
+  if (peAdd) peAdd.textContent = t("planAddBtn");
+  const peAddFirst = document.getElementById("planAddFirstBtn");
+  if (peAddFirst) peAddFirst.textContent = t("planAddFirstBtn");
+  const peClear = document.getElementById("planClearBtn");
+  if (peClear) peClear.textContent = t("planClearBtn");
+  const peFix = document.getElementById("planFixBtn");
+  if (peFix) peFix.textContent = t("planFixBtn");
+  const peLib = document.getElementById("planLibBtn");
+  if (peLib) peLib.textContent = t("planLibBtn");
+  const peCopy = document.getElementById("planCopyBtn");
+  if (peCopy) peCopy.textContent = t("planCopyBtn");
+  const peToolbarTip = document.getElementById("planToolbarTip");
+  if (peToolbarTip) peToolbarTip.textContent = t("planToolbarTip");
 
   refreshFilePickers();
 
@@ -3499,6 +4889,14 @@ function applyLanguage() {
   if (state.routeRaceProfile) {
     renderRouteOverview(state.routeRaceProfile);
   }
+  // 执行提醒区与字段叹号的引擎提示按当前语言重渲染（语言切换后保持提示语言一致）
+  if (state.lastRuleOutput && state.lastRaceProfile) {
+    attachEngineHints(state.lastRuleOutput, state.language, state.lastRaceProfile);
+  }
+  // 能力评分面板语言同步（面板已显示且有数据时）
+  if (ui.profileScorePanel && !ui.profileScorePanel.classList.contains("is-hidden")) {
+    renderProfileScorePanel(state.decodedActivity, state.userProfileForm);
+  }
 }
 
 ui.confirmStep1Btn.addEventListener("click", async () => {
@@ -3509,6 +4907,36 @@ ui.confirmStep1Btn.addEventListener("click", async () => {
     }
     ui.confirmStep1Btn.disabled = true;
     setStatus(t("statusParsingActivity"));
+    const isGpx = /\.gpx$/i.test(file.name || "");
+    if (isGpx) {
+      // GPX 历史运动：走 GPX 解码（转 FIT 兼容结构）+ GPX 校验
+      const text = await file.text();
+      const parser = window.TrailGpx;
+      if (!parser || typeof parser.decodeGpx !== "function") {
+        throw new Error("GPX 解析器未加载（gpx.js 缺失）");
+      }
+      state.decodedActivity = parser.decodeGpx(text);
+      const validation = parser.validateGpx(state.decodedActivity, { fileSizeBytes: file.size });
+      if (!validation.ok) {
+        throw new Error(validation.errors.join("\n"));
+      }
+      state.manualUserProfile = false;
+      const overview = buildActivityOverview(state.decodedActivity);
+      state.activitySummaryForm = overview.activitySummary;
+      state.userProfileForm = overview.userProfile;
+      renderActivitySummaryPreview(state.activitySummaryForm);
+      renderEditor(ui.userProfileEditor, userProfileFields, state.userProfileForm);
+      refreshProfileStage(state.userProfileForm);
+      showOnlyStep(ui.step2Panel);
+      seedRaceEditor();
+      renderProfileScorePanel(state.decodedActivity, state.userProfileForm);
+      setStatus(
+        validation.warnings.length
+          ? t("statusActivityReady") + "\n" + validation.warnings.join("\n")
+          : t("statusActivityReady")
+      );
+      return;
+    }
     state.decodedActivity = await decodeFitMessages(await file.arrayBuffer());
     // 文件校验：运动类型（跑步类）+ 数据有效性 + 数据质量 + CRC + 文件大小
     const validation = validateWebActivityFit(state.decodedActivity, { fileSizeBytes: file.size });
@@ -3524,6 +4952,8 @@ ui.confirmStep1Btn.addEventListener("click", async () => {
     refreshProfileStage(state.userProfileForm);
     showOnlyStep(ui.step2Panel);
     seedRaceEditor();
+    // 能力评分：基于历史运动文件直接计算（六维）
+    renderProfileScorePanel(state.decodedActivity, state.userProfileForm);
     setStatus(
       validation.warnings.length
         ? t("statusActivityReady") + "\n" + validation.warnings.join("\n")
@@ -3551,6 +4981,8 @@ ui.manualProfileBtn.addEventListener("click", () => {
   refreshProfileStage({});
   showOnlyStep(ui.step2Panel);
   seedRaceEditor();
+  // 手动填写：无运动文件，能力评分仅基于手动字段（ITRA/VO2max/肠胃/碳水）
+  renderProfileScorePanel(null, {});
   setStatus(t("statusManualProfile"));
 });
 
@@ -3559,18 +4991,35 @@ ui.fitFile.addEventListener("change", () => {
 });
 
 ui.confirmStep2Btn.addEventListener("click", () => {
-  state.userProfileForm = readEditorValues(ui.userProfileEditor, userProfileFields);
+  const edited = readEditorValues(ui.userProfileEditor, userProfileFields);
+  const check = validateUserProfile(edited);
+  if (!check.ok) {
+    setStatus(check.message, "error");
+    return;
+  }
+  // 合并保留 FIT/GPX 携带的字段（height/gender/restingHeartRate/heartRateZones/utmbPoints 等，
+  // 不因 readEditorValues 只含可编辑字段而丢失，确保 BMI 等可计算）
+  state.userProfileForm = {
+    ...(state.userProfileForm || {}),
+    ...edited,
+    height: edited.height != null && edited.height !== "" ? edited.height : (state.userProfileForm?.height ?? ""),
+    gender: edited.gender != null && edited.gender !== "" ? edited.gender : (state.userProfileForm?.gender ?? ""),
+  };
   refreshProfileStage(state.userProfileForm);
+  // 确认时用最新编辑值重算能力评分
+  renderProfileScorePanel(state.decodedActivity, state.userProfileForm);
   showOnlyStep(ui.step3Panel);
   setStatus(t("statusConfirmRace"));
 });
 
 ui.userProfileEditor.addEventListener("input", () => {
   refreshProfileStage(readEditorValues(ui.userProfileEditor, userProfileFields));
+  renderProfileScorePanel(state.decodedActivity, readEditorValues(ui.userProfileEditor, userProfileFields));
 });
 
 ui.userProfileEditor.addEventListener("change", () => {
   refreshProfileStage(readEditorValues(ui.userProfileEditor, userProfileFields));
+  renderProfileScorePanel(state.decodedActivity, readEditorValues(ui.userProfileEditor, userProfileFields));
 });
 
 ui.backStep2Btn.addEventListener("click", () => {
@@ -3638,14 +5087,12 @@ ui.parseRaceFitBtn.addEventListener("click", async () => {
         });
       const thresholdInput = ui.raceProfileEditor.querySelector('[data-field="segmentThresholdM"]');
       const segmentThreshold = Math.max(safeFloat(thresholdInput?.value) || 50, 0);
-      const autoClimbs = extractClimbSegmentsFromFit(fakeDecoded, segmentThreshold);
-      const autoDescents = extractDescentSegmentsFromFit(fakeDecoded, segmentThreshold);
-      const autoSegments = [
-        ...autoClimbs.map((seg) => ({ type: "climb", ...seg })),
-        ...autoDescents.map((seg) => ({ type: "descent", ...seg })),
-      ].sort((a, b) => a.start - b.start || a.end - b.end);
+      const autoClimbs = capSegments(extractClimbSegmentsFromFit(fakeDecoded, segmentThreshold), parsed.ascentM);
+      const autoDescents = capSegments(extractDescentSegmentsFromFit(fakeDecoded, segmentThreshold), parsed.descentM);
+      const autoSegments = mergeSegments(autoClimbs, autoDescents);
       state.decodedRace = null;
       state.gpxRoutePoints = parsed.points;
+      state.routeTrack = parsed.points;
       const values = {
         distanceKm: parsed.distanceKm.toFixed(2),
         ascentM: parsed.ascentM.toFixed(0),
@@ -3653,7 +5100,6 @@ ui.parseRaceFitBtn.addEventListener("click", async () => {
         expectedFinishH: "",
         weatherTemp: "",
         humidity: "",
-        locationNotes: "",
         segmentThresholdM: segmentThreshold ? String(segmentThreshold) : "50",
         officialCp: officialCp.length ? JSON.stringify(officialCp) : "",
         routeSegments: autoSegments.length ? JSON.stringify(autoSegments) : "",
@@ -3665,8 +5111,12 @@ ui.parseRaceFitBtn.addEventListener("click", async () => {
     }
     state.decodedRace = await decodeFitMessages(await file.arrayBuffer());
     state.gpxRoutePoints = null;
-    const session = state.decodedRace.session_mesgs[0] || {};
+    state.routeTrack = buildRouteTrack();
     const coursePoints = state.decodedRace.course_point_mesgs || [];
+    const totals = deriveRouteTotals(state.decodedRace);
+    const distanceM = totals.distanceM;
+    const ascentM = totals.ascentM || 0;
+    const descentM = totals.descentM || 0;
     const seenCp = new Set();
     const officialCp = coursePoints
       .filter((cp) => cp && cp.distance !== undefined && cp.distance !== null)
@@ -3685,27 +5135,23 @@ ui.parseRaceFitBtn.addEventListener("click", async () => {
       });
     const thresholdInput = ui.raceProfileEditor.querySelector('[data-field="segmentThresholdM"]');
     const segmentThreshold = Math.max(safeFloat(thresholdInput?.value) || 50, 0);
-    const autoClimbs = extractClimbSegmentsFromFit(state.decodedRace, segmentThreshold);
-    const autoDescents = extractDescentSegmentsFromFit(state.decodedRace, segmentThreshold);
-    const autoSegments = [
-      ...autoClimbs.map((seg) => ({ type: "climb", ...seg })),
-      ...autoDescents.map((seg) => ({ type: "descent", ...seg })),
-    ].sort((a, b) => a.start - b.start || a.end - b.end);
+    const autoClimbs = capSegments(extractClimbSegmentsFromFit(state.decodedRace, segmentThreshold), ascentM);
+    const autoDescents = capSegments(extractDescentSegmentsFromFit(state.decodedRace, segmentThreshold), descentM);
+    const autoSegments = mergeSegments(autoClimbs, autoDescents);
     const values = {
-      distanceKm: firstField(session, "total_distance") !== null ? (firstField(session, "total_distance") / 1000).toFixed(2) : "",
-      ascentM: firstField(session, "total_ascent") !== null ? firstField(session, "total_ascent").toFixed(0) : "",
-      descentM: firstField(session, "total_descent") !== null ? firstField(session, "total_descent").toFixed(0) : "",
+      distanceKm: distanceM !== null ? (distanceM / 1000).toFixed(2) : "",
+      ascentM: ascentM ? ascentM.toFixed(0) : "",
+      descentM: descentM ? descentM.toFixed(0) : "",
       expectedFinishH: "",
       weatherTemp: "",
       humidity: "",
-      locationNotes: "",
       segmentThresholdM: segmentThreshold ? String(segmentThreshold) : "50",
       officialCp: officialCp.length ? JSON.stringify(officialCp) : "",
       routeSegments: autoSegments.length ? JSON.stringify(autoSegments) : "",
     };
     state.raceProfileForm = values;
     renderEditor(ui.raceProfileEditor, raceProfileFields, values);
-    setStatus(t("statusRaceReady"));
+    setStatus(t(totals.derived ? "statusRaceReadyDerived" : "statusRaceReady"));
   } catch (error) {
     setStatus(error instanceof Error ? error.message : String(error), "error");
   }
@@ -3814,44 +5260,75 @@ ui.backStep4Btn.addEventListener("click", () => {
   showOnlyStep(ui.step3Panel);
 });
 
+// 引擎计算核心（不调 AI）：计算规则契约/输出/提示并载入补给编辑器；返回各对象供后续复用
+function runEngineCore() {
+  if (!state.decodedActivity && !state.manualUserProfile) {
+    throw new Error(t("statusNeedActivity"));
+  }
+  ui.contractOutput.textContent = "";
+  ui.engineOutput.textContent = "";
+  ui.engineHints.innerHTML = "";
+
+  const userProfileInput = {
+    ...(state.userProfileForm || {}),
+    ...buildProfileFromActivityForm(),
+  };
+  const raceProfileInput = buildRaceProfileFromEditor();
+  const userProfile = new UserProfileBuilder().build(state.decodedActivity, userProfileInput);
+  const raceProfile = new RaceProfileBuilder().build(raceProfileInput);
+  state.raceProfileForm = raceProfileInput;
+  state.routeRaceProfile = raceProfile;
+  const weightKg = safeFloat(userProfileInput.weight) || 70;
+  const ruleOutput = new TrailLabRuleEngine().compute(userProfile, raceProfile, weightKg);
+  const contract = ruleEngineOutputToContract(userProfile, raceProfile, ruleOutput);
+  state.lastRuleOutput = ruleOutput;
+  state.lastRaceProfile = raceProfile;
+  const language = state.language;
+
+  ui.contractOutput.textContent = JSON.stringify(contract, null, 2);
+  ui.engineOutput.textContent = renderRuleEngineOutput(ruleOutput, language);
+  attachEngineHints(ruleOutput, language, raceProfile);
+  // 补给时间轴编辑器：载入引擎结果，可编辑
+  loadPlanEditor(ruleOutput, raceProfile);
+
+  return { userProfile, raceProfile, ruleOutput, language };
+}
+
+// 第四步确认后直接生成补给策略并进入第五步
 ui.confirmStep4Btn.addEventListener("click", () => {
   showOnlyStep(ui.step5Panel);
-  setStatus(t("statusReadyEngine"));
+  try {
+    runEngineCore();
+    setStatus(t("statusEngineDone"));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    setStatus(`${t("statusFailed")}: ${message}`, "error");
+  }
 });
 
 ui.backStep5Btn.addEventListener("click", () => {
   showOnlyStep(ui.step4Panel);
 });
 
+// 底部“生成 AI 解释”：仅调用 AI 解释（引擎已在第四步确认后生成）；若尚未生成则先补算
 ui.runBtn.addEventListener("click", async () => {
   try {
-    if (!state.decodedActivity && !state.manualUserProfile) {
-      throw new Error(t("statusNeedActivity"));
+    let built = null;
+    if (!state.lastRuleOutput) {
+      built = runEngineCore();
     }
     ui.runBtn.disabled = true;
-    ui.contractOutput.textContent = "";
-    ui.engineOutput.textContent = "";
-    ui.engineHints.innerHTML = "";
     ui.aiOutput.textContent = "";
-
-    const userProfileInput = buildProfileFromActivityForm();
-    const raceProfileInput = buildRaceProfileFromEditor();
-    const userProfile = new UserProfileBuilder().build(state.decodedActivity, userProfileInput);
-    const raceProfile = new RaceProfileBuilder().build(raceProfileInput);
-    state.raceProfileForm = raceProfileInput;
-    state.routeRaceProfile = raceProfile;
-    const weightKg = safeFloat(userProfileInput.weight) || 70;
-    const ruleOutput = new TrailLabRuleEngine().compute(userProfile, raceProfile, weightKg);
-    const contract = ruleEngineOutputToContract(userProfile, raceProfile, ruleOutput);
-    state.lastRuleOutput = ruleOutput;
-    state.lastRaceProfile = raceProfile;
     const language = state.language;
-
-    ui.contractOutput.textContent = JSON.stringify(contract, null, 2);
-    ui.engineOutput.textContent = renderRuleEngineOutput(ruleOutput, language);
-    attachEngineHints(ruleOutput, language, raceProfile);
-
-    setStatus(t("statusEngineDone"));
+    const userProfileInput = {
+      ...(state.userProfileForm || {}),
+      ...buildProfileFromActivityForm(),
+    };
+    const userProfile = built
+      ? built.userProfile
+      : new UserProfileBuilder().build(state.decodedActivity, userProfileInput);
+    const raceProfile = built ? built.raceProfile : state.lastRaceProfile;
+    const ruleOutput = built ? built.ruleOutput : state.lastRuleOutput;
     const aiText = await callAIPlanner({
       provider: ui.provider.value,
       model: ui.model.value.trim(),
@@ -3875,12 +5352,50 @@ ui.runBtn.addEventListener("click", async () => {
 ui.topLanguage.addEventListener("change", () => {
   state.language = ui.topLanguage.value === "en" ? "en" : "zh";
   applyLanguage();
+  if (window.TrailLabPlanEditor && state.planRowsInitialized) {
+    window.TrailLabPlanEditor.setLanguage(state.language);
+  }
 });
 
-ui.exportCsvBtn.addEventListener("click", exportPlanCsv);
+// 导出：单按钮 + 底部抽屉（与小程序第 5 步一致）
+const openExportSheet = () => {
+  if (ui.planExportSheet) ui.planExportSheet.hidden = false;
+  if (ui.planExportMask) ui.planExportMask.hidden = false;
+};
+const closeExportSheet = () => {
+  if (ui.planExportSheet) ui.planExportSheet.hidden = true;
+  if (ui.planExportMask) ui.planExportMask.hidden = true;
+};
+if (ui.planExportBtn) ui.planExportBtn.addEventListener("click", openExportSheet);
+if (ui.planExportMask) ui.planExportMask.addEventListener("click", closeExportSheet);
+const cancelBtn = document.getElementById("exportCancel");
+if (cancelBtn) cancelBtn.addEventListener("click", closeExportSheet);
+if (ui.planExportSheet) {
+  ui.planExportSheet.addEventListener("click", async (e) => {
+    const opt = e.target.closest(".export-option");
+    if (!opt) return;
+    const mode = opt.dataset.mode;
+    closeExportSheet();
+    if (!window.TrailLabPlanEditor) return;
+    if (mode === "xlsx") {
+      const png = await captureRouteChartPng();
+      window.TrailLabPlanEditor.exportXlsx(png);
+    } else if (mode === "image") {
+      window.TrailLabPlanEditor.exportImage();
+    } else {
+      window.TrailLabPlanEditor.exportRouteFile(mode);
+    }
+  });
+}
+if (ui.planCopyBtn) ui.planCopyBtn.addEventListener("click", () => {
+  if (window.TrailLabPlanEditor) window.TrailLabPlanEditor.copyPlan();
+});
 
 setRaceMode("manual");
 seedRaceEditor();
 applyLanguage();
+initPlanEditor();
+initLargeChart();
+initPlanHelpTip();
 showOnlyStep(ui.step1Panel, false); // 初始进入不滚动，保留介绍信息
 refreshProfileStage();

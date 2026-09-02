@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Trail Lab · AI Fuel Planner — 越野跑补给 AI 规划工具（Garmin FIT）</title>
+    <title>Trail Lab · Fuel Planner — 越野跑补给规划工具（Garmin FIT）</title>
 
     <!-- Primary SEO -->
-    <meta name="description" content="AI Fuel Planner：上传 Garmin .FIT 历史运动文件，设定目标路线，用规则引擎 + AI 自动计算越野跑补给节奏、碳水/液体/钠摄入量与分段补给建议。Trail Lab（山野实验室）Experiment #001 开源项目，浏览器本地解析，数据不上传。" />
-    <meta name="keywords" content="trail running, ultramarathon, fueling, nutrition, Garmin, FIT file, 越野跑, 越野, 补给, 营养, 电解质, 碳水, 心率, Garmin FIT, AI, trail, outdoor, 户外, sports science, run planner" />
+    <meta name="description" content="Fuel Planner：上传 Garmin .FIT 历史运动文件，设定目标路线，用规则引擎自动计算越野跑补给节奏、碳水/液体/钠摄入量与分段补给建议。Trail Lab（山野实验室）Experiment #001 开源项目，浏览器本地解析，数据不上传。" />
+    <meta name="keywords" content="trail running, ultramarathon, fueling, nutrition, Garmin, FIT file, 越野跑, 越野, 补给, 营养, 电解质, 碳水, 心率, Garmin FIT, trail, outdoor, 户外, sports science, run planner" />
     <meta name="author" content="Trail Lab (山野实验室) · marsdace" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="theme-color" content="#1F3D2E" />
@@ -17,17 +17,17 @@
     <!-- Open Graph (GitHub Pages / 社交分享) -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Trail Lab · 山野实验室" />
-    <meta property="og:title" content="AI Fuel Planner — 越野跑补给 AI 规划工具" />
+    <meta property="og:title" content="Fuel Planner — 越野跑补给规划工具" />
     <meta property="og:description" content="上传 Garmin .FIT 文件，自动计算越野跑补给节奏、碳水/液体/钠摄入与分段补给建议。浏览器本地解析，数据不上传。" />
     <meta property="og:url" content="https://marsdace.github.io/AI-Fuel-Planner/" />
     <meta property="og:image" content="https://marsdace.github.io/AI-Fuel-Planner/logo.png" />
-    <meta property="og:image:alt" content="Trail Lab AI Fuel Planner logo" />
+    <meta property="og:image:alt" content="Trail Lab Fuel Planner logo" />
     <meta property="og:locale" content="zh_CN" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="AI Fuel Planner — Trail Lab 越野跑补给 AI 工具" />
-    <meta name="twitter:description" content="用 Garmin FIT 数据 + AI 规划越野跑补给：碳水、液体、钠、分段时间轴。" />
+    <meta name="twitter:title" content="Fuel Planner — Trail Lab 越野跑补给规划工具" />
+    <meta name="twitter:description" content="用 Garmin FIT 数据规划越野跑补给：碳水、液体、钠、分段时间轴。" />
     <meta name="twitter:image" content="https://marsdace.github.io/AI-Fuel-Planner/logo.png" />
 
     <!-- Structured data (JSON-LD) -->
@@ -35,7 +35,7 @@
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      "name": "AI Fuel Planner",
+      "name": "Fuel Planner",
       "url": "https://marsdace.github.io/AI-Fuel-Planner/",
       "applicationCategory": "SportsApplication",
       "operatingSystem": "Any (browser)",
@@ -44,7 +44,7 @@
         "name": "Trail Lab (山野实验室)",
         "url": "https://github.com/marsdace/AI-Fuel-Planner"
       },
-      "description": "AI-powered trail running fueling planner that parses Garmin FIT files locally and computes carb/fluid/sodium intake and segment fueling timelines."
+      "description": "Rule-based trail running fueling planner that parses Garmin FIT files locally and computes carb/fluid/sodium intake and segment fueling timelines."
     }
     </script>
 
@@ -54,7 +54,7 @@
       href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260807p" />
+    <link rel="stylesheet" href="./styles.css?v=20260901e" />
   </head>
   <body>
     <!-- 梦幻山野夜空背景层 -->
@@ -66,9 +66,9 @@
     </div>
     <div class="background-intro" aria-hidden="true">
       <div class="background-copy" id="backgroundHeroInner">
-        <h1 id="heroTitle">越野跑智能补给规划 AI Trail run Fuel Planner</h1>
+        <h1 id="heroTitle">越野跑补给规划工具 Trail run Fuel Planner</h1>
         <p class="hero-tagline" id="heroTagline">上传 FIT运动文件，自动计算补给节奏与分段建议</p>
-        <p class="subtitle" id="heroSubtitle">五步完成补给规划-解析历史运动记录、校准用户能力画像、设定线路信息、确认线路信息、生成规则与 AI 解释。</p>
+        <p class="subtitle" id="heroSubtitle">五步完成补给规划-解析历史运动记录、校准用户能力画像、设定线路信息、确认线路信息、生成补给方案与分段建议。</p>
       </div>
     </div>
     <div class="bottom-intro" aria-hidden="true">
@@ -101,7 +101,7 @@
           <label>
             <span id="activityFitLabel">选择历史运动文件</span>
             <div class="file-picker">
-              <input id="fitFile" class="sr-only-file" type="file" accept=".fit" />
+              <input id="fitFile" class="sr-only-file" type="file" accept=".fit,.gpx" />
               <button id="fitFileTrigger" class="ghost-btn" type="button">选择文件</button>
               <span id="fitFileName" class="file-name">未选择文件</span>
             </div>
@@ -142,10 +142,21 @@
             <div id="userProfileEditor" class="grid two"></div>
           </div>
         </div>
+        <div class="subpanel profile-score-panel" id="profileScorePanel">
+          <h3 id="profileScoreTitle">能力画像评分（六维）</h3>
+          <div class="score-layout">
+            <div class="score-radar" id="profileRadar"></div>
+            <div class="score-side">
+              <div class="score-cards" id="profileSpeedCards"></div>
+            </div>
+          </div>
+          <div class="score-desc" id="profileScoreDesc"></div>
+        </div>
         <div class="actions left">
           <button id="backStep2Btn" class="ghost-btn back-btn" type="button">返回上一步</button>
           <button id="confirmStep2Btn" type="button">确认活动信息</button>
         </div>
+        <p class="step-footnote" id="step2Footnote">若以上画像与你的实际感受有较大出入，请返回第 1 步更换更能代表当前水平的运动文件，或修正输入参数（体重 / 最大心率 / ITRA / VO2max / HRV 等）。</p>
       </section>
 
       <section class="panel step-panel is-hidden" id="step3Panel">
@@ -199,6 +210,22 @@
           <span id="legendClimbSeg"><i class="dot climb"></i>爬坡路段</span>
           <span id="legendDescentSeg"><i class="dot descent"></i>下降路段</span>
         </div>
+        <p class="step-footnote" id="step4ZoomTip">点击概况图可查看横版大图（缩放 / 拖拽 / 下载保存）</p>
+        <div class="export-mask" id="largeChartMask" hidden></div>
+        <div class="large-chart-sheet" id="largeChartSheet" hidden>
+          <div class="large-chart-toolbar">
+            <span class="large-chart-title" id="largeChartTitle">横版大图</span>
+            <button type="button" class="mini-btn" id="largeChartZoomIn">＋</button>
+            <button type="button" class="mini-btn" id="largeChartZoomOut">－</button>
+            <button type="button" class="mini-btn" id="largeChartReset">复位</button>
+            <button type="button" class="mini-btn" id="largeChartDownload">下载 PNG</button>
+            <button type="button" class="mini-btn" id="largeChartClose">关闭</button>
+          </div>
+          <div class="large-chart-canvas-wrap" id="largeChartWrap">
+            <canvas id="largeChartCanvas" width="3200" height="1300"></canvas>
+          </div>
+          <p class="step-footnote" id="largeChartTip">滚轮缩放 · 拖拽平移 · 下载保存</p>
+        </div>
         <div class="actions left">
           <button id="backStep4Btn" class="ghost-btn back-btn" type="button">返回上一步</button>
           <button id="confirmStep4Btn" type="button">确认路线概况</button>
@@ -208,12 +235,85 @@
       <section class="panel step-panel is-hidden" id="step5Panel">
         <div class="step-heading">
           <span class="step-badge" id="stepBadge5">Step 5</span>
-          <h2 id="step5Title">规则引擎与 AI 解释</h2>
+          <h2 id="step5Title">规则引擎输出</h2>
         </div>
-        <p class="step-purpose" id="stepHint5">本步将生成：规则契约 JSON、补给定量输出与 AI 可执行解释。</p>
+        <p class="step-purpose" id="stepHint5">程序计算数值，输出可执行补给方案。</p>
+
         <div class="subpanel">
-          <h3 id="aiPlannerTitle">AI Planner (可选)</h3>
-          <div class="grid two">
+          <h3 id="planRoutePreviewTitle">路线概况</h3>
+          <div class="plan-editor-route" id="planRoutePreview"></div>
+        </div>
+
+        <div class="subpanel plan-summary-panel">
+          <h3><span id="planSummaryTitleText">补给方案</span><button id="planHelpBtn" type="button" class="field-info" role="note" tabindex="0" data-tooltip="">!</button> <button id="planCopyBtn" type="button" class="mini-btn">复制方案文本</button></h3>
+          <div class="safety-banner" id="planSafetyBanner">安全提示：本方案为通用规则估算，非医疗建议；请结合自身体能、天气与肠胃耐受，在专业人士指导下调整，量力而行；使用者自行承担风险。</div>
+          <div class="plan-editor-summary" id="planSummary"></div>
+        </div>
+
+        <div class="subpanel plan-checklist-panel">
+          <h3 id="planChecklistTitle">出发自查清单</h3>
+          <div class="plan-checklist" id="planChecklist"></div>
+        </div>
+
+        <div class="subpanel plan-editor" id="planEditorPanel">
+          <h3 id="planEditorTitle">补给时间轴（可删减、更改）</h3>
+          <div class="type-legend" id="planTypeLegend">
+            <span class="type-swatch"><i class="swatch-dot self"></i>自补点</span>
+            <span class="type-swatch"><i class="swatch-dot cp"></i>官方补给点</span>
+          </div>
+          <div class="plan-editor-toolbar">
+            <span class="plan-editor-toolbar-tip" id="planToolbarTip">点 − / ＋ 调整数量；每行下方可插入补给点；清空自补点会保留官方补给点</span>
+            <button id="planClearBtn" type="button" class="mini-btn">清空自补点</button>
+          </div>
+          <div class="plan-table" id="planTable"></div>
+          <div class="plan-totals" id="planTotals"></div>
+          <div class="plan-carry-warnings" id="planCarryWarnings"></div>
+          <p class="note" id="planEditorHint">补给点可自由增删插行、编辑距离后自动重排并重算区间距离/爬升与合计；官方补给点可编辑“带出”物品，出发携带与各段带出会做校验，可用“一键补齐”。</p>
+        </div>
+
+        <div class="subpanel">
+          <h3 id="planWarningsTitle">执行提醒</h3>
+          <div id="engineHints" class="hint-list"></div>
+        </div>
+
+        <details class="subpanel debug-details">
+          <summary id="debugTitle">调试信息（契约 JSON / 引擎明细）</summary>
+          <h3 id="contractOutputTitle">Rule Contract JSON</h3>
+          <pre id="contractOutput" class="output"></pre>
+          <h3 id="engineOutputTitle">Rule Engine 输出</h3>
+          <pre id="engineOutput" class="output"></pre>
+        </details>
+
+        <div class="actions left plan-export-row">
+          <button id="planExportBtn" type="button" class="btn-primary">导出</button>
+          <button id="backStep5Btn" class="ghost-btn back-btn" type="button">返回上一步</button>
+        </div>
+
+        <div class="export-mask" id="planExportMask" hidden></div>
+        <div class="export-sheet" id="planExportSheet" hidden>
+          <div class="export-sheet-title" id="exportSheetTitle">选择导出方式</div>
+          <button type="button" class="export-option" data-mode="xlsx">
+            <span class="export-option-name" id="exportOptXlsx">导出 xlsx 文件</span>
+            <span class="export-option-desc" id="exportOptXlsxDesc">内容可编辑 + 线路海拔图 + 出门清单</span>
+          </button>
+          <button type="button" class="export-option" data-mode="image">
+            <span class="export-option-name" id="exportOptImage">导出图片</span>
+            <span class="export-option-desc" id="exportOptImageDesc">补给总览海报 · 便于查询 · 设置屏保</span>
+          </button>
+          <button type="button" class="export-option" data-mode="fit">
+            <span class="export-option-name" id="exportOptFit">导出 FIT 路线</span>
+            <span class="export-option-desc" id="exportOptFitDesc">路线轨迹 + 补给点航点（自补给点）</span>
+          </button>
+          <button type="button" class="export-option" data-mode="gpx">
+            <span class="export-option-name" id="exportOptGpx">导出 GPX 路线</span>
+            <span class="export-option-desc" id="exportOptGpxDesc">路线轨迹 + 补给点航点（自补给点）</span>
+          </button>
+          <button type="button" class="export-cancel" id="exportCancel">取消</button>
+        </div>
+
+        <details class="subpanel ai-planner-panel" id="aiPlannerPanel">
+          <summary id="aiPlannerTitle">AI 解释（可选）</summary>
+          <div class="ai-compact">
             <label>
               <span id="providerLabel">Provider</span>
               <select id="provider">
@@ -226,21 +326,17 @@
             <label>
               <span id="modelLabel">Model</span>
               <select id="model">
-                <!-- 默认（mock） -->
                 <option value="mock" selected>mock</option>
-                <!-- openai -->
                 <optgroup label="openai">
                   <option value="gpt-4o-mini" data-provider="openai">gpt-4o-mini</option>
                   <option value="gpt-4o" data-provider="openai">gpt-4o</option>
                   <option value="gpt-4.1-mini" data-provider="openai">gpt-4.1-mini</option>
                   <option value="gpt-4.1" data-provider="openai">gpt-4.1</option>
                 </optgroup>
-                <!-- deepseek -->
                 <optgroup label="deepseek">
                   <option value="deepseek-v4-flash" data-provider="deepseek">deepseek-v4-flash</option>
                   <option value="deepseek-v4-pro" data-provider="deepseek">deepseek-v4-pro</option>
                 </optgroup>
-                <!-- gemini -->
                 <optgroup label="gemini">
                   <option value="gemini-2.0-flash" data-provider="gemini">gemini-2.0-flash</option>
                   <option value="gemini-1.5-flash" data-provider="gemini">gemini-1.5-flash</option>
@@ -249,43 +345,29 @@
               </select>
             </label>
             <label>
-              <span id="apiKeyLabel">API Key (浏览器端明文，仅本地实验)</span>
+              <span id="apiKeyLabel">API Key</span>
               <input id="apiKey" type="password" placeholder="可留空使用 mock" />
             </label>
             <label>
               <span id="temperatureLabel">Temperature</span>
               <input id="temperature" type="number" min="0" max="1.5" step="0.1" value="0.6" />
             </label>
+            <button id="runBtn" type="button" class="mini-btn ai-run">生成 AI 解释</button>
           </div>
           <p class="note" id="aiPlannerNote">提示：浏览器端调用第三方模型可能受 CORS 限制。若失败请先使用 mock 验证全流程。</p>
-        </div>
-        <div class="actions left">
-          <button id="backStep5Btn" class="ghost-btn back-btn" type="button">返回上一步</button>
-          <button id="runBtn" type="button">开始计算并生成解释</button>
-        </div>
-        <div class="grid single outputs">
-          <section class="subpanel">
-            <h3 id="contractOutputTitle">Rule Contract JSON</h3>
-            <pre id="contractOutput" class="output"></pre>
-          </section>
-          <section class="subpanel">
-            <h3 id="engineOutputTitle">Rule Engine 输出 <button id="exportCsvBtn" type="button" class="mini-btn">导出表格</button></h3>
-            <pre id="engineOutput" class="output"></pre>
-            <h3 id="engineHintsTitle">智能提示</h3>
-            <div id="engineHints" class="hint-list"></div>
-          </section>
-          <section class="subpanel">
-            <h3 id="aiOutputTitle">AI Planner 输出</h3>
-            <pre id="aiOutput" class="output"></pre>
-          </section>
-        </div>
+          <pre id="aiOutput" class="output ai-output"></pre>
+        </details>
       </section>
       </div>
 
     </main>
 
     <script src="./bg.js?v=20260806u"></script>
-    <script src="./gpx.js?v=20260820"></script>
-    <script src="./app.js?v=20260820"></script>
+    <script src="./gpx.js?v=20260901"></script>
+    <script src="./xlsx.js?v=20260828"></script>
+    <script src="./profile_score.js?v=20260828"></script>
+    <script src="./plan_editor.js?v=20260901f"></script>
+    <script src="./poster.js?v=20260901f"></script>
+    <script src="./app.js?v=20260901e"></script>
   </body>
 </html>
