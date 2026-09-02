@@ -1015,7 +1015,7 @@ function buildActivityOverview(decoded, physiologicalMaxHr = null) {
   };
 }
 
-const ENGINE_VERSION = "2.0.0";
+const ENGINE_VERSION = "2.3";
 
 // HRV 状态五档 → fatigue_risk（PRD §4.1 映射表）
 const HRV_TO_FATIGUE = {
@@ -2180,7 +2180,7 @@ function renderRuleEngineOutput(ruleOutput, language = "zh") {
   const branchLabel = trace.finish_time_branch || "?";
   const lines = language === "en"
     ? [
-      `Trail Lab Rule Engine v2.0 Output (engine ${ruleOutput.engine_version || "?"})`,
+      `Trail Lab Rule Engine ${ruleOutput.engine_version || "v2.3"} Output (engine ${ruleOutput.engine_version || "?"})`,
       `- Estimated finish time: ${ruleOutput.estimated_finish_time_h.toFixed(2)} h (${sourceLabel}, range ${ruleOutput.finish_time_range[0].toFixed(2)}–${ruleOutput.finish_time_range[1].toFixed(2)}, branch ${branchLabel}, confidence ${ruleOutput.confidence.finish_time})`,
       `- Carbohydrate: ${ruleOutput.carbs_per_hour_g.toFixed(1)} g/h (range ${ruleOutput.carb_range_g[0]}-${ruleOutput.carb_range_g[1]}, ceiling ${ruleOutput.cho_ceiling_g_h}${ruleOutput.dual_sugar ? ", dual sugar" : ""}; evidence ${(ruleOutput.evidence.carbs || []).join("/")})`,
       `- Fluid: ${ruleOutput.fluid_per_hour_ml} ml/h (range ${ruleOutput.fluid_range_ml[0]}-${ruleOutput.fluid_range_ml[1]}${ruleOutput.fluid_estimated ? ", estimated" : ", measured sweat rate"}; evidence ${(ruleOutput.evidence.fluid || []).join("/")})`,
@@ -2193,7 +2193,7 @@ function renderRuleEngineOutput(ruleOutput, language = "zh") {
       "- Fueling points:",
     ]
     : [
-      `山野实验室规则引擎 v2.0 输出（engine ${ruleOutput.engine_version || "?"}）`,
+      `山野实验室规则引擎 ${ruleOutput.engine_version || "v2.3"} 输出（engine ${ruleOutput.engine_version || "?"}）`,
       `- 预计完赛时间: ${ruleOutput.estimated_finish_time_h.toFixed(2)} 小时（${sourceLabel}，区间 ${ruleOutput.finish_time_range[0].toFixed(2)}–${ruleOutput.finish_time_range[1].toFixed(2)}，分支 ${branchLabel}，置信度 ${ruleOutput.confidence.finish_time}）`,
       `- 碳水: ${ruleOutput.carbs_per_hour_g.toFixed(1)} 克/小时（区间 ${ruleOutput.carb_range_g[0]}-${ruleOutput.carb_range_g[1]}，上限 ${ruleOutput.cho_ceiling_g_h}${ruleOutput.dual_sugar ? "，双糖" : ""}；依据 ${(ruleOutput.evidence.carbs || []).join("/")}）`,
       `- 液体: ${ruleOutput.fluid_per_hour_ml} 毫升/小时（区间 ${ruleOutput.fluid_range_ml[0]}-${ruleOutput.fluid_range_ml[1]}${ruleOutput.fluid_estimated ? "，估算" : "，实测汗率"}；依据 ${(ruleOutput.evidence.fluid || []).join("/")}）`,
@@ -4036,7 +4036,7 @@ function renderLargeChartCanvas() {
   ctx.textAlign = "left";
   ctx.fillText(en ? "Explore the mountains with technology — make outdoor fun, efficient and safe" : "用科技探索山野，让户外更有趣、更高效、更安全", 64, H - 44);
   ctx.textAlign = "right";
-  ctx.fillText("Trail Lab Engine v2.0 · " + (en ? "local data · for reference only" : "数据本地解析 · 仅供参考"), W - 64, H - 44);
+  ctx.fillText("Trail Lab Engine v2.3 · " + (en ? "local data · for reference only" : "数据本地解析 · 仅供参考"), W - 64, H - 44);
   return true;
 }
 

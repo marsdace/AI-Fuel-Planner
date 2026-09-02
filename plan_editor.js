@@ -1314,7 +1314,7 @@
     const trace = (out && out.debug_trace) || {};
     const s1 = [];
     const push = (...cells) => s1.push(cells);
-    push("补给方案（完整版·Trail Lab Engine v2.0）");
+    push("补给方案（完整版·Trail Lab Engine v2.3）");
     push("安全提示：本方案为通用规则估算，非医疗建议；请结合自身体能、天气与肠胃耐受，在专业人士指导下调整，量力而行；使用者自行承担风险。");
     push("一、路线与完赛");
     push("距离(km)", rp.distance_km, "爬升(m)", rp.ascent_m, "", "赛前 36-48h 糖原填充(g/天)", `${Math.round(weightKg * 10)}-${Math.round(weightKg * 12)}（${weightKg} kg × 10-12）`);
@@ -1886,7 +1886,7 @@
     ctx.textAlign = "left";
     ctx.font = "15px sans-serif";
     ctx.fillStyle = "rgba(233,243,236,0.42)";
-    ctx.fillText("Trail Lab Engine v2.0 · " + (en ? "local data · for reference only" : "数据本地解析 · 仅供参考"), 48, H - 54);
+    ctx.fillText("Trail Lab Engine v2.3 · " + (en ? "local data · for reference only" : "数据本地解析 · 仅供参考"), 48, H - 54);
     ctx.fillStyle = "rgba(233,243,236,0.5)";
     const safety = en ? "General estimate, not medical advice. Adjust by conditions, GI tolerance and professional guidance." : "通用规则估算，非医疗建议；请结合天气、肠胃耐受与专业指导调整，量力而行。";
     ctx.fillText(safety, 48, H - 24);

@@ -564,7 +564,7 @@
     ctx.textAlign = "right";
     ctx.font = "18px sans-serif";
     ctx.fillStyle = "rgba(233,243,236,0.4)";
-    ctx.fillText(L("Trail Lab Engine v2.0 · 数据本地解析 · 仅供参考", "Trail Lab Engine v2.0 · local parsing · for reference only"), W - padR, legendTop + 16);
+    ctx.fillText(L("Trail Lab Engine v2.3 · 数据本地解析 · 仅供参考", "Trail Lab Engine v2.3 · local parsing · for reference only"), W - padR, legendTop + 16);
     const legendTopY = legendTop + 44;
     const legendBottom = H - 4;
     const simulateRows = (fontPx, iconSize) => {
