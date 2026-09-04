@@ -1015,7 +1015,32 @@ function buildActivityOverview(decoded, physiologicalMaxHr = null) {
   };
 }
 
-const ENGINE_VERSION = "2.3";
+const ENGINE_VERSION = "2.5";
+
+// ===== v2.4 补给形态常量（2026-09-02 需求定版）=====
+const STATION_FOOD_LIMIT_G = 60;
+function stationFoodDefaultG(timeH) {
+  if (timeH < 2) return 15;
+  if (timeH < 4) return 25;
+  if (timeH < 6) return 35;
+  if (timeH < 8) return 45;
+  return 55;
+}
+const FORM_MATRIX = [
+  { untilH: 6, gel: 0.45, liquid: 0.2, food: 0.35 },
+  { untilH: 12, gel: 0.25, liquid: 0.4, food: 0.35 },
+  { untilH: Infinity, gel: 0.1, liquid: 0.45, food: 0.45 },
+];
+function formTierForTime(timeH) {
+  for (const tier of FORM_MATRIX) {
+    if (timeH < tier.untilH) return tier;
+  }
+  return FORM_MATRIX[FORM_MATRIX.length - 1];
+}
+const BOTTLE_PLAIN_ML = 500;
+const BOTTLE_FUEL_ML = 500;
+const RESERVE_KCAL = 800;
+const RESERVE_NOTE = "全程应急储备约 800 kcal（约 2 支胶 + 2 根能量棒当量）：起点一次带齐，独立于正常补给消耗，不考虑途中补充";
 
 // HRV 状态五档 → fatigue_risk（PRD §4.1 映射表）
 const HRV_TO_FATIGUE = {
@@ -1342,6 +1367,12 @@ class RaceProfileBuilder {
 
     // 无官方补给点时不生成默认 CP：aid_stations_km 保持空（图中不画 CP 点）
     aidStations = [...new Set(aidStations)].sort((a, b) => a - b);
+    const aidStationSupply = {};
+    validCps.forEach((cp) => {
+      const km = safeFloat(cp.distance);
+      if (km === null || km <= 0 || km >= distanceKm) return;
+      aidStationSupply[String(Math.round(km * 100))] = Array.isArray(cp.supply) ? cp.supply : null;
+    });
 
     const dedupSupplemental = [...new Set(supplementalPoints)].filter((value) => !aidStations.includes(value)).sort((a, b) => a - b);
 
@@ -1350,6 +1381,7 @@ class RaceProfileBuilder {
       ascent_m: ascentM,
       descent_m: descentM,
       aid_stations_km: aidStations,
+      aid_station_supply: aidStationSupply,
       climb_segments: segments,
       steep_segments: steepSegments,
       supplemental_points_km: dedupSupplemental,
@@ -1578,6 +1610,66 @@ function allocateWholeItems(targets, itemSize) {
   // 全程剩余不足单件量的需求：在最后一个补给点补 1 件（宁多勿少，全程至多超 1 件）
   if (acc > 0 && counts.length) counts[counts.length - 1] += 1;
   return counts;
+}
+
+// 小时窗口整件分配（v2.4）：能量胶等可整件物品按 floor(time_h) 小时桶发放；
+// 桶内整件碳水不得超过 maxPerHourG，超出部分自动向后一事件平移（与下一小时联动）；
+// 尾差（不足整件）不补发，由连续量（液体碳水）吸收，保证不超量。
+function allocateHourlyGelItems(events, itemG, maxPerHourG) {
+  const counts = new Array(events.length).fill(0);
+  let acc = 0;
+  let issuedTotal = 0;
+  const hourEmit = new Map();
+  for (let i = 0; i < events.length; i++) {
+    acc += events[i].carbs_g || 0;
+    const want = Math.floor(acc / itemG) - issuedTotal;
+    if (want <= 0) continue;
+    const hour = Math.floor(events[i].time_h);
+    const used = hourEmit.get(hour) || 0;
+    const room = Math.floor((maxPerHourG - used) / itemG);
+    const issue = Math.min(want, Math.max(room, 0));
+    counts[i] = issue;
+    issuedTotal += issue;
+    hourEmit.set(hour, used + issue * itemG);
+  }
+  return counts;
+}
+
+// 冲饮按半包粒度取整（0.5 包）：累计四舍五入到最近半包，单一账本结转；
+// 不足半包（<40g）不补发，缺口显式记录，不静默堆到最后一个事件。
+function allocateDrinkMixHalf(events, itemG) {
+  const half = itemG / 2;
+  const counts = new Array(events.length).fill(0);
+  let acc = 0;
+  let issued = 0;
+  for (let i = 0; i < events.length; i += 1) {
+    acc += events[i].carbs_g || 0;
+    const want = Math.round(acc / half) / 2;
+    const issue = Math.max(0, Number((want - issued).toFixed(2)));
+    counts[i] = issue;
+    issued += issue;
+  }
+  return { counts, issuedTotal: Number(issued.toFixed(2)) };
+}
+
+// 真食按份四舍五入：把克数就近折算成具体真食物品（面包/包子/粥/香蕉）
+function foodServingsList(items, grams) {
+  const sorted = [...(items || [])].sort((a, b) => (b.carbs_g || 0) - (a.carbs_g || 0));
+  let remaining = grams;
+  const out = [];
+  for (const it of sorted) {
+    const per = it.carbs_g || 1;
+    const n = Math.round(remaining / per);
+    if (n > 0) {
+      out.push({ key: it.key, label: it.label, count: n, carbs_g: it.carbs_g });
+      remaining -= n * per;
+    }
+  }
+  return out;
+}
+function foodServingsText(items, grams) {
+  if (grams <= 0) return "";
+  return foodServingsList(items, grams).map((s) => `${s.label} ${s.count} 份`).join(" + ") || "少量真食";
 }
 
 // 起点 → CP → 终点分段携带清单（供官方补给点"带出"预填与携带校验）
@@ -1892,6 +1984,27 @@ class TrailLabRuleEngine {
     const ELEC_DRINK_NA_MG_L = 500;
     const SALT_TAB_MG = 200;
     const GEL_G = 25;
+    const DRINK_MIX_G = 80;
+    const DRINK_MIX_WEIGHT_G = 90;
+    // 补给点到达时间按“难度里程”调整：距离 + 累计爬升/100（100m 爬升≈1km 平路）
+    const cumEffort = (km) => {
+      let cumKm = 0;
+      let cumAscent = 0;
+      for (const seg of raceProfile.climb_segments || []) {
+        const dist = seg[0] || 0;
+        const delta = seg[1] || 0;
+        const end = cumKm + dist;
+        if (km <= end) {
+          const frac = dist > 0 ? Math.min(Math.max((km - cumKm) / dist, 0), 1) : 0;
+          cumAscent += Math.max(delta, 0) * frac;
+          break;
+        }
+        cumAscent += Math.max(delta, 0);
+        cumKm = end;
+      }
+      return km + cumAscent / 100;
+    };
+    const totalEffort = Math.max(cumEffort(raceProfile.distance_km), 0.1);
     const basePoints = effectivePoints.map((pointKm) => {
       const sources = [];
       if (raceProfile.aid_stations_km.some((point) => Math.abs(point - pointKm) <= 0.3)) sources.push("cp");
@@ -1902,7 +2015,7 @@ class TrailLabRuleEngine {
       const saltTabTopupMg = Math.max(0, sodiumPerEvent - electrolyteNaMg);
       return {
         km: Number(pointKm.toFixed(2)),
-        time_h: Number((finishTimeH * (pointKm / raceProfile.distance_km)).toFixed(2)),
+        time_h: Number((finishTimeH * (cumEffort(pointKm) / totalEffort)).toFixed(2)),
         carbs_g: carbsPerEvent,
         fluid_ml: fluidPerEvent,
         sodium_mg: sodiumPerEvent,
@@ -1927,13 +2040,127 @@ class TrailLabRuleEngine {
       };
     });
     const saltTabCounts = allocateWholeItems(drinkPlan.map((d) => d.residual_mg), SALT_TAB_MG);
-    const gelCounts = allocateWholeItems(basePoints.map((p) => p.carbs_g), GEL_G);
+
+    // —— 补给形态分配（leg + 真食优先 + 半包冲饮 + 单一账本）——
+    const realFoodItems = [
+      { key: "bread", label: "面包", carbs_g: 15 },
+      { key: "baozi", label: "包子", carbs_g: 30 },
+      { key: "porridge", label: "粥", carbs_g: 50 },
+      { key: "banana", label: "香蕉", carbs_g: 25 },
+    ];
+    const stationSupplyByKm = raceProfile.aid_station_supply || {};
+    const getStationFoodItems = (km) => {
+      const s = stationSupplyByKm[String(Math.round(km * 100))];
+      if (Array.isArray(s)) return s.filter((it) => (it.carbs_g || 0) > 0);
+      return realFoodItems;
+    };
+    const GEL_GI_CAP_G_H = 45;
+    const distanceKm = Math.max(raceProfile.distance_km || 0, 0.1);
+    const cps = (raceProfile.aid_stations_km || [])
+      .filter((km) => km > 0 && km < distanceKm)
+      .sort((a, b) => a - b);
+    const legBounds = [0, ...cps, distanceKm];
+    const legList = legBounds.slice(0, -1).map((from, i) => ({ from, to: legBounds[i + 1] }));
+    const legCarbs = legList.map((leg) => Number(((totalCarbs * (leg.to - leg.from)) / distanceKm).toFixed(2)));
+    if (legCarbs.length) {
+      const head = legCarbs.slice(0, -1).reduce((s, x) => s + x, 0);
+      legCarbs[legCarbs.length - 1] = Number((totalCarbs - head).toFixed(1));
+    }
+    const legRealFood = legList.map((leg, i) => {
+      const stationKm = i === 0 ? null : cps[i - 1];
+      if (stationKm == null) return { eat: 0, takeout: 0, stationKm: null, foodItems: [] };
+      const foodItems = getStationFoodItems(stationKm);
+      if (!Array.isArray(foodItems) || !foodItems.length) return { eat: 0, takeout: 0, stationKm, foodItems: [] };
+      const arriveH = (finishTimeH * stationKm) / distanceKm;
+      const eat = Math.min(stationFoodDefaultG(arriveH), STATION_FOOD_LIMIT_G, legCarbs[i]);
+      const takeout = Number(Math.min(Math.max(0, legCarbs[i] - eat), 100).toFixed(1));
+      return { eat: Number(eat.toFixed(1)), takeout, stationKm, foodItems };
+    });
+    const legCarryCarbs = legList.map((leg, i) => Math.max(0, legCarbs[i] - legRealFood[i].eat - legRealFood[i].takeout));
+    const pointLegIdx = basePoints.map((p) => {
+      for (let i = 0; i < legList.length; i += 1) {
+        if (p.km >= legList[i].from && p.km <= legList[i].to) return i;
+      }
+      return legList.length - 1;
+    });
+    const selfCounts = legList.map((leg, i) => basePoints
+      .map((p, idx) => ({ p, idx }))
+      .filter(({ p, idx }) => pointLegIdx[idx] === i && !(p.source || "").split("+").includes("cp"))
+      .map(({ idx }) => idx));
+    const carryCarbs = new Array(basePoints.length).fill(0);
+    legList.forEach((leg, li) => {
+      const idxs = selfCounts[li];
+      if (!idxs.length) return;
+      const total = legCarryCarbs[li];
+      const per = total / idxs.length;
+      idxs.forEach((idx, j) => {
+        carryCarbs[idx] = j === idxs.length - 1 ? total - per * (idxs.length - 1) : per;
+      });
+    });
+    const gelHourCap = Math.min(GEL_GI_CAP_G_H, carbsPerHour);
+    const selfIndices = [];
+    const selfGelEvents = [];
+    basePoints.forEach((p, i) => {
+      if (!(p.source || "").split("+").includes("cp")) {
+        selfIndices.push(i);
+        selfGelEvents.push({ time_h: p.time_h, carbs_g: carryCarbs[i] });
+      }
+    });
+    const gelAlloc = allocateHourlyGelItems(selfGelEvents, GEL_G, gelHourCap);
+    const gelCounts = new Array(basePoints.length).fill(0);
+    selfIndices.forEach((idx, j) => {
+      gelCounts[idx] = gelAlloc[j];
+    });
+    const gelActualCarbs = gelCounts.reduce((s, c) => s + c * GEL_G, 0);
+    const gelCarbsAtPoint = gelCounts.map((c) => c * GEL_G);
+    const liquidCarbsTotal = Number((legCarryCarbs.reduce((s, x) => s + x, 0) - gelActualCarbs).toFixed(1));
+    const mixTargets = basePoints.map((p, i) => Number(Math.max(0, carryCarbs[i] - gelCarbsAtPoint[i]).toFixed(2)));
+    if (selfIndices.length) {
+      const sumBefore = mixTargets.reduce((s, x) => s + x, 0);
+      const last = selfIndices[selfIndices.length - 1];
+      mixTargets[last] = Number(Math.max(0, mixTargets[last] + (liquidCarbsTotal - sumBefore)).toFixed(2));
+    }
+    const mixPlan = allocateDrinkMixHalf(
+      basePoints.map((p, i) => ({ time_h: p.time_h, carbs_g: mixTargets[i] })),
+      DRINK_MIX_G
+    );
+    const drinkMixCounts = mixPlan.counts;
+    const drinkMixCarbsIssued = Number((mixPlan.issuedTotal * DRINK_MIX_G).toFixed(1));
+    const liquidCarbsDeficitG = Number(Math.max(0, liquidCarbsTotal - drinkMixCarbsIssued).toFixed(1));
+    const stationEatByKm = {};
+    for (let i = 1; i < legRealFood.length; i += 1) {
+      if (legRealFood[i].stationKm != null) {
+        stationEatByKm[String(Math.round(legRealFood[i].stationKm * 100))] = legRealFood[i].eat;
+      }
+    }
+    const stationFoodG = basePoints.map((p) => {
+      if (!(p.source || "").split("+").includes("cp")) return 0;
+      return stationEatByKm[String(Math.round(p.km * 100))] || 0;
+    });
+    const stationFoodItems = basePoints.map((p, i) => {
+      const g = stationFoodG[i];
+      if (g <= 0) return null;
+      const leg = legRealFood.find((l) => l.stationKm != null && Math.abs(l.stationKm - p.km) < 0.05);
+      return foodServingsList(leg && leg.foodItems ? leg.foodItems : realFoodItems, g);
+    });
+    const stationFoodTotal = stationFoodG.reduce((s, g) => s + g, 0);
+    const takeoutTotal = legRealFood.reduce((s, x) => s + (x.takeout || 0), 0);
+    legRealFood.forEach((lf) => {
+      if (lf.stationKm != null && (!lf.foodItems || !lf.foodItems.length)) {
+        warnings.push(`官方补给点（${Number(lf.stationKm).toFixed(1)}km）站内补给为空或品类不足，已用随身能量胶/冲饮补足；请核对该站实际是否提供真食。`);
+      }
+    });
     const fuelingPoints = basePoints.map((p, i) => ({
       ...p,
+      carbs_g: Number((stationFoodG[i] + gelCarbsAtPoint[i] + mixTargets[i]).toFixed(1)),
       electrolyte_ml: drinkPlan[i].electrolyte_ml,
       plain_ml: drinkPlan[i].plain_ml,
       salt_tab_count: saltTabCounts[i],
       gels_count: gelCounts[i],
+      station_food_g: stationFoodG[i],
+      station_food_items: stationFoodItems[i],
+      liquid_carbs_g: Number(mixTargets[i].toFixed(1)),
+      drink_mix_count: drinkMixCounts[i],
     }));
 
     // 咖啡因分次分配：把预算落实到具体补给点（工程化规则，待实测校准）
@@ -1971,29 +2198,66 @@ class TrailLabRuleEngine {
           .map((p) => ({ km: p.km, time_h: p.time_h, g: 10 }))
       : [];
 
-    // 携带清单：自补给点（无官方站）所需的自备补给数量与重量（工程化，待实测校准）
+    // 携带清单（v2.4）：胶与盐丸全自备（起点一次背够全程，含官方点随身消耗）；
+    // 液体仅统计自补给点所需（官方站内补液不计入随身）
     const GEL_WEIGHT_G = 34; // 每支胶含包装约 34g
     const SALT_WEIGHT_G = 2; // 每粒约 2g
     const selfPoints = fuelingPoints.filter((p) => !(p.source || "").split("+").includes("cp"));
     const selfFluidMl = selfPoints.reduce((sum, p) => sum + p.fluid_ml, 0);
     const selfElecMl = selfPoints.reduce((sum, p) => sum + (p.electrolyte_ml || 0), 0);
     const selfPlainMl = selfPoints.reduce((sum, p) => sum + (p.plain_ml || 0), 0);
-    // 携带量 = 自补给点分配到的整件数之和（与时间轴一致，不再独立按总量取整）
-    const gelCount = selfPoints.reduce((sum, p) => sum + (p.gels_count || 0), 0);
-    const saltCount = selfPoints.reduce((sum, p) => sum + (p.salt_tab_count || 0), 0);
-    const totalCarryG = gelCount * GEL_WEIGHT_G + saltCount * SALT_WEIGHT_G + selfFluidMl;
+    const gelCount = fuelingPoints.reduce((sum, p) => sum + (p.gels_count || 0), 0);
+    const saltCount = fuelingPoints.reduce((sum, p) => sum + (p.salt_tab_count || 0), 0);
+    const drinkMixPacks = fuelingPoints.reduce((sum, p) => sum + (p.drink_mix_count || 0), 0);
+    const dryWeightG =
+      gelCount * GEL_WEIGHT_G + saltCount * SALT_WEIGHT_G + drinkMixPacks * DRINK_MIX_WEIGHT_G;
+    const totalCarryG = dryWeightG;
     const carryPlan = {
-      gels: { count: gelCount, per_g: GEL_G, weight_g: gelCount * GEL_WEIGHT_G },
-      salt_tabs: { count: saltCount, per_mg: SALT_TAB_MG, weight_g: saltCount * SALT_WEIGHT_G },
+      gels: { count: gelCount, per_g: GEL_G, weight_g: gelCount * GEL_WEIGHT_G, kind: "gel" },
+      drink_mix: { count: drinkMixPacks, per_g: DRINK_MIX_G, weight_g: drinkMixPacks * DRINK_MIX_WEIGHT_G, kind: "powder" },
+      salt_tabs: { count: saltCount, per_mg: SALT_TAB_MG, weight_g: saltCount * SALT_WEIGHT_G, kind: "tablet" },
+      station_food_total_g: Math.round(stationFoodTotal * 10) / 10,
+      carry_out_food_total_g: Number(takeoutTotal.toFixed(1)),
       self_fluid_ml: Math.round(selfFluidMl),
       self_electrolyte_ml: Math.round(selfElecMl),
       self_plain_ml: Math.round(selfPlainMl),
+      liquid_carbs_deficit_g: liquidCarbsDeficitG,
       caffeine_total_mg: caffeineTotalMg,
       caffeine_note: "含咖啡因能量胶 50-100mg/支 或 咖啡（约 80-100mg/杯）",
+      reserve_kcal: RESERVE_KCAL,
+      reserve_note: RESERVE_NOTE,
+      dry_weight_g: Math.round(dryWeightG),
       total_weight_g: Math.round(totalCarryG),
-      note: "仅统计自补给点所需（官方站可补的未计入）；两站间隔长时建议在官方站带出补给，减少随身携带重量",
+      total_carry_weight_g: Math.round(dryWeightG + 1000 + 1500),
+      note:
+        "真食优先：官方站站内进食 + 带出真食覆盖部分碳水，其余由能量胶与冲饮补足；液体仅自补点随身部分，官方站内补液不计入。" +
+        (liquidCarbsDeficitG > 0
+          ? `冲饮按半包取整后缺口约 ${liquidCarbsDeficitG}g，可用半包冲饮或站内运动饮料补齐。`
+          : "") +
+        "总重为干物资；水按两壶（白水壶+能量壶）分段携带，站内补满。",
     };
 
+    if (userProfile.verified_cho_max != null && userProfile.verified_cho_max >= 75) {
+      warnings.push(
+        `高验证碳水上限 ${userProfile.verified_cho_max} g/h：规划按该速率执行，建议结合长距离实测与肠胃反馈微调`
+      );
+    }
+    if (stationFoodTotal < totalCarbs * 0.2) {
+      warnings.push(
+        `站内真食供给有限（约 ${Math.round(stationFoodTotal)}g，占总量 ${Math.round((stationFoodTotal / Math.max(totalCarbs, 1)) * 100)}%），` +
+          "不足部分由随身能量胶/冲饮补足；赛事真食充足时可在官方补给点调高站内进食"
+      );
+    }
+    if (liquidCarbsDeficitG > 10) {
+      warnings.push(
+        `液体碳水按整包/半包取整后缺口约 ${liquidCarbsDeficitG}g（不足半包不补发）：短程可忽略，中长程建议用半包冲饮或站内运动饮料补齐`
+      );
+    }
+    if (dryWeightG + 1000 + 1500 > 8000) {
+      warnings.push(
+        `出门携带总重约 ${(dryWeightG + 1000 + 1500) / 1000}kg（干物资 ${(dryWeightG / 1000).toFixed(2)}kg + 两壶水 1kg + 装备约 1.5kg），超过 8kg 建议上限，请核对是否携带过多或改用站内补给`
+      );
+    }
     if (fluidEstimated) warnings.push("无实测出汗率，液体为环境估算（低置信度），建议按体重法实测校准");
     if (userProfile.sweat_sodium === null) warnings.push("无汗液钠浓度数据，钠为保守区间（低置信度）");
     if (userProfile.verified_cho_max === null) warnings.push("无已验证碳水上限，默认上限 60 g/h（低置信度）；长距离实测后回填可升级");
@@ -2008,15 +2272,21 @@ class TrailLabRuleEngine {
 
     // 区间携带量过大预警（与小程序一致）：某段自补点消耗过大时提示确认携带能力或在官方点带出
     const carrySegments = buildCarrySegments(raceProfile, fuelingPoints, caffeineSchedule);
+    carrySegments.forEach((seg, i) => {
+      seg.carry_out_food_g = (legRealFood[i] && legRealFood[i].takeout) || 0;
+    });
     carrySegments.forEach((seg) => {
       if (seg.points <= 0) return;
       const heavy = [];
       if (seg.carbs_g > 150) heavy.push(`碳水 ${seg.carbs_g}g`);
-      if (seg.fluid_ml > 2500) heavy.push(`液体 ${seg.fluid_ml}ml`);
+      // 两壶默认 2×500ml；超过即提示（2026-09-03 由 2500ml 阈值改为壶容量口径）
+      if (seg.fluid_ml > BOTTLE_PLAIN_ML + BOTTLE_FUEL_ML) {
+        heavy.push(`液体 ${seg.fluid_ml}ml（超两壶 ${BOTTLE_PLAIN_ML + BOTTLE_FUEL_ML}ml 容量）`);
+      }
       if (heavy.length) {
         warnings.push(
           `携带校验：${seg.from_km === 0 ? "起点" : "官方补给点"}到 ${seg.to_km}km 区间自补给消耗较大（${heavy.join(" / ")}），` +
-          "请确认携带能力或在官方补给点带出补给"
+          "请确认携带能力（大壶/水袋/途中水源）或在官方补给点调整带出"
         );
       }
     });
@@ -2047,7 +2317,23 @@ class TrailLabRuleEngine {
               }
             : null,
         finish_breakdown: finishBreakdown,
-        cho: { tier_range: [tier.lo, tier.hi], ceiling },
+        cho: {
+          tier_range: [tier.lo, tier.hi],
+          ceiling,
+          matrix: FORM_MATRIX.map((t) => ({
+            until_h: t.untilH === Infinity ? null : t.untilH,
+            gel_pct: Math.round(t.gel * 100),
+            liquid_pct: Math.round(t.liquid * 100),
+            food_pct: Math.round(t.food * 100),
+          })),
+          form_actual: {
+            gel_g: Math.round(gelActualCarbs),
+            liquid_carbs_g: Math.round(liquidCarbsTotal * 10) / 10,
+            liquid_carbs_deficit_g: liquidCarbsDeficitG,
+            station_food_g: Math.round(stationFoodTotal * 10) / 10,
+            portable_food_g: Number(takeoutTotal.toFixed(1)),
+          },
+        },
         fluid: { sweat_rate_lph: userProfile.sweat_rate, estimated: fluidEstimated },
         sodium: { sweat_sodium_mgl: userProfile.sweat_sodium, drink_conc_mg_l: drinkSodiumMgL },
       },
@@ -2063,6 +2349,19 @@ class TrailLabRuleEngine {
       caffeine_budget_mg: [cafLo, cafHi],
       caffeine_tier: caffeineTier,
       total_carbs_g: totalCarbs,
+      carb_breakdown: {
+        gel_g: Math.round(gelActualCarbs),
+        liquid_carbs_g: Math.round(liquidCarbsTotal * 10) / 10,
+        liquid_carbs_deficit_g: liquidCarbsDeficitG,
+        station_food_g: Math.round(stationFoodTotal * 10) / 10,
+        portable_food_g: Number(takeoutTotal.toFixed(1)),
+      },
+      form_matrix: FORM_MATRIX.map((t) => ({
+        until_h: t.untilH === Infinity ? null : t.untilH,
+        gel_pct: Math.round(t.gel * 100),
+        liquid_pct: Math.round(t.liquid * 100),
+        food_pct: Math.round(t.food * 100),
+      })),
       total_fluid_ml: totalFluidMl,
       total_sodium_mg: totalSodiumMg,
       fueling_points: fuelingPoints,
@@ -2148,6 +2447,8 @@ function ruleEngineOutputToContract(userProfile, raceProfile, ruleOutput) {
       caffeine_budget_mg: ruleOutput.caffeine_budget_mg,
       caffeine_tier: ruleOutput.caffeine_tier,
       total_carbs_g: ruleOutput.total_carbs_g,
+      carb_breakdown: ruleOutput.carb_breakdown,
+      form_matrix: ruleOutput.form_matrix,
       total_fluid_ml: ruleOutput.total_fluid_ml,
       total_sodium_mg: ruleOutput.total_sodium_mg,
       fueling_points: ruleOutput.fueling_points,
@@ -2180,7 +2481,7 @@ function renderRuleEngineOutput(ruleOutput, language = "zh") {
   const branchLabel = trace.finish_time_branch || "?";
   const lines = language === "en"
     ? [
-      `Trail Lab Rule Engine ${ruleOutput.engine_version || "v2.3"} Output (engine ${ruleOutput.engine_version || "?"})`,
+      `Trail Lab Rule Engine ${ruleOutput.engine_version || "v2.5"} Output (engine ${ruleOutput.engine_version || "?"})`,
       `- Estimated finish time: ${ruleOutput.estimated_finish_time_h.toFixed(2)} h (${sourceLabel}, range ${ruleOutput.finish_time_range[0].toFixed(2)}–${ruleOutput.finish_time_range[1].toFixed(2)}, branch ${branchLabel}, confidence ${ruleOutput.confidence.finish_time})`,
       `- Carbohydrate: ${ruleOutput.carbs_per_hour_g.toFixed(1)} g/h (range ${ruleOutput.carb_range_g[0]}-${ruleOutput.carb_range_g[1]}, ceiling ${ruleOutput.cho_ceiling_g_h}${ruleOutput.dual_sugar ? ", dual sugar" : ""}; evidence ${(ruleOutput.evidence.carbs || []).join("/")})`,
       `- Fluid: ${ruleOutput.fluid_per_hour_ml} ml/h (range ${ruleOutput.fluid_range_ml[0]}-${ruleOutput.fluid_range_ml[1]}${ruleOutput.fluid_estimated ? ", estimated" : ", measured sweat rate"}; evidence ${(ruleOutput.evidence.fluid || []).join("/")})`,
@@ -2193,7 +2494,7 @@ function renderRuleEngineOutput(ruleOutput, language = "zh") {
       "- Fueling points:",
     ]
     : [
-      `山野实验室规则引擎 ${ruleOutput.engine_version || "v2.3"} 输出（engine ${ruleOutput.engine_version || "?"}）`,
+      `山野实验室规则引擎 ${ruleOutput.engine_version || "v2.5"} 输出（engine ${ruleOutput.engine_version || "?"}）`,
       `- 预计完赛时间: ${ruleOutput.estimated_finish_time_h.toFixed(2)} 小时（${sourceLabel}，区间 ${ruleOutput.finish_time_range[0].toFixed(2)}–${ruleOutput.finish_time_range[1].toFixed(2)}，分支 ${branchLabel}，置信度 ${ruleOutput.confidence.finish_time}）`,
       `- 碳水: ${ruleOutput.carbs_per_hour_g.toFixed(1)} 克/小时（区间 ${ruleOutput.carb_range_g[0]}-${ruleOutput.carb_range_g[1]}，上限 ${ruleOutput.cho_ceiling_g_h}${ruleOutput.dual_sugar ? "，双糖" : ""}；依据 ${(ruleOutput.evidence.carbs || []).join("/")}）`,
       `- 液体: ${ruleOutput.fluid_per_hour_ml} 毫升/小时（区间 ${ruleOutput.fluid_range_ml[0]}-${ruleOutput.fluid_range_ml[1]}${ruleOutput.fluid_estimated ? "，估算" : "，实测汗率"}；依据 ${(ruleOutput.evidence.fluid || []).join("/")}）`,
@@ -2261,6 +2562,37 @@ function renderRuleEngineOutput(ruleOutput, language = "zh") {
         ? `    Note: target carbs ${point.carbs_g.toFixed(1)} g / sodium ${point.sodium_mg.toFixed(0)} mg; keep at least 1/3 plain water per point (concentrated electrolyte drink can worsen thirst); sodium not covered by the electrolyte drink is topped up with whole salt tabs allocated across the whole plan (avoid per-point stacking); electrolyte drink ≈ 500 mg/L, check your product label.`
         : `    说明：目标碳水 ${point.carbs_g.toFixed(1)}g / 钠 ${point.sodium_mg.toFixed(0)}mg；每点至少保留 1/3 白水，电解质水未覆盖的钠缺口按全程累计由盐丸补足（整粒执行，避免逐点过量）；电解质水按常见 500mg/L 估算，实际以包装为准。`
     );
+  }
+
+  if (ruleOutput.carry_plan) {
+    const cp = ruleOutput.carry_plan;
+    if (language === "en") {
+      lines.push(
+        "",
+        "V. Carry list at start (v2.5: carry all at once; official-station refills / in-station food NOT counted as carried):",
+        `- Energy gels: ${cp.gels.count} (≈ ${cp.gels.per_g} g carbs each, ~${cp.gels.weight_g} g)`,
+        `- Drink mix: ${(cp.drink_mix && cp.drink_mix.count) || 0} pack(s) (≈ ${(cp.drink_mix && cp.drink_mix.per_g) || 80} g carbs each, ~${(cp.drink_mix && cp.drink_mix.weight_g) || 0} g dry weight)`,
+        `- Salt tabs: ${cp.salt_tabs.count} (${cp.salt_tabs.per_mg} mg sodium each, ~${cp.salt_tabs.weight_g} g)`,
+        `- In-station real food total: ~${cp.station_food_total_g != null ? cp.station_food_total_g : 0} g carbs (eaten at official stations)`,
+        `- Self-point carried fluid: ~${cp.self_fluid_ml} ml (electrolyte ${cp.self_electrolyte_ml != null ? cp.self_electrolyte_ml : cp.self_fluid_ml} ml + plain ${cp.self_plain_ml != null ? cp.self_plain_ml : 0} ml); refill at official stations`,
+        `- Caffeine: ${cp.caffeine_total_mg} mg total (${cp.caffeine_note})`,
+        `- Emergency reserve ${cp.reserve_kcal != null ? cp.reserve_kcal : 800} kcal: ${cp.reserve_note || "carried once at start, separate from planned intake"}`,
+        `- Dry goods total ~${cp.dry_weight_g != null ? cp.dry_weight_g : cp.total_weight_g} g (${cp.note})`
+      );
+    } else {
+      lines.push(
+        "",
+        "五、出门补给携带清单（v2.5：全程一次带齐；官方站内补液/站内真食不计入随身）",
+        `- 能量胶 ${cp.gels.count} 支（每支约 ${cp.gels.per_g}g 碳水，约 ${cp.gels.weight_g}g）`,
+        `- 碳水冲饮 ${(cp.drink_mix && cp.drink_mix.count) || 0} 包（每包约 ${(cp.drink_mix && cp.drink_mix.per_g) || 80}g 碳水，约 ${(cp.drink_mix && cp.drink_mix.weight_g) || 0}g 干重）`,
+        `- 盐丸 ${cp.salt_tabs.count} 粒（每粒 ${cp.salt_tabs.per_mg}mg 钠，约 ${cp.salt_tabs.weight_g}g）`,
+        `- 站内真食合计约 ${cp.station_food_total_g != null ? cp.station_food_total_g : 0} g 碳水（在官方补给点站内进食，不计入随身）`,
+        `- 自补点随身液体约 ${cp.self_fluid_ml} ml（电解质水 ${cp.self_electrolyte_ml != null ? cp.self_electrolyte_ml : cp.self_fluid_ml} ml + 白水 ${cp.self_plain_ml != null ? cp.self_plain_ml : 0} ml），官方站内补满`,
+        `- 咖啡因总量 ${cp.caffeine_total_mg} mg（${cp.caffeine_note}）`,
+        `- 应急储备 ${cp.reserve_kcal != null ? cp.reserve_kcal : 800} kcal：${cp.reserve_note || "独立于正常补给消耗，起点一次带齐"}`,
+        `- 干物资合计约 ${cp.dry_weight_g != null ? cp.dry_weight_g : cp.total_weight_g} g（${cp.note}）`
+      );
+    }
   }
 
   if (ruleOutput.warnings.length) {
@@ -2340,7 +2672,7 @@ function exportPlanCsv() {
   lines.push(`赛前 1-4h 碳水(g),${Math.round(weightKg * 1)}-${Math.round(weightKg * 4)}（低纤维低脂）`);
   lines.push(`赛后 0-4h 碳水(g/h),${Math.round(weightKg * 1.0)}-${Math.round(weightKg * 1.2)}`);
   lines.push(`赛后 0-4h 蛋白(g/h),${Math.round(weightKg * 0.3)}-${Math.round(weightKg * 0.4)}`);
-  lines.push("公里,时间(h),类型,碳水(g),能量胶(支),液体总量(ml),电解质水(ml),白水(ml),钠目标(mg),盐丸(粒),咖啡因(mg),蛋白(g),来源");
+  lines.push("公里,时间(h),类型,碳水(g),能量胶(支),液体碳水(g),冲饮(包),站内真食(g),液体总量(ml),电解质水(ml),白水(ml),钠目标(mg),盐丸(粒),咖啡因(mg),蛋白(g),来源");
   const kmKey = (v) => String(Number(Number(v).toFixed(2)));
   const caffByKm = new Map((out.caffeine_schedule || []).map((c) => [kmKey(c.km), c]));
   const proteinByKm = new Map((out.protein_schedule || []).map((p) => [kmKey(p.km), p]));
@@ -2352,7 +2684,7 @@ function exportPlanCsv() {
     const saltCount = p.salt_tab_count != null ? p.salt_tab_count : Math.ceil(Math.max(0, p.sodium_mg - Math.round(electrolyteMl * 0.5)) / 200);
     const gels = p.gels_count != null ? p.gels_count : (p.carbs_g > 0 ? Math.max(1, Math.round(p.carbs_g / 25)) : 0);
     lines.push(
-      `${p.km},${p.time_h},${type(p.source)},${p.carbs_g},${gels},${p.fluid_ml},${electrolyteMl},${plainMl},${p.sodium_mg},${saltCount},${caff ? caff.mg : ""},${protein ? protein.g : ""},${p.source}`
+      `${p.km},${p.time_h},${type(p.source)},${p.carbs_g},${gels},${p.liquid_carbs_g != null ? p.liquid_carbs_g : ""},${p.drink_mix_count != null ? p.drink_mix_count : ""},${p.station_food_g != null ? p.station_food_g : ""},${p.fluid_ml},${electrolyteMl},${plainMl},${p.sodium_mg},${saltCount},${caff ? caff.mg : ""},${protein ? protein.g : ""},${p.source}`
     );
   }
   const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
@@ -4036,7 +4368,7 @@ function renderLargeChartCanvas() {
   ctx.textAlign = "left";
   ctx.fillText(en ? "Explore the mountains with technology — make outdoor fun, efficient and safe" : "用科技探索山野，让户外更有趣、更高效、更安全", 64, H - 44);
   ctx.textAlign = "right";
-  ctx.fillText("Trail Lab Engine v2.3 · " + (en ? "local data · for reference only" : "数据本地解析 · 仅供参考"), W - 64, H - 44);
+  ctx.fillText("Trail Lab Engine v2.5 · " + (en ? "local data · for reference only" : "数据本地解析 · 仅供参考"), W - 64, H - 44);
   return true;
 }
 
@@ -4188,6 +4520,66 @@ function initPlanHelpTip() {
   });
   tip.addEventListener("mouseenter", () => clearTimeout(hideTimer));
   tip.addEventListener("mouseleave", hide);
+}
+
+const STEP4_FOOD_LIBRARY = [
+  { key: "electrolyte", label: "电解质水", carbs_g: 0, fluid_ml: 500 },
+  { key: "water", label: "白水", carbs_g: 0, fluid_ml: 500 },
+  { key: "banana", label: "香蕉", carbs_g: 25 },
+  { key: "bar", label: "能量棒", carbs_g: 25 },
+  { key: "bread", label: "面包", carbs_g: 15 },
+  { key: "baozi", label: "包子", carbs_g: 30 },
+  { key: "cookie", label: "饼干", carbs_g: 15 },
+  { key: "raisins", label: "葡萄干", carbs_g: 20 },
+  { key: "gummies", label: "能量软糖", carbs_g: 25 },
+  { key: "honey", label: "蜂蜜", carbs_g: 15 },
+  { key: "nuts", label: "坚果", carbs_g: 5 },
+  { key: "cola", label: "可乐（罐）", carbs_g: 35 },
+  { key: "soup", label: "热汤", carbs_g: 10 },
+  { key: "porridge", label: "粥", carbs_g: 50 },
+  { key: "orange", label: "橙子", carbs_g: 15 },
+];
+const STEP4_DEFAULT_KEYS = ["bread", "cola", "banana", "porridge", "electrolyte", "water"];
+
+function getStep4Cps() {
+  try {
+    const cps = JSON.parse((state.raceProfileForm && state.raceProfileForm.officialCp) || "[]");
+    return Array.isArray(cps) ? cps : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function step4SupplyFor(cp) {
+  if (Array.isArray(cp.supply)) return cp.supply;
+  return STEP4_DEFAULT_KEYS.map((k) => STEP4_FOOD_LIBRARY.find((i) => i.key === k)).filter(Boolean);
+}
+
+function renderStep4Supply() {
+  const el = document.getElementById("step4Supply");
+  if (!el) return;
+  const cps = getStep4Cps();
+  if (!cps.length) {
+    el.innerHTML = "";
+    return;
+  }
+// 只渲染有效的官方补给点（有正距离），避免编辑器里未填写的空行产生幻影补给站；
+    // 保留其在 cps 数组中的真实下标，供 data-cp 事件回写。
+    const entries = cps.map((cp, i) => ({ cp, i }))
+      .filter(({ cp }) => { const d = safeFloat(cp.distance); return d !== null && d > 0; });
+    el.innerHTML =
+      '<div class="panel-title">' + (state.language === "en" ? "In-station supply detail" : "官方补给点·站内补给明细") + "</div>" +
+      entries.map(({ cp, i }) => {
+        const supply = step4SupplyFor(cp);
+        const chips = supply.map((it, j) =>
+          `<span class="supply-chip on" data-act="rm" data-cp="${i}" data-idx="${j}">${escapeHtml(it.label)} −</span>`
+        ).join("");
+        const lib = STEP4_FOOD_LIBRARY.filter((it) => !supply.some((s) => s.key === it.key))
+          .map((it) => `<span class="supply-chip" data-act="add" data-cp="${i}" data-key="${it.key}">${escapeHtml(it.label)} ＋</span>`)
+          .join("");
+        const custom = `<span class="supply-chip custom-add" data-act="custom" data-cp="${i}">${state.language === "en" ? "＋ Custom" : "＋ 自定义"}</span>`;
+        return `<div class="supply-cp"><div class="supply-cp-name">${escapeHtml(cp.name || (state.language === "en" ? "Aid station" : "补给点"))} · ${cp.distance}km</div><div class="supply-tags">${chips}${lib}${custom}</div></div>`;
+      }).join("");
 }
 
 function renderRouteOverview(raceProfile) {
@@ -4888,6 +5280,7 @@ function applyLanguage() {
   }
   if (state.routeRaceProfile) {
     renderRouteOverview(state.routeRaceProfile);
+    renderStep4Supply();
   }
   // 执行提醒区与字段叹号的引擎提示按当前语言重渲染（语言切换后保持提示语言一致）
   if (state.lastRuleOutput && state.lastRaceProfile) {
@@ -5228,6 +5621,7 @@ ui.confirmStep3Btn.addEventListener("click", () => {
   ui.engineOutput.textContent = "";
   ui.aiOutput.textContent = "";
   renderRouteOverview(raceProfile);
+  renderStep4Supply();
   showOnlyStep(ui.step4Panel);
   setStatus(t("statusRouteReady"));
 });
@@ -5260,6 +5654,31 @@ ui.backStep4Btn.addEventListener("click", () => {
   showOnlyStep(ui.step3Panel);
 });
 
+// Step4「站内补给明细」选择会写入 state.raceProfileForm.officialCp[].supply；
+// 但 Step3 编辑器没有 supply 列，DOM 重建后该字段会丢失。引擎计算前把 state 里的
+// supply 按站点距离叠加回编辑器表单，确保第四步的增删能真正影响第五步站内真食分配。
+function mergeStep4Supply(input) {
+  try {
+    const domCps = JSON.parse(String(input.officialCp || "[]"));
+    const stateCps = JSON.parse(String((state.raceProfileForm && state.raceProfileForm.officialCp) || "[]"));
+    if (!Array.isArray(domCps) || !Array.isArray(stateCps)) return input;
+    const byKm = new Map();
+    stateCps.forEach((c) => {
+      if (c && c.distance != null && Array.isArray(c.supply)) {
+        byKm.set(String(Number(Number(c.distance).toFixed(2))), c.supply);
+      }
+    });
+    if (!byKm.size) return input;
+    const merged = domCps.map((c) => {
+      const s = byKm.get(String(Number(Number(c.distance).toFixed(2))));
+      return s ? { ...c, supply: s } : c;
+    });
+    return { ...input, officialCp: JSON.stringify(merged) };
+  } catch (e) {
+    return input;
+  }
+}
+
 // 引擎计算核心（不调 AI）：计算规则契约/输出/提示并载入补给编辑器；返回各对象供后续复用
 function runEngineCore() {
   if (!state.decodedActivity && !state.manualUserProfile) {
@@ -5273,7 +5692,7 @@ function runEngineCore() {
     ...(state.userProfileForm || {}),
     ...buildProfileFromActivityForm(),
   };
-  const raceProfileInput = buildRaceProfileFromEditor();
+  const raceProfileInput = mergeStep4Supply(buildRaceProfileFromEditor());
   const userProfile = new UserProfileBuilder().build(state.decodedActivity, userProfileInput);
   const raceProfile = new RaceProfileBuilder().build(raceProfileInput);
   state.raceProfileForm = raceProfileInput;
@@ -5305,6 +5724,96 @@ ui.confirmStep4Btn.addEventListener("click", () => {
     setStatus(`${t("statusFailed")}: ${message}`, "error");
   }
 });
+
+const step4SupplyEl = document.getElementById("step4Supply");
+if (step4SupplyEl) {
+  step4SupplyEl.addEventListener("click", (e) => {
+    const chip = e.target.closest("[data-act]");
+    if (!chip) return;
+    const act = chip.getAttribute("data-act");
+    const cpi = Number(chip.getAttribute("data-cp"));
+    const cps = getStep4Cps();
+    const cp = cps[cpi];
+    if (!cp) return;
+    const supply = step4SupplyFor(cp);
+    if (act === "rm") {
+      const idx = Number(chip.getAttribute("data-idx"));
+      supply.splice(idx, 1);
+      cp.supply = supply;
+    } else if (act === "add") {
+      const it = STEP4_FOOD_LIBRARY.find((x) => x.key === chip.getAttribute("data-key"));
+      if (it && !supply.some((s) => s.key === it.key)) {
+        supply.push({ key: it.key, label: it.label, carbs_g: it.carbs_g });
+        cp.supply = supply;
+      }
+    } else if (act === "custom") {
+      openStep4CustomForm(cpi);
+      return;
+    }
+    state.raceProfileForm = state.raceProfileForm || {};
+    state.raceProfileForm.officialCp = JSON.stringify(cps);
+    renderStep4Supply();
+  });
+}
+
+// 站内补给明细「自定义添加」（对齐小程序 overview 的 addCustomItem）：
+// 新建自定义站内补给品并写入该官方补给点 cp.supply，供引擎第 5 步站内真食分配使用。
+function openStep4CustomForm(cpi) {
+  const en = state.language === "en";
+  const overlay = document.createElement("div");
+  overlay.className = "pe-overlay";
+  overlay.id = "step4CustomOverlay";
+  const numField = (label, id) =>
+    `<label class="pe-field"><span>${escapeHtml(label)}</span><input id="${id}" type="number" min="0" step="1"/></label>`;
+  overlay.innerHTML = `
+    <div class="pe-modal">
+      <div class="pe-modal-head"><h3>${en ? "Add custom in-station item" : "自定义站内补给品"}</h3><button type="button" class="pe-modal-close" data-close="1">×</button></div>
+      <div class="pe-modal-body">
+        <label class="pe-field"><span>${en ? "Name" : "名称"}</span><input id="s4cName" placeholder="${en ? "e.g. 榨菜 / 面包 / 能量饮料" : "如：榨菜 / 面包 / 能量饮料"}"/></label>
+        <div class="pe-custom-grid">
+          ${numField(en ? "Carbs (g)" : "碳水 (g)", "s4cCarbs")}
+          ${numField(en ? "Fluid (ml)" : "水 (ml)", "s4cFluid")}
+          ${numField(en ? "Sodium (mg)" : "钠 (mg)", "s4cSodium")}
+          ${numField(en ? "Protein (g)" : "蛋白 (g)", "s4cProtein")}
+        </div>
+        <p class="note">${en ? "Nutrition values are engineering estimates. In-station food with carbs is picked as real food eaten at the station (Step 5)." : "营养参考值为工程估算。含碳水的站内补给会作为该站真食（站内进食）参与第 5 步分配。"}</p>
+        <button type="button" class="pe-libmini" data-save="1">${en ? "Save and add" : "保存并添加"}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener("click", (e) => {
+    if (e.target.closest("[data-close]") || e.target === overlay) {
+      overlay.remove();
+      return;
+    }
+    if (!e.target.closest("[data-save]")) return;
+    const nameEl = overlay.querySelector("#s4cName");
+    const name = nameEl ? nameEl.value.trim() : "";
+    if (!name) {
+      if (global.__peToast) global.__peToast(en ? "Please enter a name" : "请填写名称");
+      return;
+    }
+    const val = (id) => safeFloat((overlay.querySelector(id) || {}).value) || 0;
+    const item = {
+      key: "custom_" + Date.now(),
+      label: name,
+      unit: "份",
+      kind: "other",
+      carbs_g: val("#s4cCarbs"),
+      fluid_ml: val("#s4cFluid"),
+      sodium_mg: val("#s4cSodium"),
+      protein_g: val("#s4cProtein"),
+    };
+    overlay.remove();
+    const cps = getStep4Cps();
+    const cp = cps[cpi];
+    if (!cp) return;
+    cp.supply = [...(step4SupplyFor(cp) || []), item];
+    state.raceProfileForm = state.raceProfileForm || {};
+    state.raceProfileForm.officialCp = JSON.stringify(cps);
+    renderStep4Supply();
+  });
+}
 
 ui.backStep5Btn.addEventListener("click", () => {
   showOnlyStep(ui.step4Panel);

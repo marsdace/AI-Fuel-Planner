@@ -1,4 +1,4 @@
-# AI Fuel Planner
+# python_legacy · AI Fuel Planner（历史 Python 测试版 · 已弃用；现主程序为仓库根 Web 版 Trail Run Fuel Planner）
 
 > English version available in README_EN.md
 

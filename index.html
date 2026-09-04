@@ -11,7 +11,7 @@
     <meta name="author" content="Trail Lab (山野实验室) · marsdace" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="theme-color" content="#1F3D2E" />
-    <link rel="canonical" href="https://marsdace.github.io/AI-Fuel-Planner/" />
+    <link rel="canonical" href="https://marsdace.github.io/trail-run-fuel-planner/" />
     <link rel="icon" type="image/png" href="./logo.png" />
 
     <!-- Open Graph (GitHub Pages / 社交分享) -->
@@ -19,8 +19,8 @@
     <meta property="og:site_name" content="Trail Lab · 山野实验室" />
     <meta property="og:title" content="Fuel Planner — 越野跑补给规划工具" />
     <meta property="og:description" content="上传 Garmin .FIT 文件，自动计算越野跑补给节奏、碳水/液体/钠摄入与分段补给建议。浏览器本地解析，数据不上传。" />
-    <meta property="og:url" content="https://marsdace.github.io/AI-Fuel-Planner/" />
-    <meta property="og:image" content="https://marsdace.github.io/AI-Fuel-Planner/logo.png" />
+    <meta property="og:url" content="https://marsdace.github.io/trail-run-fuel-planner/" />
+    <meta property="og:image" content="https://marsdace.github.io/trail-run-fuel-planner/logo.png" />
     <meta property="og:image:alt" content="Trail Lab Fuel Planner logo" />
     <meta property="og:locale" content="zh_CN" />
 
@@ -28,7 +28,7 @@
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="Fuel Planner — Trail Lab 越野跑补给规划工具" />
     <meta name="twitter:description" content="用 Garmin FIT 数据规划越野跑补给：碳水、液体、钠、分段时间轴。" />
-    <meta name="twitter:image" content="https://marsdace.github.io/AI-Fuel-Planner/logo.png" />
+    <meta name="twitter:image" content="https://marsdace.github.io/trail-run-fuel-planner/logo.png" />
 
     <!-- Structured data (JSON-LD) -->
     <script type="application/ld+json">
@@ -36,13 +36,13 @@
       "@context": "https://schema.org",
       "@type": "WebApplication",
       "name": "Fuel Planner",
-      "url": "https://marsdace.github.io/AI-Fuel-Planner/",
+      "url": "https://marsdace.github.io/trail-run-fuel-planner/",
       "applicationCategory": "SportsApplication",
       "operatingSystem": "Any (browser)",
       "author": {
         "@type": "Organization",
         "name": "Trail Lab (山野实验室)",
-        "url": "https://github.com/marsdace/AI-Fuel-Planner"
+        "url": "https://github.com/marsdace/trail-run-fuel-planner"
       },
       "description": "Rule-based trail running fueling planner that parses Garmin FIT files locally and computes carb/fluid/sodium intake and segment fueling timelines."
     }
@@ -54,7 +54,7 @@
       href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260901e" />
+    <link rel="stylesheet" href="./styles.css?v=20260905c" />
   </head>
   <body>
     <!-- 梦幻山野夜空背景层 -->
@@ -210,6 +210,7 @@
           <span id="legendClimbSeg"><i class="dot climb"></i>爬坡路段</span>
           <span id="legendDescentSeg"><i class="dot descent"></i>下降路段</span>
         </div>
+        <div id="step4Supply" class="supply-panel"></div>
         <p class="step-footnote" id="step4ZoomTip">点击概况图可查看横版大图（缩放 / 拖拽 / 下载保存）</p>
         <div class="export-mask" id="largeChartMask" hidden></div>
         <div class="large-chart-sheet" id="largeChartSheet" hidden>
@@ -362,12 +363,13 @@
 
     </main>
 
-    <script src="./bg.js?v=20260806u"></script>
-    <script src="./gpx.js?v=20260901"></script>
-    <script src="./xlsx.js?v=20260828"></script>
-    <script src="./profile_score.js?v=20260828"></script>
-    <script src="./plan_editor.js?v=20260901f"></script>
-    <script src="./poster.js?v=20260901f"></script>
-    <script src="./app.js?v=20260901e"></script>
+    <script src="./bg.js?v=20260905c"></script>
+    <script src="./gpx.js?v=20260905c"></script>
+    <script src="./xlsx.js?v=20260905c"></script>
+    <script src="./profile_score.js?v=20260905c"></script>
+    <script src="./icons_data.js?v=20260905c"></script>
+    <script src="./plan_editor.js?v=20260905c"></script>
+    <script src="./poster.js?v=20260905c"></script>
+    <script src="./app.js?v=20260905c"></script>
   </body>
 </html>

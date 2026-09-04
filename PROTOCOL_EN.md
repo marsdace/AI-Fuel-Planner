@@ -1,4 +1,4 @@
-# AI Fuel Planner · Usage Agreement & License Notices
+# Trail Run Fuel Planner · Usage Agreement & License Notices
 
 > Version: v1.0 · Updated: 2026-08-10
 > This document covers both (a) this project's own license terms and (b) the licenses of third-party components used by this project.
@@ -7,7 +7,7 @@
 
 ## Part 1: Project License (MIT License)
 
-This project (AI Fuel Planner, the public code portion of Trail Lab Experiment #001) is released under the **MIT License**.
+This project (Trail Run Fuel Planner, the public code portion of Trail Lab Experiment #001) is released under the **MIT License**.
 
 - **Copyright**: Copyright (c) 2026 Trail Lab (山野实验室) · marsdace
 - **License text**: see the `LICENSE` file in the repository root.

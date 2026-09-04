@@ -1,17 +1,17 @@
 <p align="center">
-  <img src="banner.png" alt="Trail Lab · AI Fuel Planner — AI-powered trail running fueling planner" width="100%" />
+  <img src="banner.png" alt="Trail Lab · Trail Run Fuel Planner — trail running fueling planner" width="100%" />
 </p>
 
-<h1 align="center">🏔️ Trail Lab · AI Fuel Planner</h1>
+<h1 align="center">🏔️ Trail Lab · Trail Run Fuel Planner</h1>
 
 <p align="center">
-  <strong>AI-powered trail running fueling planner</strong> ·
-  <em>.FIT activity data (Garmin / Coros etc.) + rule engine + AI fueling timeline</em>
+  <strong>Trail running fueling planner</strong> ·
+  <em>.FIT activity data (Garmin / Coros etc.) + rule engine · optional AI explainer</em>
 </p>
 
 <p align="center">
-  <a href="https://marsdace.github.io/AI-Fuel-Planner/"><img src="https://img.shields.io/badge/🚀-Live%20Demo-FF7A00?style=for-the-badge" alt="Live Demo" /></a>
-  <a href="https://github.com/marsdace/AI-Fuel-Planner"><img src="https://img.shields.io/github/stars/marsdace/AI-Fuel-Planner?style=for-the-badge&color=FF7A00" alt="GitHub stars" /></a>
+  <a href="https://marsdace.github.io/trail-run-fuel-planner/"><img src="https://img.shields.io/badge/🚀-Live%20Demo-FF7A00?style=for-the-badge" alt="Live Demo" /></a>
+  <a href="https://github.com/marsdace/trail-run-fuel-planner"><img src="https://img.shields.io/github/stars/marsdace/trail-run-fuel-planner?style=for-the-badge&color=FF7A00" alt="GitHub stars" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-1F3D2E?style=for-the-badge" alt="License MIT" /></a>
   <a href="README.md"><img src="https://img.shields.io/badge/🌐-中文-2f6b49?style=for-the-badge" alt="中文" /></a>
 </p>
@@ -27,29 +27,30 @@
 
 > No install, no server needed — open it in your browser, upload your own watch's `.fit` file (Garmin / Coros and other major brands). Parsed locally, data never uploaded.
 
-### 👉 https://marsdace.github.io/AI-Fuel-Planner/
+### 👉 https://marsdace.github.io/trail-run-fuel-planner/
 
-**5-step fueling workflow**: upload historical FIT → calibrate ability profile → set target route → confirm elevation/aid stations → rule engine + AI fueling timeline.
+**5-step fueling workflow**: upload historical FIT → calibrate ability profile → set target route → confirm elevation/aid stations → rule engine fueling timeline (optional AI explainer).
 
 ---
 
 ## ✨ What is this?
 
-**AI Fuel Planner** solves a concrete problem for trail runners and hikers: *how to turn historical activity data into a fueling decision for the next outing.*
+**Trail Run Fuel Planner** is a trail-running fueling planner that answers one concrete question for runners and hikers: *how to turn historical activity data into a fueling decision for the next outing.*
 
-Upload a historical activity file (`.fit`) from your watch (Garmin / Coros etc.), set the target route (distance, ascent, aid stations, weather), and the program computes **carbohydrate / fluid / sodium intake and a fueling timeline** using a sports-nutrition rule engine, then an **AI generates an actionable natural-language explanation**.
+Upload a historical activity file (`.fit`) from your watch (Garmin / Coros etc.), set the target route (distance, ascent, aid stations, weather), and a **sports-nutrition rule engine** computes carbohydrate / fluid / sodium intake, a per-point fueling timeline and a take-along checklist — all locally. AI is not the core feature: it is an optional experiment that only translates the engine's output into natural-language advice.
 
-**Core design principle — data first, AI second**:
+**Core design principle — the rule engine computes, AI only explains (optional)**:
 
 ```
 Upload Garmin .FIT file
       ↓  (parsed locally in the browser, no upload)
-Rule engine computes fueling (carbs / fluid / sodium / points)
-      ↓  (deterministic — the program's job)
-AI generates the natural-language explanation (optional — explain only)
+Rule engine computes fueling (carbs / fluid / sodium / points)   ← core feature
+      ↓  (deterministic: same input → same output)
+Fueling timeline / take-along checklist / export
+(optional) AI explainer: restates results, never computes
 ```
 
-> The program does all the math; AI only translates the results into actionable advice — AI is forbidden from inventing numbers.
+> The program does all the math; the core planning works fully even if you never use AI.
 
 ---
 
@@ -64,20 +65,19 @@ AI generates the natural-language explanation (optional — explain only)
 
 ## ⚡ Key features
 
-- **In-browser FIT parsing**: decodes via Garmin's official `@garmin/fitsdk` (`.fit` from Garmin / Coros and other major watches); runs from `file://` or any static server — **raw activity data never leaves your machine**
-- **5-step guided flow**: activity history → user profile → route params → elevation/fuel overview → rule engine + AI
-- **Climb/descent segment modeling**: segmented by gradient with a configurable threshold (default 50 m) to tune fueling density
-- **Fuel-point planning**: official CP input + automatic equivalence splitting + climb triggers + time fallback
-- **Per-point plain-water / electrolyte split**: each point gives one actionable instruction — "electrolyte drink X ml + plain water Y ml + salt tab N"; at least 1/3 plain water per point, because concentrated electrolyte drinks can worsen thirst
-- **Whole-item carry-forward allocation**: gels and salt tabs are indivisible and are allocated across the whole plan by cumulative deficit (total = ⌈target / item size⌉), so per-point rounding cannot stack into hourly overshoot
-- **CSV plan export**: one-click export with gels / electrolyte / plain water / salt tabs per point, plus caffeine and protein
-- **FIT validation**: step 1 validates the sport type and only accepts running data, so non-running records cannot mislead the ability profile
-- **GPX route support**: step 3 can read a `.gpx` route file and auto-extract climb/descent segments and CP waypoints
-- **AI final answer only**: DeepSeek thinking mode is explicitly disabled; reasoning chains are never shown or mixed into the output
-- **Rule-contract JSON**: every number comes from the rule engine as a fixed contract; AI only explains, never fabricates
-- **Bilingual**: Chinese / English one-click switch
-- **Zero-dependency deploy**: native ES2020+, no framework, no build step
-- **Swappable AI**: DeepSeek (default, thinking mode off) / OpenAI / Gemini / mock
+- **5-step guided flow**: activity history (FIT/GPX upload or manual profile) → user profile (6-dimension score) → route params → elevation/aid-station overview (with in-station supply menu) → rule-engine fueling timeline (editable, exportable)
+- **In-browser parsing**: Garmin's official `@garmin/fitsdk` is loaded on demand and `.fit` is decoded locally; steps 1 & 3 also accept `.gpx` — **raw activity data never leaves your machine**
+- **6-dimension ability score**: climb / descent / aerobic / endurance / GI sensitivity / carb tolerance, with an SVG radar, data cards and explanations (heart-rate drift, ITRA, measured field tests)
+- **Route modeling**: official aid stations + climb/descent segments (configurable threshold, default 50 m) + course-difficulty factor (fast/standard/technical/alpine) + auto-extract CPs and segments from a GPX/FIT route file
+- **Step-4 in-station supply menu**: per aid station you can add/remove in-station real food & drinks, including **custom in-station items** (name + carb content etc.) that feed the engine's station-food allocation
+- **Fueling-timeline editor**: add/delete/insert rows; editing distance auto-re-sorts and recomputes segment distance/climb; each point gives one instruction — "electrolyte X ml + plain water Y ml + salt tab N", with at least 1/3 plain water per point
+- **Whole-item carry-forward allocation**: indivisible gels / salt tabs are allocated across the whole plan by cumulative deficit so per-point rounding cannot stack into hourly overshoot
+- **Fine-tune in-station food / extras**: every item on the timeline (including custom in-station food) can be adjusted with −/＋ and totals recalculate live
+- **Carry check + one-click fix**: start carry and each official station's "takeout" must cover the self-point consumption in its segment; shortages are topped up in one click
+- **Departure checklist**: supplies + gear groups, asymmetric stepping, and suggested-limit warnings (no hard truncation)
+- **Supply/gear icons**: synced with the mini-program `09_wxxcx` (37 icons), consistent across UI and the exported poster
+- **Multiple exports**: copy plan text / Excel (`xlsx`, with embedded route chart + checklist) / poster PNG (landscape) / FIT / GPX route files
+- **Bilingual · local-first · AI optional**: Chinese/English one-click switch; AI (DeepSeek/OpenAI/Gemini/mock) only explains the engine's output, never computes
 
 ---
 
@@ -96,28 +96,31 @@ python3 -m http.server 8080
 
 ### A full planning flow
 
-1. **Step 1** — Upload your historical activity file (Garmin / Coros etc. `.fit`), or choose "manual profile entry"
-2. **Step 2** — Calibrate your ability profile (HR zones, weight, resting HR, ITRA/UTMB points)
-3. **Step 3** — Set the target route: distance, ascent, weather, official aid stations, climb/descent segments (with threshold); or read a `.gpx` route file directly
-4. **Step 4** — Confirm the route elevation overview (elevation profile + aid-station layout + segment bands)
-5. **Step 5** — Pick an AI provider (start with `mock` to validate), click "Run engine and generate explanation"
+1. **Step 1** — Upload your historical activity file (Garmin / Coros etc. `.fit` or `.gpx`), or choose "manual profile entry"
+2. **Step 2** — Calibrate your ability profile: weight / max HR / VO2max / ITRA etc. The "ability score" radar below updates live (with heart-rate-drift endurance analysis)
+3. **Step 3** — Set the target route: distance, ascent/descent, weather, course difficulty, official aid stations, climb/descent segments (with threshold); or "read target route FIT/GPX" to auto-fill CPs and segments
+4. **Step 4** — Confirm the route elevation overview (elevation profile + aid-station layout + climb/descent bands; click for a wide view). In "in-station supply detail", add/remove real food & drinks per aid station, or add a **custom in-station item**
+5. **Step 5** — The rule engine generates the plan directly: summary cards → departure checklist → fueling-timeline editor (add/insert/remove rows, −/＋ fine-tune in-station food & extras, one-click carry fix) → execution reminders. Hit "Export" for text / Excel / poster image / FIT / GPX. Optional: open the bottom AI panel (start with `mock`) to generate an AI explanation
 
 ---
 
 ## 📁 Project structure
 
 ```
-AI-Fuel-Planner/                 # Repo root = the 03_Code folder
-├── index.html                   # ★ Main app (pure JS static web app)
-├── app.js                       #   Logic: FIT parsing / profile / rule engine / chart / AI
-├── styles.css                   #   Page styles (forest-green × ember theme)
+trail-run-fuel-planner/         # Repo root = the 03_Code folder
+├── index.html                   # ★ Main app (pure JS static web app, loads modules below)
+├── app.js                       #   Logic: FIT/GPX parsing / profile / rule engine / chart / Step-4 station supply
+├── plan_editor.js               #   Step-5 fueling timeline editor (rows / carry check / supply library / custom)
+├── poster.js                    #   Landscape poster export (overrides the legacy portrait export)
+├── profile_score.js             #   6-dimension ability score + SVG radar (synced with mini-program)
+├── gpx.js                       #   GPX route/activity parser (steps 1 & 3 read .gpx)
+├── xlsx.js                      #   Minimal .xlsx generator (Excel export with embedded route chart, zero-dep)
+├── icons_data.js + icons/       #   Supply/gear icon dataURLs & PNGs (synced with 09_wxxcx)
 ├── bg.js                        #   Forest-night animated background
-├── gpx.js                       #   GPX route parser (step 3 reads .gpx route files)
-├── logo.png                     #   Trail Lab brand avatar
-├── banner.png                   #   README banner
-├── LICENSE                      #   MIT license
-├── PROTOCOL_ZH.md / _EN.md      #   Usage agreement & license notices (EN/中文)
-├── THIRD_PARTY_NOTICES.md       #   Third-party licenses
+├── styles.css                   #   Page styles (forest-green × ember theme)
+├── logo.png / banner.png        #   Brand avatar / README banner
+├── qr_miniprogram.jpg           #   Mini-program QR on the poster
+├── LICENSE / PROTOCOL_ZH.md / PROTOCOL_EN.md / THIRD_PARTY_NOTICES.md
 ├── README.md / README_EN.md     #   Documentation (this file)
 ├── docs/                        # 📚 Technical docs (en/ English · zh/ 中文, 4-part series)
 └── python_legacy/               # ⚠️ Deprecated Python prototype (archived)
@@ -160,7 +163,27 @@ Want to study how this program works, or reuse it? Start with these four parts (
 
 ---
 
-## 📦 Latest updates (2026-08-21)
+## 📦 Latest updates (2026-09 · v2.1.0 / Engine v2.5)
+
+> The web app is now fully synced with the WeChat mini-program `09_wxxcx` v2.1.0 (Engine v2.5). The repo was renamed to `trail-run-fuel-planner`; the GitHub Pages URL is unchanged.
+
+### 🧮 Engine v2.5 (fueling strategy)
+
+- **Autonomous legs + real-food-first + half-pack drink mix + single ledger**: in-station real food first covers each leg's carb gap; you only carry the remaining gap. Drink mix is rounded to half packs with the shortfall recorded explicitly
+- **Effort-distance arrival times**: point arrival is based on "distance + cumulative ascent/100 m", with pace adjusting to difficulty
+- **Whole-item carry-forward**: salt tabs / gels are allocated across the whole plan by cumulative deficit so per-point rounding can't stack; each point keeps at least 1/3 plain water
+- **Total carry-weight check**: warns when dry goods + two bottles + gear exceed ≈ 8 kg
+
+### 🛠 UI features synced with the mini-program
+
+- **Step 2 · 6-dimension ability score**: radar + data cards + explanations (heart-rate-drift endurance analysis)
+- **Step 3 · read GPX/FIT**: auto-generates official aid stations and climb/descent segments; 4 course-difficulty tiers
+- **Step 4 · in-station supply detail**: add/remove real food & drinks per aid station, including **custom in-station items**; choices genuinely affect the Step-5 station-food allocation
+- **Step 5 · fueling-timeline editor**: official-station takeout, −/＋ fine-tuning of extras & in-station food (custom items shown individually), carry check + one-click fix, supply/gear library & custom items
+- **Supply/gear icons**: synced with the mini-program (37 icons), consistent across UI and the exported poster
+- **Exports**: copy text / Excel (embedded route chart + checklist) / landscape poster PNG / FIT / GPX route
+
+## 📦 Historical changelog (archive)
 
 ### 🥤 Fueling points: plain-water / electrolyte split + whole-item carry-forward
 
@@ -183,7 +206,7 @@ Want to study how this program works, or reuse it? Start with these four parts (
 
 ---
 
-## 📦 All changes since Commit `7c4403b`
+### 📦 Commit-level history (since `7c4403b`, archived)
 
 > Below are all **22 commits** between `7c4403b` and HEAD, grouped by topic.
 
@@ -249,9 +272,9 @@ This project is released under the **MIT License**. The full usage agreement, th
 
 ## 🤝 Contributing
 
-- Issues and PRs are welcome: [Issues](https://github.com/marsdace/AI-Fuel-Planner/issues) · [Pull requests](https://github.com/marsdace/AI-Fuel-Planner/pulls)
-- Contributors agree by default to release their contributions under the MIT License
-- Share your fueling data and heart-rate-drift samples in [GitHub Discussions](https://github.com/marsdace/AI-Fuel-Planner/discussions)
+- Issues and PRs are welcome: [Issues](https://github.com/marsdace/trail-run-fuel-planner/issues) · [Pull requests](https://github.com/marsdace/trail-run-fuel-planner/pulls)
+- Contributors agree to release their contributions under the MIT license
+- Share your fueling data and heart-rate-drift samples in [GitHub Discussions](https://github.com/marsdace/trail-run-fuel-planner/discussions)
 
 ---
 

@@ -1,11 +1,11 @@
 {
   "app": "trail-lab-web",
   "repo": "03_Code（GitHub Pages）",
-  "version": "2.0.1",
-  "engine_version": "2.3",
-  "status": "与小程序同步后待发布（含路线导出、海报、第五步布局、清单超量提示等；引擎独立版本化至 v2.3）",
+  "version": "2.1.0",
+  "engine_version": "2.5",
+  "status": "已发布 2026-09-04（仓库 marsdace/trail-run-fuel-planner，与微信小程序 v2.1.0/引擎 v2.5 同步）：leg 自治段 + 真食优先 + 半包冲饮 + 单一账本 + 难度里程到达时间 + 站内补给菜单/自定义真食可编辑 + 带出仅计缺口 + 8kg 上限校验 + 补给图标全量同步 + 时间轴编辑器/多格式导出",
   "previous_released_version": "2.0.0",
   "previous_released_at": "2026-08-21",
-  "backup_dir": "releases/web/v2.0.1-20260902",
+  "backup_dir": "releases/web/v2.1.0-20260904",
   "changelog": "CHANGELOG.md"
 }

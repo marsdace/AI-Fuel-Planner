@@ -1,17 +1,17 @@
 <p align="center">
-  <img src="banner.png" alt="Trail Lab · AI Fuel Planner — 越野跑补给 AI 规划工具" width="100%" />
+  <img src="banner.png" alt="Trail Lab · Trail Run Fuel Planner — 越野跑补给规划工具" width="100%" />
 </p>
 
-<h1 align="center">🏔️ Trail Lab · AI Fuel Planner</h1>
+<h1 align="center">🏔️ Trail Lab · Trail Run Fuel Planner</h1>
 
 <p align="center">
-  <strong>越野跑补给 AI 规划工具</strong> ·
-  <em>.FIT 运动数据（Garmin / Coros 等）+ 规则引擎 + AI 补给时间轴</em>
+  <strong>越野跑补给规划工具</strong> ·
+  <em>.FIT 运动数据（Garmin / Coros 等）+ 规则引擎补给时间轴 · AI 解释可选</em>
 </p>
 
 <p align="center">
-  <a href="https://marsdace.github.io/AI-Fuel-Planner/"><img src="https://img.shields.io/badge/🚀-Live%20Demo%20%2F%20在线试用-FF7A00?style=for-the-badge" alt="Live Demo" /></a>
-  <a href="https://github.com/marsdace/AI-Fuel-Planner"><img src="https://img.shields.io/github/stars/marsdace/AI-Fuel-Planner?style=for-the-badge&color=FF7A00" alt="GitHub stars" /></a>
+  <a href="https://marsdace.github.io/trail-run-fuel-planner/"><img src="https://img.shields.io/badge/🚀-Live%20Demo%20%2F%20在线试用-FF7A00?style=for-the-badge" alt="Live Demo" /></a>
+  <a href="https://github.com/marsdace/trail-run-fuel-planner"><img src="https://img.shields.io/github/stars/marsdace/trail-run-fuel-planner?style=for-the-badge&color=FF7A00" alt="GitHub stars" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-1F3D2E?style=for-the-badge" alt="License MIT" /></a>
   <a href="README_EN.md"><img src="https://img.shields.io/badge/🌐-English-2f6b49?style=for-the-badge" alt="English" /></a>
 </p>
@@ -27,29 +27,30 @@
 
 > 无需安装、无需服务器，浏览器打开即可使用：上传你自己的运动手表 `.fit` 文件（Garmin / Coros 等主流品牌均支持），本地解析，数据不上传。
 
-### 👉 https://marsdace.github.io/AI-Fuel-Planner/
+### 👉 https://marsdace.github.io/trail-run-fuel-planner/
 
-**功能一览（5 步完成补给规划）**：上传历史 FIT → 校准能力画像 → 设定目标路线 → 确认海拔/补给点 → 规则引擎 + AI 补给时间轴。
+**功能一览（5 步完成补给规划）**：上传历史 FIT → 校准能力画像 → 设定目标路线 → 确认海拔/补给点 → 规则引擎补给时间轴（AI 解释可选）。
 
 ---
 
 ## ✨ 这是什么？
 
-**AI Fuel Planner** 解决越野跑/徒步爱好者的一个具体问题：*如何把历史运动数据转换成下一次活动的补给决策？*
+**Trail Run Fuel Planner（越野跑补给规划工具）** 解决越野跑 / 徒步爱好者的一个具体问题：*如何把历史运动数据转换成下一次活动的补给决策？*
 
-上传运动手表（Garmin / Coros 等）的历史运动文件（`.fit`），设定目标路线（距离、爬升、补给点、天气），程序用**运动营养规则引擎**计算碳水 / 液体 / 钠的摄入量与补给时间轴，再由 **AI 生成可执行的自然语言解释**。
+上传运动手表（Garmin / Coros 等）的历史运动文件（`.fit`），设定目标路线（距离、爬升、补给点、天气），程序用**运动营养规则引擎**本地计算碳水 / 液体 / 钠的摄入量、逐段补给时间轴与出门清单。AI 不是主功能：它是一个可选的实验特性，仅把引擎结果翻译成自然语言建议。
 
-**核心设计原则 —— 数据优先于 AI**：
+**核心设计原则 —— 规则引擎算数，AI 只做可选的解释**：
 
 ```
 上传 Garmin .FIT 文件
       ↓  （浏览器本地解析，数据不上传）
-规则引擎计算补给量（碳水 / 液体 / 钠 / 补给点）
-      ↓  （确定性计算，程序负责）
-AI 生成自然语言解释（可选，只解释不算）
+规则引擎计算补给量（碳水 / 液体 / 钠 / 补给点）   ← 主线功能
+      ↓  （确定性计算：同一输入 → 同一输出）
+补给时间轴 / 出门携带清单 / 导出
+（可选）AI 解释：把结果翻译成建议，只解释、不算数
 ```
 
-> 程序负责所有数学计算，AI 只负责把结果翻译成可执行的建议 —— 禁止 AI 编造数值。
+> 程序负责所有数学计算；即使完全不使用 AI，核心规划功能也完整可用。
 
 ---
 
@@ -64,20 +65,19 @@ AI 生成自然语言解释（可选，只解释不算）
 
 ## ⚡ 核心特性
 
-- **浏览器本地解析 FIT**：通过 Garmin 官方 `@garmin/fitsdk` 解码（Garmin / Coros 等主流手表导出的 `.fit` 均可解析），`file://` 双击或任意静态服务器即可运行，**原始运动数据不上传**
-- **五步引导流程**：历史运动 → 用户画像 → 路线参数 → 海拔/补给概况 → 规则引擎 + AI 解释
-- **爬升/下降路段建模**：按爬升率分段（阈值可配置，默认 50m），匹配不同补给密度
-- **补给点规划**：官方 CP 输入 + 自动等效拆分 + 爬升触发点 + 时间兜底
-- **每点白水/电解质水拆分执行**：每个补给点给出「电解质水 X ml + 白水 Y ml + 盐丸 N 粒」的单一指令；每点至少保留 1/3 白水，避免电解质水过量加重口渴
-- **整件累计分配**：能量胶、盐丸不可分切，按全程累计缺口分配到各补给点（全程件数 = ⌈总目标 / 单件量⌉），避免逐点向上取整造成小时级过量
-- **CSV 方案导出**：一键导出补给方案表格（每点含能量胶 / 电解质水 / 白水 / 盐丸整件数、咖啡因、蛋白）
-- **FIT 文件校验**：第一步校验运动类型，仅接受跑步类数据，避免非跑步记录误导能力画像
-- **GPX 路线文件支持**：步骤 3 可直接读取 `.gpx` 路线文件，自动生成爬升/下降路段
-- **AI 只输出最终回答**：调用 DeepSeek 时显式关闭思考模式，思考链不展示、不混入输出
-- **规则契约 JSON**：所有数值由规则引擎输出固定契约，AI 只解释、不编造
-- **双语支持**：中文 / English 一键切换
-- **零依赖部署**：原生 ES2020+，无框架、无构建步骤
-- **AI 可切换**：DeepSeek（默认，已关闭思考模式）/ OpenAI / Gemini / mock
+- **五步引导流程**：历史运动（FIT/GPX 上传或手动画像）→ 用户画像（六维评分）→ 路线参数 → 海拔/补给概况（含站内补给菜单）→ 规则引擎补给时间轴（可编辑、可导出）
+- **浏览器本地解析**：Garmin 官方 `@garmin/fitsdk` 动态加载、浏览器本地解码 `.fit`；步骤 1/3 均支持 `.gpx`；**原始运动数据不上传**
+- **六维能力画像评分**：爬升 / 下坡 / 有氧 / 耐力 / 肠胃敏感度 / 碳水耐受，SVG 雷达图 + 解读（基于心率漂移、ITRA、实测回填）
+- **路线参数建模**：官方补给点 CP + 爬升/下降路段（阈值可配，默认 50 m）+ 赛道难度系数（fast/standard/technical/alpine）+ 读取 GPX/FIT 自动生成 CP 与路段
+- **Step 4 站内补给明细**：每个官方补给点可增删站内真食/饮料，支持**自定义站内补给品**（名称 + 碳水等含量），供引擎分配站内真食
+- **补给时间轴编辑器**：增/删/插行、编辑距离自动重排并重算区间距离/爬升；每点给出「电解质水 X ml + 白水 Y ml + 盐丸 N 粒」单一指令，每点至少保留 1/3 白水
+- **整件累计分配（carry-forward）**：能量胶、盐丸不可分切，按全程累计缺口分配，避免逐点取整叠加过量
+- **站内真食 / 额外补给可微调**：时间轴上每一项（含自定义站内真食）均可 −/＋ 调整并实时重算合计
+- **携带校验 + 一键补齐**：出发携带与各官方点「带出」≥ 区间自补点消耗，缺额一键补齐
+- **出门自查清单**：补给品 + 装备分组，非对称步进 + 建议上限提示（超量不再强制截断）
+- **补给/装备图标**：与小程序 `09_wxxcx` 图标同步（37 个），UI 与导出海报一致
+- **多种导出**：复制方案文本 / Excel（`xlsx`，含路线海拔图 + 清单）/ 补给海报（横版 PNG）/ FIT / GPX 路线文件
+- **双语 / 本地优先 / AI 可选**：中文/English 一键切换；AI（DeepSeek/OpenAI/Gemini/mock）仅解释引擎结果，不算数
 
 ---
 
@@ -96,28 +96,31 @@ python3 -m http.server 8080
 
 ### 一次完整的规划流程
 
-1. **步骤 1** — 上传自己的历史运动文件（Garmin / Coros 等 `.fit`），或选择「手动填写用户信息」
-2. **步骤 2** — 校准用户能力画像（HR 区间、体重、静息心率、ITRA/UTMB 积分）
-3. **步骤 3** — 设定目标路线：距离、总爬升、天气、官方补给点、爬升/下降路段（含阈值）；也可直接读取 `.gpx` 路线文件
-4. **步骤 4** — 确认路线海拔概况图（海拔轮廓 + 补给点分布 + 路段色带）
-5. **步骤 5** — 选择 AI Provider（可先用 `mock` 验证全流程），点击「开始计算并生成解释」
+1. **步骤 1** — 上传自己的历史运动文件（Garmin / Coros 等 `.fit` 或 `.gpx`），或选择「手动填写用户信息」
+2. **步骤 2** — 校准用户能力画像：体重 / 最大心率 / VO2max / ITRA 等；下方「能力画像评分」雷达图实时更新（含心率漂移耐力分析）
+3. **步骤 3** — 设定目标路线：距离、总爬升/下降、天气、赛道难度、官方补给点、爬升/下降路段（含阈值）；也可「读取目标路线 FIT/GPX」自动填入 CP 与路段
+4. **步骤 4** — 确认路线海拔概况图（海拔轮廓 + 补给点分布 + 爬坡/下降色带，点击可看横版大图）；在「官方补给点·站内补给明细」中为该站增删真食/饮料，或**自定义**站内补给品
+5. **步骤 5** — 规则引擎直接生成补给方案：摘要卡 → 出发自查清单 → 补给时间轴编辑器（可增删插行、± 微调真食/补给、一键补齐携带）→ 执行提醒；可点「导出」选择复制文本 / Excel / 海报图片 / FIT / GPX；可选：展开底部 AI 面板（先可用 `mock`）生成 AI 解释
 
 ---
 
 ## 📁 项目结构
 
 ```
-AI-Fuel-Planner/                 # 仓库根目录 = 03_Code 文件夹
-├── index.html                   # ★ 主程序（纯 JS 静态 Web 应用）
-├── app.js                       #   逻辑：FIT 解析 / 画像 / 规则引擎 / 图表 / AI
-├── styles.css                   #   页面样式（深林绿 × 探索橙主题）
+trail-run-fuel-planner/         # 仓库根目录 = 03_Code 文件夹
+├── index.html                   # ★ 主程序（纯 JS 静态 Web 应用，引入下方各模块）
+├── app.js                       #   逻辑：FIT/GPX 解析 / 画像 / 规则引擎 / 图表 / Step4 站内补给
+├── plan_editor.js               #   Step5 补给时间轴编辑器（增删插行 / 携带校验 / 补给库 / 自定义）
+├── poster.js                    #   横版补给海报导出（覆盖竖版旧实现）
+├── profile_score.js             #   六维能力画像评分 + SVG 雷达图（与小程序同步）
+├── gpx.js                       #   GPX 路线/历史运动解析（步骤 1/3 读取 .gpx）
+├── xlsx.js                      #   极简 .xlsx 生成器（导出 Excel，内嵌路线图，零依赖）
+├── icons_data.js + icons/       #   补给/装备图标 dataURL 与 PNG（与小程序 09_wxxcx 同步）
 ├── bg.js                        #   森林夜空动效背景
-├── gpx.js                       #   GPX 路线解析（步骤 3 读取 .gpx 路线文件）
-├── logo.png                     #   Trail Lab 品牌头像
-├── banner.png                   #   README 横幅
-├── LICENSE                      #   MIT 许可
-├── PROTOCOL_ZH.md / _EN.md      #   使用协议与许可声明（中/英）
-├── THIRD_PARTY_NOTICES.md       #   第三方组件许可
+├── styles.css                   #   页面样式（深林绿 × 探索橙主题）
+├── logo.png / banner.png        #   品牌头像 / README 横幅
+├── qr_miniprogram.jpg           #   海报右下角小程序码
+├── LICENSE / PROTOCOL_ZH.md / PROTOCOL_EN.md / THIRD_PARTY_NOTICES.md
 ├── README.md / README_EN.md     #   说明文档（本文件）
 ├── docs/                        # 📚 技术文档（zh/ 中文版 · en/ 英文版，各四篇系列）
 └── python_legacy/               # ⚠️ 已弃用的 Python 测试版（历史存档）
@@ -160,7 +163,27 @@ AI-Fuel-Planner/                 # 仓库根目录 = 03_Code 文件夹
 
 ---
 
-## 📦 最近更新（2026-08-21）
+## 📦 最近更新（2026-09 · v2.1.0 / 引擎 v2.5）
+
+> Web 版已与微信小程序 `09_wxxcx` v2.1.0（引擎 v2.5）全面同步。仓库已更名为 `trail-run-fuel-planner`，GitHub Pages 地址不变。
+
+### 🧮 引擎 v2.5（补给策略）
+
+- **leg 自治段 + 真食优先 + 半包冲饮 + 单一账本**：官方站站内真食先覆盖该段碳水缺口，随身只背剩余缺口；冲饮按半包取整、缺口显式记录
+- **难度里程到达时间**：补给点到达时间按「距离 + 累计爬升/100 m」折算，配速随难度调整
+- **整件累计分配**：盐丸/能量胶按全程累计缺口整件分配，避免逐点取整叠加过量；每点至少保留 1/3 白水
+- **出门总重上限校验**：干物资 + 两壶水 + 装备估算超过 8 kg 时给出携带预警
+
+### 🛠 与小程序同步的界面能力
+
+- **Step 2 六维能力画像评分**：雷达图 + 数据卡 + 解读（心率漂移耐力分析）
+- **Step 3 读取 GPX/FIT**：自动生成官方补给点与爬升/下降路段；赛道难度系数 4 档
+- **Step 4 站内补给明细**：每个官方点增删站内真食/饮料、支持**自定义站内补给品**；选择真正影响第 5 步站内真食分配
+- **Step 5 补给时间轴编辑器**：官方点带出、额外补给与站内真食 −/＋ 微调（自定义站内真食单独显示）、携带校验 + 一键补齐、补给/装备库与自定义项
+- **补给/装备图标**：与小程序同步（37 个），UI 与导出海报一致
+- **导出**：复制文本 / Excel（内嵌路线海拔图 + 出门清单）/ 横版补给海报 PNG / FIT / GPX 路线
+
+## 📦 历史更新日志（归档）
 
 ### 🥤 补给点：白水/电解质水拆分 + 整件累计分配
 
@@ -183,7 +206,7 @@ AI-Fuel-Planner/                 # 仓库根目录 = 03_Code 文件夹
 
 ---
 
-## 📦 自 Commit `7c4403b` 以来的全部更新
+### 📦 提交级历史（自 `7c4403b`，归档）
 
 > 以下为 `7c4403b` → HEAD 之间 **22 个提交** 的全部改动（按主题分组）。
 
@@ -249,9 +272,9 @@ AI-Fuel-Planner/                 # 仓库根目录 = 03_Code 文件夹
 
 ## 🤝 贡献与反馈
 
-- 欢迎提交 [Issue](https://github.com/marsdace/AI-Fuel-Planner/issues) 与 [PR](https://github.com/marsdace/AI-Fuel-Planner/pulls)
+- 欢迎提交 [Issue](https://github.com/marsdace/trail-run-fuel-planner/issues) 与 [PR](https://github.com/marsdace/trail-run-fuel-planner/pulls)
 - 贡献者默认同意以 MIT 许可发布其贡献内容
-- 你也可以在 [GitHub Discussions](https://github.com/marsdace/AI-Fuel-Planner/discussions) 分享你的补给数据与心率漂移样本
+- 你也可以在 [GitHub Discussions](https://github.com/marsdace/trail-run-fuel-planner/discussions) 分享你的补给数据与心率漂移样本
 
 ---
 

@@ -1,4 +1,4 @@
-# AI Fuel Planner · 使用协议与许可声明
+# Trail Run Fuel Planner · 使用协议与许可声明
 
 > 版本：v1.0 · 更新：2026-08-10
 > 本协议覆盖「本项目自己的许可条款」与「本项目使用的第三方组件许可」两部分。
@@ -7,7 +7,7 @@
 
 ## 第一部分：本项目许可（MIT License）
 
-本项目（AI Fuel Planner，Trail Lab 实验 #001 的公开代码部分）以 **MIT License** 开源发布。
+本项目（Trail Run Fuel Planner，Trail Lab 实验 #001 的公开代码部分）以 **MIT License** 开源发布。
 
 - **版权**：Copyright (c) 2026 Trail Lab (山野实验室) · marsdace
 - **许可文本**：见仓库根目录 `LICENSE` 文件。

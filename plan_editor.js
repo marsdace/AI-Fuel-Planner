@@ -8,8 +8,36 @@
 "use strict";
 
 (function (global) {
-  // ---------- 补给库（与小程序一致，Web 端用 color 色块替代 icon PNG） ----------
+  // ---------- 补给库（图标与小程序 09_wxxcx/assets/icons 同步；canvas 用 dataURL 规避 file:// 污染） ----------
   const CUSTOM_COLORS = ["#FF6B6B", "#FF9F43", "#FFC94D", "#6BCB77", "#4D96FF", "#9B59B6", "#FF8AB5", "#5B8A72"];
+
+  // ---- 图标映射：UI key → icons/*.png（键与小程序图标一一对应） ----
+  const ICONS_DIR = "icons/";
+  const ICON_BY_KEY = {
+    carbs: "carbs", gels: "carbs", add_carbs: "carbs", chk_carbs: "carbs",
+    electrolyte: "electrolyte", electrolyte_ml: "electrolyte", add_elec: "electrolyte", chk_elec: "electrolyte",
+    water: "water", plain_ml: "water", add_water: "water", chk_water: "water",
+    salt: "salt", salt_tabs: "salt", add_salt: "salt", chk_salt: "salt",
+    caffeine: "caffeine", caffeine_mg: "caffeine", add_caff: "caffeine", chk_caff: "caffeine",
+    banana: "banana", bar: "bar", bread: "bread", baozi: "baozi", cookie: "cookie",
+    raisins: "raisins", gummies: "gummies", honey: "honey", nuts: "nuts",
+    cola: "cola", soup: "soup", porridge: "porridge", orange: "orange",
+    take_longsleeve: "long_sleeve", take_longpants: "long_pants", take_jacket: "jacket",
+    take_raincoat: "raincoat", take_cap: "cap", take_gloves: "gloves", take_shoes: "shoes",
+    take_backpack: "backpack", take_lamp: "lamp", take_poles: "poles",
+    take_waterbottle: "water_bottle", take_utensils: "utensils", take_sunscreen: "sunscreen",
+    take_blanket: "blanket", take_whistle: "whistle", take_firstaid: "firstaid",
+    take_phone: "phone", take_powerbank: "powerbank", take_sunglasses: "sunglasses",
+  };
+  const iconFile = (key) => { const n = ICON_BY_KEY[key]; return n ? ICONS_DIR + n + ".png" : null; };
+  const iconData = (key) => { const n = ICON_BY_KEY[key]; if (!n) return null; const M = global.TrailLabIconData; return M ? (M[n] || null) : null; };
+  const iconTag = (key, cls) => { const f = iconFile(key); return f ? `<img class="${cls || "pe-ico"}" alt="" loading="lazy" src="${f}">` : ""; };
+
+  // 补给品/装备按键元数据（名称/单位/颜色，供海报图例等外部解析 extra 项；含自定义项）
+  function describeItem(key) {
+    const it = getAllSupplyItems().find((i) => i.key === key) || gearLibrary().find((i) => i.key === key) || null;
+    return it ? { label: it.label, unit: it.unit || "", color: it.color || "#9BA8B4" } : null;
+  }
 
   // 出发携带清单"建议上限"（不再强制截断，仅超量后提示）
   const CHECKLIST_LIMITS = {
@@ -21,9 +49,11 @@
   };
 
   const SUPPLY_ITEMS = [
+    { key: "drink_mix", label: "碳水冲饮", unit: "包", carbs_g: 80, sodium_mg: 0, caffeine_mg: 0, fluid_ml: 0, protein_g: 0, step: 1, cat: 1, sort: 0, color: "#9BC1FF", kind: "powder" },
     { key: "banana", label: "香蕉", unit: "份", carbs_g: 25, sodium_mg: 0, caffeine_mg: 0, fluid_ml: 0, protein_g: 0, step: 1, cat: 1, sort: 1, color: "#FFC94D" },
     { key: "bar", label: "能量棒", unit: "份", carbs_g: 25, sodium_mg: 100, caffeine_mg: 0, fluid_ml: 0, protein_g: 5, step: 1, cat: 1, sort: 2, color: "#B07B45" },
     { key: "bread", label: "面包", unit: "份", carbs_g: 15, sodium_mg: 80, caffeine_mg: 0, fluid_ml: 0, protein_g: 0, step: 1, cat: 1, sort: 3, color: "#E8C996" },
+    { key: "baozi", label: "包子", unit: "份", carbs_g: 30, sodium_mg: 120, caffeine_mg: 0, fluid_ml: 0, protein_g: 5, step: 1, cat: 1, sort: 4, color: "#E7D6B8" },
     { key: "cookie", label: "饼干", unit: "份", carbs_g: 15, sodium_mg: 50, caffeine_mg: 0, fluid_ml: 0, protein_g: 0, step: 1, cat: 1, sort: 4, color: "#C98A6B" },
     { key: "raisins", label: "葡萄干", unit: "份", carbs_g: 20, sodium_mg: 0, caffeine_mg: 0, fluid_ml: 0, protein_g: 0, step: 1, cat: 1, sort: 5, color: "#6B4D8A" },
     { key: "gummies", label: "能量软糖", unit: "份", carbs_g: 25, sodium_mg: 40, caffeine_mg: 0, fluid_ml: 0, protein_g: 0, step: 1, cat: 1, sort: 6, color: "#FF8AB5" },
@@ -31,6 +61,7 @@
     { key: "nuts", label: "坚果", unit: "份", carbs_g: 5, sodium_mg: 0, caffeine_mg: 0, fluid_ml: 0, protein_g: 0, step: 1, cat: 1, sort: 8, color: "#8A6B4D" },
     { key: "cola", label: "可乐（罐）", unit: "份", carbs_g: 35, sodium_mg: 10, caffeine_mg: 32, fluid_ml: 330, protein_g: 0, step: 1, cat: 2, sort: 1, color: "#4D2B2B" },
     { key: "soup", label: "热汤", unit: "份", carbs_g: 10, sodium_mg: 300, caffeine_mg: 0, fluid_ml: 200, protein_g: 0, step: 1, cat: 2, sort: 2, color: "#B0743A" },
+    { key: "porridge", label: "粥", unit: "份", carbs_g: 50, sodium_mg: 150, caffeine_mg: 0, fluid_ml: 150, protein_g: 3, step: 1, cat: 2, sort: 3, color: "#C7A86B" },
     { key: "orange", label: "橙子", unit: "份", carbs_g: 15, sodium_mg: 0, caffeine_mg: 0, fluid_ml: 50, protein_g: 0, step: 1, cat: 3, sort: 1, color: "#FF9F43" },
   ];
 
@@ -40,6 +71,28 @@
     { key: "add_water", label: "白水", unit: "瓶", carbs_g: 0, sodium_mg: 0, caffeine_mg: 0, fluid_ml: 500, protein_g: 0, step: 1, cat: 2, sort: 1, color: "#6BCB77" },
     { key: "add_salt", label: "盐丸", unit: "粒", carbs_g: 0, sodium_mg: 200, caffeine_mg: 0, fluid_ml: 0, protein_g: 0, step: 1, cat: 4, sort: 0, color: "#9B59B6" },
     { key: "add_caff", label: "咖啡因", unit: "份", carbs_g: 0, sodium_mg: 0, caffeine_mg: 100, fluid_ml: 0, protein_g: 0, step: 1, cat: 5, sort: 0, color: "#5B8A72" },
+  ];
+
+  const KIND_BY_KEY = {
+    add_carbs: "gel",
+    add_elec: "liquid",
+    add_water: "liquid",
+    add_salt: "tablet",
+    add_caff: "tablet",
+    drink_mix: "powder",
+    banana: "solid", bar: "solid", bread: "solid", baozi: "solid", cookie: "solid",
+    raisins: "solid", gummies: "solid", honey: "liquid", nuts: "solid",
+    cola: "liquid", soup: "liquid", porridge: "solid", orange: "solid",
+  };
+  const withKind = (items) => (items || []).map((i) => ({ ...i, kind: i.kind || KIND_BY_KEY[i.key] || "other" }));
+
+  const KIND_OPTIONS = [
+    { value: "gel", label: "胶" },
+    { value: "liquid", label: "液体" },
+    { value: "solid", label: "固体" },
+    { value: "powder", label: "冲饮" },
+    { value: "tablet", label: "药片" },
+    { value: "other", label: "其他" },
   ];
 
   const TAKE_OUT_GEAR = [
@@ -122,8 +175,8 @@
   // ---------- 补给库 ----------
   function getAllSupplyItems() {
     const custom = (state.customItems || []).map((i) => ({ ...i, isCustom: true, cat: 99, sort: 0, nutri: formatNutri(i) }));
-    return BASE_SUPPLY_FIVE.map((i) => ({ ...i, isCustom: false, nutri: formatNutri(i) }))
-      .concat(SUPPLY_ITEMS.map((i) => ({ ...i, isCustom: false, nutri: formatNutri(i) })))
+    return withKind(BASE_SUPPLY_FIVE).map((i) => ({ ...i, isCustom: false, nutri: formatNutri(i) }))
+      .concat(withKind(SUPPLY_ITEMS).map((i) => ({ ...i, isCustom: false, nutri: formatNutri(i) })))
       .concat(custom)
       .sort((a, b) => (a.cat || 99) - (b.cat || 99) || (a.sort || 0) - (b.sort || 0));
   }
@@ -221,11 +274,8 @@
       const meta = carryMeta(canonKey);
       list.push({ key: meta.addKey, label: meta.label, count, unit: meta.unit, color: meta.color });
     };
-    add("carbs", seg.gels);
     add("electrolyte", seg.electrolyte_bottles);
     add("water", seg.water_bottles);
-    add("salt", seg.salt_tabs);
-    add("caffeine", seg.caffeine_cups);
     return list;
   }
 
@@ -338,10 +388,22 @@
       const caff = caffByKm.get(kmKey(p.km));
       const protein = proteinByKm.get(kmKey(p.km));
       const seg = (ruleOutput.carry_segments || []).find((s) => s.from_km > 0 && Math.abs(s.from_km - Number(p.km)) < 0.05);
+      const extra = {};
+      if (isCp && Array.isArray(p.station_food_items)) {
+        p.station_food_items.forEach((sf) => {
+          if (sf && sf.key) extra[sf.key] = Math.round(sf.count * 10) / 10;
+        });
+      }
       return {
         km: String(Math.round(Number(p.km) * 10) / 10),
         time_h: String(p.time_h),
         typeIndex: isCp ? 0 : 1,
+        stationFoods: isCp ? (Array.isArray(p.station_food_items) ? p.station_food_items : []) : [],
+        stationAdvice: isCp
+          ? (Array.isArray(p.station_food_items)
+              ? p.station_food_items.map((s) => `${s.label} ${s.count}份`).join(" + ")
+              : p.station_food_items || "")
+          : "",
         cutoff: isCp ? ((state.cpMap || {})[kmKey(p.km)] || {}).cutoff || "" : "",
         takeout: isCp ? [
           { key: "bread", label: "面包", count: 1, unit: "份", color: "#E8C996" },
@@ -355,7 +417,7 @@
         caffeine_mg: caff ? String(caff.mg) : "",
         protein_g: protein ? String(protein.g) : "",
         note: p.source || "",
-        extra: {},
+        extra,
       };
     });
     return refreshDerived(sortRowsByKm(rows));
@@ -438,7 +500,7 @@
     const firstCp = cps[0];
     const seg0 = indexed.filter((x) => Number(x.r.typeIndex) !== 0 && x.kmNum < firstCp.kmNum);
     const need0 = sumNeed(seg0);
-    const carry0 = amountMap(state.checklist.filter((c) => c.kind === "supply"));
+    const carry0 = amountMap(state.checklist.filter((c) => c.class === "supply"));
     Object.keys(need0).forEach((k) => pushWarn("start", null, null, k, need0[k], carry0[k] || 0));
     for (let i = 0; i < cps.length - 1; i += 1) {
       const from = cps[i].kmNum;
@@ -477,6 +539,8 @@
     t.fluid_ml = Math.round(t.fluid_ml);
     t.sodium_mg = Math.round(t.sodium_mg);
     t.caffeine_mg = Math.round(t.caffeine_mg);
+    const targetCarbs = (state.lastRuleOutput && state.lastRuleOutput.total_carbs_g) || 0;
+    t.carbs_deficit = targetCarbs > 0 ? Math.max(0, Math.round((targetCarbs - t.carbs_g) * 10) / 10) : 0;
     const carry = { gels: 0, salt: 0, fluid: 0, elec: 0, plain: 0, caff: 0, weight: 0 };
     for (const r of state.planRows) {
       if (r.kmInvalid || r.typeIndex === 0) continue;
@@ -606,10 +670,10 @@
     const rows = state.planRows;
     const stepBtn = (dir, key, step, extraAttr) => `
       <button type="button" class="pe-step" data-step="${dir > 0 ? step : -step}" data-key="${key}" ${extraAttr || ""}>${dir > 0 ? "＋" : "−"}</button>`;
-    const chip = (label, countTxt, color, minus, plus) => `
+    const chip = (key, label, countTxt, color, minus, plus) => `
       <span class="pe-chip-item">
         ${minus}
-        <span class="pe-chip" style="--c:${color || "#9BA8B4"}">${esc(label)} ${countTxt}</span>
+        <span class="pe-chip" style="--c:${color || "#9BA8B4"}">${iconTag(key)}${esc(label)} ${countTxt}</span>
         ${plus}
       </span>`;
     const fmtBottle = (ml) => String(Math.round(((sf(ml) || 0) / 500) * 10) / 10);
@@ -625,21 +689,56 @@
       const salt = sf(r.salt_tabs) || 0;
       const caff = sf(r.caffeine_mg) || 0;
       const itemsHtml = []
-        .concat(gels > 0 ? [chip(en ? "Gel" : "能量胶", gels + "件", "#FF7A00", stepBtn(-1, "gels", 1), stepBtn(1, "gels", 1))] : [])
-        .concat(elecMl > 0 ? [chip(en ? "Elec" : "电解质水", fmtBottle(elecMl) + "瓶", "#4D96FF", stepBtn(-1, "electrolyte_ml", 50), stepBtn(1, "electrolyte_ml", 250))] : [])
-        .concat(plainMl > 0 ? [chip(en ? "Water" : "白水", fmtBottle(plainMl) + "瓶", "#6BCB77", stepBtn(-1, "plain_ml", 50), stepBtn(1, "plain_ml", 250))] : [])
-        .concat(salt > 0 ? [chip(en ? "Salt" : "盐丸", salt + "粒", "#9B59B6", stepBtn(-1, "salt_tabs", 1), stepBtn(1, "salt_tabs", 1))] : [])
-        .concat(caff > 0 ? [chip(en ? "Caff" : "咖啡因", fmtCup(caff) + "份", "#5B8A72", stepBtn(-1, "caffeine_mg", 10), stepBtn(1, "caffeine_mg", 50))] : [])
+        .concat(gels > 0 ? [chip("gels", en ? "Gel" : "能量胶", gels + "件", "#FF7A00", stepBtn(-1, "gels", 1), stepBtn(1, "gels", 1))] : [])
+        .concat(elecMl > 0 ? [chip("electrolyte_ml", en ? "Elec" : "电解质水", fmtBottle(elecMl) + "瓶", "#4D96FF", stepBtn(-1, "electrolyte_ml", 50), stepBtn(1, "electrolyte_ml", 250))] : [])
+        .concat(plainMl > 0 ? [chip("plain_ml", en ? "Water" : "白水", fmtBottle(plainMl) + "瓶", "#6BCB77", stepBtn(-1, "plain_ml", 50), stepBtn(1, "plain_ml", 250))] : [])
+        .concat(salt > 0 ? [chip("salt_tabs", en ? "Salt" : "盐丸", salt + "粒", "#9B59B6", stepBtn(-1, "salt_tabs", 1), stepBtn(1, "salt_tabs", 1))] : [])
+        .concat(caff > 0 ? [chip("caffeine_mg", en ? "Caff" : "咖啡因", fmtCup(caff) + "份", "#5B8A72", stepBtn(-1, "caffeine_mg", 10), stepBtn(1, "caffeine_mg", 50))] : [])
         .concat(
           getAllSupplyItems()
             .filter((it) => ((r.extra || {})[it.key] || 0) > 0)
-            .map((it) => chip(it.label, (r.extra || {})[it.key] + (it.unit || ""), it.color || "#9BA8B4", "", ""))
+            .map((it) => {
+              const extraCnt = (r.extra || {})[it.key];
+              // 额外补给品/站内真食数量可加减（对齐小程序 itemViews，减到 0 移除）
+              return chip(
+                it.key,
+                it.label,
+                extraCnt + (it.unit || ""),
+                it.color || "#9BA8B4",
+                stepBtn(-1, it.key, 1, 'data-extra="1"'),
+                stepBtn(1, it.key, 1, 'data-extra="1"')
+              );
+            })
+        )
+        .concat(
+          (() => {
+            // 自定义站内真食（Step4 添加、被引擎选中）不在内置补给库：
+            // 用 r.stationFoods 元数据显示成带名称的可编辑 chip（减到 0 移除）
+            const knownKeys = new Set(getAllSupplyItems().map((i) => i.key));
+            const labelByKey = {};
+            (r.stationFoods || []).forEach((s) => {
+              if (s && s.key) labelByKey[s.key] = s.label || s.key;
+            });
+            return Object.keys(r.extra || {})
+              .filter((k) => ((r.extra || {})[k] || 0) > 0 && !knownKeys.has(k))
+              .map((k) => {
+                const cnt = (r.extra || {})[k];
+                return chip(
+                  k,
+                  labelByKey[k] || k,
+                  cnt + "份",
+                  "#D9A441",
+                  stepBtn(-1, k, 1, 'data-extra="1"'),
+                  stepBtn(1, k, 1, 'data-extra="1"')
+                );
+              });
+          })()
         )
         .join("");
       const takeoutHtml = (r.takeout || []).filter((it) => (sf(it.count) || 0) > 0).map((it) => `
         <span class="pe-chip-item">
           ${stepBtn(-1, it.key, 1)}
-          <span class="pe-chip" style="--c:${it.color || "#9BA8B4"}">${esc(it.label)} ${it.count}${it.unit || ""}</span>
+          <span class="pe-chip" style="--c:${it.color || "#9BA8B4"}">${iconTag(it.key)}${esc(it.label)} ${it.count}${it.unit || ""}</span>
           ${stepBtn(1, it.key, 1)}
         </span>`).join("");
       const addBtn = isCp
@@ -695,8 +794,11 @@
   function renderTotals() {
     const en = state.language === "en";
     const t = state.planTotals || { carbs_g: 0, fluid_ml: 0, sodium_mg: 0, gels: 0, salt_tabs: 0, caffeine_mg: 0 };
+    const deficit = (t.carbs_deficit > 0)
+      ? `<span class="pe-total pe-deficit">⚠ ${en ? "Carb deficit" : "碳水缺口"} ${t.carbs_deficit}g</span>`
+      : "";
     el.totals.innerHTML = `
-      <span class="pe-total">${en ? "Adjusted total" : "调整后合计"}：${en ? "Carbs" : "碳水"} <b>${t.carbs_g}g</b> / ${en ? "Fluid" : "液体"} <b>${t.fluid_ml}ml</b> / ${en ? "Sodium" : "钠"} <b>${t.sodium_mg}mg</b>（${en ? "Gels" : "能量胶"} <b>${t.gels}</b> · ${en ? "Salt" : "盐丸"} <b>${t.salt_tabs}</b> · ${en ? "Caffeine" : "咖啡因"} <b>${t.caffeine_mg}mg</b>）</span>`;
+      <span class="pe-total">${en ? "Adjusted total" : "调整后合计"}：${en ? "Carbs" : "碳水"} <b>${t.carbs_g}g</b> / ${en ? "Fluid" : "液体"} <b>${t.fluid_ml}ml</b> / ${en ? "Sodium" : "钠"} <b>${t.sodium_mg}mg</b>（${en ? "Gels" : "能量胶"} <b>${t.gels}</b> · ${en ? "Salt" : "盐丸"} <b>${t.salt_tabs}</b> · ${en ? "Caffeine" : "咖啡因"} <b>${t.caffeine_mg}mg</b>）</span>${deficit}`;
   }
 
   function renderCarryWarnings() {
@@ -714,18 +816,18 @@
     const bottles = (ml) => Math.max(1, Math.ceil((ml || 0) / 500));
     const cups = (mg) => Math.max(1, Math.ceil((mg || 0) / 100));
     const items = [
-      { key: "chk_carbs", label: "能量胶", count: carry.gels || 0, unit: "件", kind: "supply", color: "#FF7A00" },
-      { key: "chk_salt", label: "盐丸", count: carry.salt || 0, unit: "粒", kind: "supply", color: "#9B59B6" },
-      { key: "chk_elec", label: "电解质水", count: bottles(carry.elec), unit: "瓶", kind: "supply", color: "#4D96FF" },
-      { key: "chk_water", label: "白水", count: bottles(carry.plain), unit: "瓶", kind: "supply", color: "#6BCB77" },
-      { key: "chk_caff", label: "咖啡因", count: cups(carry.caff), unit: "份", kind: "supply", color: "#5B8A72" },
-      { key: "take_phone", label: "手机/导航", count: 1, unit: "件", kind: "gear", color: "#4D96FF" },
-      { key: "take_firstaid", label: "急救包", count: 1, unit: "件", kind: "gear", color: "#FF6B6B" },
-      { key: "take_whistle", label: "救生口哨", count: 1, unit: "件", kind: "gear", color: "#FF8A1F" },
-      { key: "take_blanket", label: "保温毯", count: 1, unit: "件", kind: "gear", color: "#C9825B" },
-      { key: "take_waterbottle", label: "水具", count: 1, unit: "件", kind: "gear", color: "#6BCB77" },
-      { key: "take_backpack", label: "越野背包", count: 1, unit: "件", kind: "gear", color: "#3D5B4D" },
-      { key: "take_jacket", label: "冲锋衣", count: 1, unit: "件", kind: "gear", color: "#2B3A6B" },
+      { key: "chk_carbs", label: "能量胶", count: carry.gels || 0, unit: "件", class: "supply", color: "#FF7A00" },
+      { key: "chk_salt", label: "盐丸", count: carry.salt || 0, unit: "粒", class: "supply", color: "#9B59B6" },
+      { key: "chk_elec", label: "电解质水", count: 1, unit: "瓶", class: "supply", color: "#4D96FF" },
+      { key: "chk_water", label: "白水", count: 1, unit: "瓶", class: "supply", color: "#6BCB77" },
+      { key: "chk_caff", label: "咖啡因", count: cups(carry.caff), unit: "份", class: "supply", color: "#5B8A72" },
+      { key: "take_phone", label: "手机/导航", count: 1, unit: "件", class: "gear", color: "#4D96FF" },
+      { key: "take_firstaid", label: "急救包", count: 1, unit: "件", class: "gear", color: "#FF6B6B" },
+      { key: "take_whistle", label: "救生口哨", count: 1, unit: "件", class: "gear", color: "#FF8A1F" },
+      { key: "take_blanket", label: "保温毯", count: 1, unit: "件", class: "gear", color: "#C9825B" },
+      { key: "take_waterbottle", label: "水具", count: 1, unit: "件", class: "gear", color: "#6BCB77" },
+      { key: "take_backpack", label: "越野背包", count: 1, unit: "件", class: "gear", color: "#3D5B4D" },
+      { key: "take_jacket", label: "冲锋衣", count: 1, unit: "件", class: "gear", color: "#2B3A6B" },
     ];
     return items.filter((it) => it.count > 0);
   }
@@ -790,15 +892,15 @@
   function renderChecklist() {
     const en = state.language === "en";
     if (!state.checklist || !state.checklist.length) return;
-    const supply = state.checklist.filter((c) => c.kind === "supply");
-    const gear = state.checklist.filter((c) => c.kind === "gear");
+    const supply = state.checklist.filter((c) => c.class === "supply");
+    const gear = state.checklist.filter((c) => c.class === "gear");
     let html = `<div class="pe-chk-title">${en ? "Departure checklist (supplies + gear)" : "出发自查清单（补给品 + 装备）"}</div><div class="pe-chk-body">`;
     if (supply.length) {
       html += `<div class="pe-chk-group"><span class="pe-chk-group-label">${en ? "Supplies" : "补给品"}</span>`;
       supply.forEach((c) => {
         html += `<span class="pe-chip-item">
           <button type="button" class="pe-step" data-chk="-1" data-key="${c.key}">−</button>
-          <span class="pe-chip" style="--c:${c.color || "#9BA8B4"}">${esc(c.label)} × ${c.count}${c.unit || ""}</span>
+          <span class="pe-chip" style="--c:${c.color || "#9BA8B4"}">${iconTag(c.key)}${esc(c.label)} × ${c.count}${c.unit || ""}</span>
           <button type="button" class="pe-step" data-chk="1" data-key="${c.key}">＋</button>
         </span>`;
       });
@@ -810,7 +912,7 @@
       gear.forEach((c) => {
         html += `<span class="pe-chip-item">
           <button type="button" class="pe-step" data-chk="-1" data-key="${c.key}">−</button>
-          <span class="pe-chip" style="--c:${c.color || "#9BA8B4"}">${esc(c.label)}${c.count > 1 ? " × " + c.count : ""}</span>
+          <span class="pe-chip" style="--c:${c.color || "#9BA8B4"}">${iconTag(c.key)}${esc(c.label)}${c.count > 1 ? " × " + c.count : ""}</span>
           <button type="button" class="pe-step" data-chk="1" data-key="${c.key}">＋</button>
         </span>`;
       });
@@ -859,9 +961,9 @@
         // 统一口径（carbs/electrolyte/water/salt/caffeine）合并到既有清单项，避免"能量胶×N + 能量胶×1"重复显示
         const canon = canonSupplyKey(key);
         const meta = carryMeta(canon);
-        const hit = state.checklist.find((c) => c.kind === "supply" && canonSupplyKey(c.key) === canon);
+        const hit = state.checklist.find((c) => c.class === "supply" && canonSupplyKey(c.key) === canon);
         if (hit) hit.count = Math.round((hit.count + 1) * 10) / 10;
-        else state.checklist.push({ key: meta.checkKey, label: meta.label, unit: meta.unit || "份", count: 1, kind: "supply", color: item.color || meta.color });
+        else state.checklist.push({ key: meta.checkKey, label: meta.label, unit: meta.unit || "份", count: 1, class: "supply", color: item.color || meta.color });
         overlay.remove();
         renderChecklist();
         recalcTotals();
@@ -880,11 +982,13 @@
     const supplyItemHtml = (it) => `
       <button type="button" class="pe-lib-item" data-add="${it.key}" data-canon="${canonSupplyKey(it.key)}" style="--c:${it.color || "#9BA8B4"}">
         ${it.isCustom ? `<span class="pe-lib-del" data-del="${it.key}" title="${en ? "Delete" : "删除"}">×</span>` : ""}
+        <span class="pe-lib-icon">${iconTag(it.key, "pe-lib-ico")}</span>
         <span class="pe-lib-name">${esc(it.label)}</span><span class="pe-lib-nutri">${esc(it.nutri || "")}</span>
       </button>`;
     const gearItemHtml = (it) => `
       <button type="button" class="pe-lib-item" data-add="${it.key}" data-canon="${it.key}" style="--c:${it.color || "#9BA8B4"}">
         ${it.isCustom ? `<span class="pe-lib-del" data-del="${it.key}" title="${en ? "Delete" : "删除"}">×</span>` : ""}
+        <span class="pe-lib-icon">${iconTag(it.key, "pe-lib-ico")}</span>
         <span class="pe-lib-name">${esc(it.label)}</span>
       </button>`;
     let html = `<div class="pe-modal"><div class="pe-modal-head"><h3>${en ? "Supply / Gear library" : "补给品 / 装备库"}</h3><button type="button" class="pe-modal-close" data-close="1">×</button></div><div class="pe-modal-body">`;
@@ -937,9 +1041,9 @@
     const item = getAllSupplyItems().find((i) => i.key === key) || gearLibrary().find((i) => i.key === key);
     if (!item) return;
     if (state.libMode === "checklist") {
-      const hit = state.checklist.find((c) => c.kind === "gear" && c.key === item.key);
+      const hit = state.checklist.find((c) => c.class === "gear" && c.key === item.key);
       if (hit) hit.count += 1;
-      else state.checklist.push({ key: item.key, label: item.label, unit: "件", count: 1, kind: "gear", color: item.color });
+      else state.checklist.push({ key: item.key, label: item.label, unit: "件", count: 1, class: "gear", color: item.color });
       renderChecklist();
       return;
     }
@@ -980,6 +1084,7 @@
     form.className = "pe-overlay";
     form.id = "peCustomOverlay";
     const colorChips = CUSTOM_COLORS.map((c) => `<button type="button" class="pe-color" data-color="${c}" style="background:${c}"></button>`).join("");
+    const kindOpts = KIND_OPTIONS.map((k) => `<option value="${k.value}">${k.label}</option>`).join("");
     // takeout 模式提供 补给品/装备 类型切换（对齐小程序带出库的 food/gear 分类）
     const typeToggle = isTakeoutMode
       ? `<div class="pe-lib-title">${en ? "Type" : "类型"}</div>
@@ -991,7 +1096,8 @@
     // 装备：只需名称+单位；补给品：名称+营养字段
     const nutriFields = isGear
       ? ""
-      : `<div class="pe-custom-grid">
+      : `<label class="pe-field"><span>${en ? "Form" : "形态"}</span><select id="peCustomKind">${kindOpts}</select></label>
+        <div class="pe-custom-grid">
           <label class="pe-field"><span>${en ? "Carbs (g)" : "碳水 (g)"}</span><input id="peCustomCarbs" type="number" min="0" step="1"/></label>
           <label class="pe-field"><span>${en ? "Sodium (mg)" : "钠 (mg)"}</span><input id="peCustomSodium" type="number" min="0" step="1"/></label>
           <label class="pe-field"><span>${en ? "Caffeine (mg)" : "咖啡因 (mg)"}</span><input id="peCustomCaff" type="number" min="0" step="1"/></label>
@@ -1033,6 +1139,7 @@
           nutriWrap.innerHTML = "";
         } else {
           nutriWrap.innerHTML = `<div class="pe-custom-grid">
+            <label class="pe-field"><span>${en ? "Form" : "形态"}</span><select id="peCustomKind">${kindOpts}</select></label>
             <label class="pe-field"><span>${en ? "Carbs (g)" : "碳水 (g)"}</span><input id="peCustomCarbs" type="number" min="0" step="1"/></label>
             <label class="pe-field"><span>${en ? "Sodium (mg)" : "钠 (mg)"}</span><input id="peCustomSodium" type="number" min="0" step="1"/></label>
             <label class="pe-field"><span>${en ? "Caffeine (mg)" : "咖啡因 (mg)"}</span><input id="peCustomCaff" type="number" min="0" step="1"/></label>
@@ -1053,7 +1160,7 @@
             label: name,
             unit: "件",
             count: 1,
-            kind: "gear",
+            class: "gear",
             color: pickedColor || "#9BA8B4",
             isCustom: true,
             step: 1,
@@ -1065,7 +1172,7 @@
             state.checklist = state.checklist || [];
             const hit = state.checklist.find((c) => c.key === item.key);
             if (hit) hit.count += 1;
-            else state.checklist.push({ key: item.key, label: item.label, unit: "件", count: 1, kind: "gear", color: item.color });
+            else state.checklist.push({ key: item.key, label: item.label, unit: "件", count: 1, class: "gear", color: item.color });
             renderChecklist();
             return;
           }
@@ -1087,6 +1194,7 @@
           label: name,
           unit: (form.querySelector("#peCustomUnit") || {}).value ? form.querySelector("#peCustomUnit").value.trim() : "份",
           carbs_g: sf((form.querySelector("#peCustomCarbs") || {}).value) || 0,
+          kind: (form.querySelector("#peCustomKind") || {}).value || "solid",
           sodium_mg: sf((form.querySelector("#peCustomSodium") || {}).value) || 0,
           caffeine_mg: sf((form.querySelector("#peCustomCaff") || {}).value) || 0,
           fluid_ml: sf((form.querySelector("#peCustomFluid") || {}).value) || 0,
@@ -1127,7 +1235,7 @@
         }
         // checklist 补给品：加入清单 supply
         state.checklist = state.checklist || [];
-        state.checklist.push({ key: it.key, label: it.label, unit: it.unit || "份", count: 1, kind: "supply", color: it.color });
+        state.checklist.push({ key: it.key, label: it.label, unit: it.unit || "份", count: 1, class: "supply", color: it.color });
         renderChecklist();
       }
     });
@@ -1161,6 +1269,21 @@
         global.__peToast(L(`「${meta.label}」已超过单点建议上限 ${meta.limit}${meta.unit}，请确认该区间实际消耗`, `"${meta.label}" exceeds the suggested per-point limit ${meta.limit}${meta.unit}`));
       }
     }
+  }
+
+  // 额外补给品/站内真食数量步进（±1 份；减到 0 从 extra 移除，对齐小程序 itemViews）
+  function adjustExtra(idx, key, dir) {
+    const rows = state.planRows.map((r) => ({ ...r }));
+    const row = rows[idx];
+    if (!row) return;
+    const extra = { ...(row.extra || {}) };
+    const next = Math.max(0, Math.round(((extra[key] || 0) + dir) * 10) / 10);
+    if (next <= 0) delete extra[key];
+    else extra[key] = next;
+    row.extra = extra;
+    state.planRows = refreshDerived(rows);
+    recalcTotals();
+    render();
   }
 
   function addRow() {
@@ -1241,9 +1364,9 @@
     for (const w of warns) {
       const meta = carryMeta(w.canonKey);
       if (w.type === "start") {
-        const hit = checklist.find((c) => c.kind === "supply" && canonSupplyKey(c.key) === w.canonKey);
+        const hit = checklist.find((c) => c.class === "supply" && canonSupplyKey(c.key) === w.canonKey);
         if (hit) hit.count = Math.max(hit.count, w.need);
-        else checklist.push({ key: meta.checkKey, label: meta.label, count: w.need, unit: meta.unit, kind: "supply", color: meta.color });
+        else checklist.push({ key: meta.checkKey, label: meta.label, count: w.need, unit: meta.unit, class: "supply", color: meta.color });
       } else {
         const row = rows[w.rowIdx];
         if (!row) continue;
@@ -1314,7 +1437,7 @@
     const trace = (out && out.debug_trace) || {};
     const s1 = [];
     const push = (...cells) => s1.push(cells);
-    push("补给方案（完整版·Trail Lab Engine v2.3）");
+    push(`补给方案（完整版·Trail Lab Engine ${(out && out.engine_version) || "v2.5"}）`);
     push("安全提示：本方案为通用规则估算，非医疗建议；请结合自身体能、天气与肠胃耐受，在专业人士指导下调整，量力而行；使用者自行承担风险。");
     push("一、路线与完赛");
     push("距离(km)", rp.distance_km, "爬升(m)", rp.ascent_m, "", "赛前 36-48h 糖原填充(g/天)", `${Math.round(weightKg * 10)}-${Math.round(weightKg * 12)}（${weightKg} kg × 10-12）`);
@@ -1355,8 +1478,8 @@
     }
     const s2 = [];
     const push2 = (...cells) => s2.push(cells);
-    const chkSupply = state.checklist.filter((c) => c.kind === "supply");
-    const chkGear = state.checklist.filter((c) => c.kind === "gear");
+    const chkSupply = state.checklist.filter((c) => c.class === "supply");
+    const chkGear = state.checklist.filter((c) => c.class === "gear");
     push2("补给品");
     if (chkSupply.length) chkSupply.forEach((c) => push2("　" + c.label, `${c.count}${c.unit || ""}`));
     push2("装备");
@@ -1547,8 +1670,8 @@
     ctx.fillStyle = "#ffd9ae";
     ctx.fillText(en ? "Departure checklist" : "出发自查清单（携带）", 48, y);
     y += 30;
-    const supply = state.checklist.filter((c) => c.kind === "supply");
-    const gear = state.checklist.filter((c) => c.kind === "gear");
+    const supply = state.checklist.filter((c) => c.class === "supply");
+    const gear = state.checklist.filter((c) => c.class === "gear");
     if (supply.length) {
       ctx.font = "20px sans-serif";
       supply.forEach((c) => drawChip(c.label, `${c.count}${c.unit || ""}`, c.color));
@@ -1886,7 +2009,7 @@
     ctx.textAlign = "left";
     ctx.font = "15px sans-serif";
     ctx.fillStyle = "rgba(233,243,236,0.42)";
-    ctx.fillText("Trail Lab Engine v2.3 · " + (en ? "local data · for reference only" : "数据本地解析 · 仅供参考"), 48, H - 54);
+    ctx.fillText("Trail Lab Engine v2.5 · " + (en ? "local data · for reference only" : "数据本地解析 · 仅供参考"), 48, H - 54);
     ctx.fillStyle = "rgba(233,243,236,0.5)";
     const safety = en ? "General estimate, not medical advice. Adjust by conditions, GI tolerance and professional guidance." : "通用规则估算，非医疗建议；请结合天气、肠胃耐受与专业指导调整，量力而行。";
     ctx.fillText(safety, 48, H - 24);
@@ -2143,6 +2266,11 @@
         const idx = Number(step.closest(".pe-row").dataset.idx);
         const key = step.dataset.key;
         const delta = Number(step.dataset.step);
+        // 额外补给品/站内真食步进：data-extra 存在时调整 row.extra 数量
+        if (step.dataset.extra != null) {
+          adjustExtra(idx, key, Math.sign(delta));
+          return;
+        }
         // 带出步进：点击的 step 在 takeout 容器内时走 adjustTakeout
         if (step.closest(".pe-takeout")) {
           adjustTakeout(idx, key, Math.sign(delta));
@@ -2267,4 +2395,6 @@
     exportRouteFile,
     getState: () => state,
   };
+
+  global.TrailLabIcons = { iconFile, iconData, iconTag, describeItem };
 })(typeof window !== "undefined" ? window : globalThis);

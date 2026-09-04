@@ -1,5 +1,5 @@
 /* ============================================================
-   Trail Lab · 山野实验室 — AI Fuel Planner
+   Trail Lab · 山野实验室 — Trail Run Fuel Planner
    深林绿 × 探索橙 × 山野夜空 · 户外极客实验室美学
    ============================================================ */
 
@@ -2069,6 +2069,29 @@ svg text {
   background: color-mix(in srgb, var(--c, #9BA8B4) 82%, #000);
   white-space: nowrap;
 }
+/* 补给品/装备图标（与小程序 assets/icons 同步） */
+.pe-ico {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  object-fit: cover;
+  vertical-align: -2px;
+  margin-right: 4px;
+}
+.pe-lib-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin: 0 0 4px 0;
+}
+.pe-lib-ico {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+}
 .pe-seg {
   font-size: 11px;
   color: var(--muted);
@@ -2977,6 +3000,73 @@ svg text {
 }
 .pe-cp-row {
   margin-top: 10px;
+}
+.pe-station-advice {
+  margin-top: 6px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(255, 182, 92, 0.12);
+  color: #ffb65c;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.pe-station-food {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pe-station-food-label {
+  font-size: 12px;
+  color: rgba(233, 243, 236, 0.7);
+}
+.pe-station-food-tag {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #1f2a24;
+  background: #ffb65c;
+}
+.pe-station-food-empty {
+  font-size: 12px;
+  color: rgba(233, 243, 236, 0.5);
+}
+.supply-panel .panel-title {
+  margin-bottom: 8px;
+}
+.supply-cp {
+  padding: 10px 0;
+  border-top: 1px solid rgba(233, 243, 236, 0.12);
+}
+.supply-cp-name {
+  font-size: 13px;
+  color: #e9f3ec;
+  margin-bottom: 8px;
+}
+.supply-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.supply-chip {
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  color: rgba(233, 243, 236, 0.7);
+  background: rgba(233, 243, 236, 0.08);
+  border: 1px solid rgba(233, 243, 236, 0.18);
+  cursor: pointer;
+}
+.supply-chip.on {
+  color: #1f2a24;
+  background: #ffb65c;
+  border-color: #ffb65c;
+}
+.supply-chip.custom-add {
+  color: #ffb65c;
+  background: rgba(255, 182, 92, 0.08);
+  border-style: dashed;
 }
 .pe-takeout {
   margin-top: 10px;

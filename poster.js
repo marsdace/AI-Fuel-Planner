@@ -11,6 +11,14 @@
     add_carbs: "#FF7A00", add_elec: "#4D96FF", add_water: "#6BCB77", add_salt: "#9B59B6", add_caff: "#5B8A72",
   };
 
+  // 海报图标缓存（dataURL，规避 file:// 污染；exportImage 预载后绘制）
+  const _iconImgs = {};
+  function iconImg(key) {
+    if (!key) return null;
+    const im = _iconImgs[key];
+    return im && im.complete && im.naturalWidth > 0 ? im : null;
+  }
+
   const sf = (v) => {
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
@@ -42,16 +50,33 @@
     const plain = sf(r.plain_ml) || 0;
     const salt = sf(r.salt_tabs) || 0;
     const caff = sf(r.caffeine_mg) || 0;
-    if (gels > 0) items.push({ label: "能量胶", qty: gels, unit: "件", color: "#FF7A00" });
-    if (elec > 0) items.push({ label: "电解质水", qty: Math.round((elec / 500) * 10) / 10, unit: "瓶", color: "#4D96FF" });
-    if (plain > 0) items.push({ label: "白水", qty: Math.round((plain / 500) * 10) / 10, unit: "瓶", color: "#6BCB77" });
-    if (salt > 0) items.push({ label: "盐丸", qty: salt, unit: "粒", color: "#9B59B6" });
-    if (caff > 0) items.push({ label: "咖啡因", qty: Math.round((caff / 100) * 10) / 10, unit: "份", color: "#5B8A72" });
+    if (gels > 0) items.push({ key: "gels", label: "能量胶", qty: gels, unit: "件", color: "#FF7A00" });
+    if (elec > 0) items.push({ key: "electrolyte_ml", label: "电解质水", qty: Math.round((elec / 500) * 10) / 10, unit: "瓶", color: "#4D96FF" });
+    if (plain > 0) items.push({ key: "plain_ml", label: "白水", qty: Math.round((plain / 500) * 10) / 10, unit: "瓶", color: "#6BCB77" });
+    if (salt > 0) items.push({ key: "salt_tabs", label: "盐丸", qty: salt, unit: "粒", color: "#9B59B6" });
+    if (caff > 0) items.push({ key: "caffeine_mg", label: "咖啡因", qty: Math.round((caff / 100) * 10) / 10, unit: "份", color: "#5B8A72" });
     const extra = r.extra || {};
     for (const key of Object.keys(extra)) {
       const n = sf(extra[key]) || 0;
       if (n > 0) {
-        items.push({ label: key, qty: n, unit: "", color: EXTRA_COLORS[key] || "#9BA8B4", extraKey: true });
+        // extra 只存数量不存名称；先用补给库元数据解析中文名/颜色，
+        // 自定义站内真食（不在补给库）回退 r.stationFoods 元数据，避免图例显示原始 key（如 banana / custom_xxx）
+        let meta =
+          global.TrailLabIcons && typeof global.TrailLabIcons.describeItem === "function"
+            ? global.TrailLabIcons.describeItem(key)
+            : null;
+        if (!meta) {
+          const sf = (r.stationFoods || []).find((s) => s && s.key === key);
+          if (sf) meta = { label: sf.label || key, color: "#D9A441" };
+        }
+        items.push({
+          key,
+          label: (meta && meta.label) || key,
+          qty: n,
+          unit: "",
+          color: (meta && meta.color) || EXTRA_COLORS[key] || "#9BA8B4",
+          extraKey: true,
+        });
       }
     }
     return items;
@@ -157,8 +182,9 @@
     ctx.textAlign = "left";
 
     // ---- 出门携带清单：slogan 与小程序码之间 ----
-    const chkS = (state.checklist || []).filter((c) => c.kind === "supply");
-    const chkG = (state.checklist || []).filter((c) => c.kind === "gear");
+    // 分组与 plan_editor 的 renderChecklist 一致：用 c.class（supply / gear），非 c.kind
+    const chkS = (state.checklist || []).filter((c) => c.class === "supply");
+    const chkG = (state.checklist || []).filter((c) => c.class === "gear");
     ctx.textAlign = "left";
     ctx.fillStyle = "#FFB65C";
     ctx.font = "bold 20px sans-serif";
@@ -189,7 +215,7 @@
           ckOverflow += 1;
           continue;
         }
-        checkItems.push({ color: c.color || "#9BA8B4", txt, x: cx, y: rowY });
+        checkItems.push({ key: c.key, color: c.color || "#9BA8B4", txt, x: cx, y: rowY });
         cx += tw;
       }
       ckY = rowY;
@@ -214,9 +240,14 @@
     ctx.restore();
     ctx.font = "17px sans-serif";
     for (const it of checkItems) {
-      ctx.fillStyle = it.color;
-      roundRect(ctx, it.x, it.y - 20, 18, 18, 4);
-      ctx.fill();
+      const ic = iconImg(it.key);
+      if (ic) {
+        ctx.drawImage(ic, it.x, it.y - 18, 18, 18);
+      } else {
+        ctx.fillStyle = it.color;
+        roundRect(ctx, it.x, it.y - 20, 18, 18, 4);
+        ctx.fill();
+      }
       ctx.fillStyle = "rgba(233,243,236,0.92)";
       ctx.fillText(it.txt, it.x + 26, it.y);
     }
@@ -490,10 +521,15 @@
       let drawn = 0;
       const drawItemRow = (it, iyPos, color) => {
         const qty = fmtQty(it.qty) + (it.unit || "");
+        const ic = iconImg(it.key);
         if (verticalMode) {
-          ctx.fillStyle = color;
-          roundRect(ctx, cx - 14, iyPos - 30, 28, 28, 6);
-          ctx.fill();
+          if (ic) {
+            ctx.drawImage(ic, cx - 14, iyPos - 29, 28, 28);
+          } else {
+            ctx.fillStyle = color;
+            roundRect(ctx, cx - 14, iyPos - 30, 28, 28, 6);
+            ctx.fill();
+          }
           ctx.fillStyle = "#CDEADD";
           ctx.font = "16px sans-serif";
           ctx.textAlign = "center";
@@ -503,9 +539,13 @@
           const gap = 8;
           const txtW = ctx.measureText(qty).width;
           const startX = cx - (icW + gap + txtW) / 2;
-          ctx.fillStyle = color;
-          roundRect(ctx, startX, iyPos - 21, 26, 26, 6);
-          ctx.fill();
+          if (ic) {
+            ctx.drawImage(ic, startX, iyPos - 21, icW, icW);
+          } else {
+            ctx.fillStyle = color;
+            roundRect(ctx, startX, iyPos - 21, 26, 26, 6);
+            ctx.fill();
+          }
           ctx.fillStyle = "#CDEADD";
           ctx.font = "18px sans-serif";
           ctx.textAlign = "left";
@@ -530,7 +570,7 @@
         let drawnTake = 0;
         for (const t of takeouts) {
           if (drawnTake >= maxTake) break;
-          drawItemRow({ qty: t.count, unit: t.unit || "" }, iy, t.color || "#FFB65C");
+          drawItemRow({ key: t.key, qty: t.count, unit: t.unit || "" }, iy, t.color || "#FFB65C");
           drawnTake += 1;
           iy += rowH;
         }
@@ -546,17 +586,17 @@
 
     // ---- 底部图标说明 ----
     const legendEntries = [];
-    const addLegend = (label, color, unit) => {
+    const addLegend = (label, color, unit, iconKey) => {
       if (!label) return;
       const key = label + "|" + color;
       if (legendEntries.some((e) => e.key === key)) return;
-      legendEntries.push({ key, label: label + (unit && label.indexOf("（") < 0 && label.indexOf("(") < 0 ? "（" + unit + "）" : ""), color: color || "#9BA8B4" });
+      legendEntries.push({ key, iconKey, label: label + (unit && label.indexOf("（") < 0 && label.indexOf("(") < 0 ? "（" + unit + "）" : ""), color: color || "#9BA8B4" });
     };
     (state.planRows || []).forEach((r) => {
-      rowItemViews(r).filter((it) => it.qty > 0).forEach((it) => addLegend(it.label, it.color, it.unit));
-      (r.takeout || []).filter((t) => sf(t.count) > 0).forEach((t) => addLegend(t.label, t.color || "#FFB65C", t.unit || ""));
+      rowItemViews(r).filter((it) => it.qty > 0).forEach((it) => addLegend(it.label, it.color, it.unit, it.key));
+      (r.takeout || []).filter((t) => sf(t.count) > 0).forEach((t) => addLegend(t.label, t.color || "#FFB65C", t.unit || "", t.key));
     });
-    (state.checklist || []).forEach((c) => addLegend(c.label, c.color || "#9BA8B4", c.unit || ""));
+    (state.checklist || []).forEach((c) => addLegend(c.label, c.color || "#9BA8B4", c.unit || "", c.key));
     ctx.fillStyle = "#FFB65C";
     ctx.font = "bold 24px sans-serif";
     ctx.textAlign = "left";
@@ -564,7 +604,7 @@
     ctx.textAlign = "right";
     ctx.font = "18px sans-serif";
     ctx.fillStyle = "rgba(233,243,236,0.4)";
-    ctx.fillText(L("Trail Lab Engine v2.3 · 数据本地解析 · 仅供参考", "Trail Lab Engine v2.3 · local parsing · for reference only"), W - padR, legendTop + 16);
+    ctx.fillText(L("Trail Lab Engine v2.5 · 数据本地解析 · 仅供参考", "Trail Lab Engine v2.5 · local parsing · for reference only"), W - padR, legendTop + 16);
     const legendTopY = legendTop + 44;
     const legendBottom = H - 4;
     const simulateRows = (fontPx, iconSize) => {
@@ -601,9 +641,14 @@
         lcx = pad;
         ly += legendRowStep;
       }
-      ctx.fillStyle = e.color;
-      roundRect(ctx, lcx, ly - legendIconSize - 2, legendIconSize, legendIconSize, 5);
-      ctx.fill();
+      const lic = iconImg(e.iconKey);
+      if (lic) {
+        ctx.drawImage(lic, lcx, ly - legendIconSize - 4, legendIconSize, legendIconSize);
+      } else {
+        ctx.fillStyle = e.color;
+        roundRect(ctx, lcx, ly - legendIconSize - 2, legendIconSize, legendIconSize, 5);
+        ctx.fill();
+      }
       ctx.fillStyle = "rgba(233,243,236,0.85)";
       ctx.fillText(e.label, lcx + legendIconSize + 6, ly);
       lcx += tw;
@@ -633,7 +678,6 @@
           for (let i = 0; i < bin.length; i += 1) buf[i] = bin.charCodeAt(i);
           onDone(new Blob([buf], { type: "image/png" }));
         } catch (e) {
-          if (global.__peToast) global.__peToast((en ? "Poster generation failed: " : "海报生成失败：") + String(e && e.message));
           onDone(null);
         }
       };
@@ -647,7 +691,6 @@
           fromDataUrl();
         }
       } catch (e) {
-        if (global.__peToast) global.__peToast((en ? "Poster generation failed: " : "海报生成失败：") + String(e && e.message));
         onDone(null);
       }
     };
@@ -707,33 +750,58 @@
       }
       showPosterPreview(url);
     };
-    const qr = new Image();
-    qr.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = W;
-      canvas.height = H;
-      const ctx = canvas.getContext("2d");
-      try {
-        drawPoster(ctx, W, H, state, qr, en);
-        canvasToBlobSafe(canvas, finish);
-      } catch (e) {
-        if (global.__peToast) global.__peToast((en ? "Poster drawing failed: " : "海报绘制失败：") + String(e && e.message));
-      }
+    const startExport = () => {
+      let qrFallbackUsed = false;
+      const renderOnce = (withQr, onBlob) => {
+        const canvas = document.createElement("canvas");
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext("2d");
+        try {
+          drawPoster(ctx, W, H, state, withQr ? qr : null, en);
+        } catch (e) {
+          onBlob(null);
+          return;
+        }
+        canvasToBlobSafe(canvas, onBlob);
+      };
+      const finishBlob = (blob) => {
+        if (blob) {
+          finish(blob);
+        } else if (!qrFallbackUsed) {
+          qrFallbackUsed = true;
+          renderOnce(false, finishBlob);
+        } else {
+          finish(null);
+        }
+      };
+      const qr = new Image();
+      qr.onload = () => { renderOnce(true, finishBlob); };
+      qr.onerror = () => { qrFallbackUsed = true; renderOnce(false, finishBlob); };
+      qr.src = QR_SRC;
     };
-    qr.onerror = () => {
-      // 二维码加载失败不阻塞海报导出
-      const canvas = document.createElement("canvas");
-      canvas.width = W;
-      canvas.height = H;
-      const ctx = canvas.getContext("2d");
-      try {
-        drawPoster(ctx, W, H, state, null, en);
-        canvasToBlobSafe(canvas, finish);
-      } catch (e) {
-        if (global.__peToast) global.__peToast((en ? "Poster drawing failed: " : "海报绘制失败：") + String(e && e.message));
-      }
-    };
-    qr.src = QR_SRC;
+    // 预载补给/装备图标（dataURL，规避 file:// 污染）后开始导出，保证海报能画上图标
+    const keys = new Set();
+    (state.checklist || []).forEach((c) => keys.add(c.key));
+    (state.planRows || []).forEach((r) => {
+      ["gels", "electrolyte_ml", "plain_ml", "salt_tabs", "caffeine_mg"].forEach((k) => keys.add(k));
+      Object.keys(r.extra || {}).forEach((k) => keys.add(k));
+      (r.takeout || []).forEach((t) => keys.add(t.key));
+    });
+    const iconDataURL = (key) => (global.TrailLabIcons && typeof global.TrailLabIcons.iconData === "function") ? global.TrailLabIcons.iconData(key) : null;
+    const pending = [];
+    keys.forEach((k) => { if (iconDataURL(k)) pending.push(k); });
+    if (!pending.length) {
+      startExport();
+    } else {
+      let left = pending.length;
+      pending.forEach((k) => {
+        const im = new Image();
+        im.onload = () => { _iconImgs[k] = im; if (--left <= 0) startExport(); };
+        im.onerror = () => { if (--left <= 0) startExport(); };
+        im.src = iconDataURL(k);
+      });
+    }
   }
 
   // 覆盖 plan_editor 的旧版竖版海报（旧实现保留但不再使用）
